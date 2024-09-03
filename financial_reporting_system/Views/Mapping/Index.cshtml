@@ -1,0 +1,93 @@
+﻿@using Syncfusion.EJ2
+@using Syncfusion.EJ2.Grids
+
+@{
+    ViewData["PageTitle"] = "Financial Mapping";
+    ViewData["PageActionUrl"] = "/Categories/AddOrEdit";
+    ViewBag.Title = "Portfolios";
+    var portfolios = ViewBag.Portfolios as List<Dictionary<string, object>>;
+    var orgFinancialMappings = ViewBag.OrgFinancialMappings as List<Dictionary<string, object>>;
+    var statementIds = ViewBag.StatementIds as List<string>;
+    var accountCategories = ViewBag.AccountCategories as List<string>;
+}
+
+<form method="post" class="centered-form">
+    <div class="floating-label-group">
+        <ejs-dropdownlist id="statementIdDropdown" name="portfolioCodeInput" dataSource="@statementIds" placeholder="Select a Statement ID" floatLabelType="Auto"></ejs-dropdownlist>
+        <ejs-dropdownlist id="accountCategoryDropdown" name="accountCategoryInput" dataSource="@accountCategories" placeholder="Select an Account Category" floatLabelType="Auto"></ejs-dropdownlist>
+        <input type="submit" value="Search" class="btn btn-blue" />
+    </div>
+</form>
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger">
+        @ViewBag.ErrorMessage
+    </div>
+}
+else
+{
+    <div class="row mb-12">
+        <div class="col-md-6">
+            <!-- First Grid View Column -->
+            <div class="row mb-5">
+                <div id="custom-grid" class="dark-theme">
+                    @Html.EJS().Grid("Grid1").DataSource(portfolios).AllowSorting(true).Columns(col =>
+                             {
+                                 if (portfolios != null && portfolios.Any())
+                                 {
+                                     foreach (var key in portfolios.First().Keys)
+                                     {
+                                         col.Field(key)
+                                         .HeaderText(key)
+                                         .TextAlign(Syncfusion.EJ2.Grids.TextAlign.Left)
+                                         .Width(150)
+                                         .Add();
+                                     }
+                                 }
+                             }).AllowPaging(true).PageSettings(settings =>
+                             {
+                                 settings.PageSize(12);
+                             }).Render()
+                </div>
+            </div>
+        </div>
+        <div class="col-md-1">
+            <!-- Button Column -->
+            <div class="row mb-2">
+                <button class="btn btn-primary">
+                    <i class="fa-solid fa-arrow-right mr-2"></i>
+                </button>
+            </div>
+            <div class="row mb-2">
+                <button class="btn btn-primary">
+                    <i class="fa-solid fa-arrow-left mr-2"></i>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <!-- Second Grid View Column -->
+            <div class="row mb-5">
+                <div id="custom-grid" class="dark-theme">
+                    @Html.EJS().Grid("Grid2").DataSource(orgFinancialMappings).AllowSorting(true).Columns(col =>
+                             {
+                                 if (orgFinancialMappings != null && orgFinancialMappings.Any())
+                                 {
+                                     foreach (var key in orgFinancialMappings.First().Keys)
+                                     {
+                                         col.Field(key)
+                                         .HeaderText(key)
+                                         .TextAlign(Syncfusion.EJ2.Grids.TextAlign.Left)
+                                         .Width(150)
+                                         .Add();
+                                     }
+                                 }
+                             }).AllowPaging(true).PageSettings(settings =>
+                             {
+                                 settings.PageSize(12);
+                             }).Render()
+                </div>
+            </div>
+        </div>
+    </div>
+}

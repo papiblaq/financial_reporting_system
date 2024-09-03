@@ -1,0 +1,75 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+
+    List<object> menuItems = new List<object>
+{
+    new { text = "financial settings", separator = "true" },
+    new { text = "Statement Types", url = "/Dashboard", iconCss = "fa-solid fa-file-invoice" },
+    new { text = "Statement Sheets", url = "/Available_accounts", iconCss = "fa-solid fa-receipt"},
+    new { text = "Statement Header", url = "/Portfolio_Accounts", iconCss = "fa-solid fa-diamond" },
+     new { text = "Statement Details", url = "/#", iconCss = "fa-solid fa-circle-info" },
+
+    // This one separates the groups
+    new { text = "Financial Mapping", separator = "true" },
+    new { text = "Statement Mapping", url = "/Mapping", iconCss = "fa-solid fa-magnifying-glass-dollar" },
+   
+
+    // Example of a dropdown menu
+    // new {
+    //     text = "Dropdown",
+    //     items = new List<object>
+    //     {
+    //         new { text = "Open" },
+    //         new { text = "Close" },
+    //         new { text = "Other" }
+    //     }
+    // }
+};
+
+
+
+
+}
+@*in the css assighm margin left with the same width as the sidebar*@
+<ejs-sidebar id="sidebar" width="290px" enableDock="true" dockSize="100px" target=".dock-target" enableGestures="false">
+
+    <e-content-template>
+
+
+        <div class="logo-wrapper">
+            <i class="fa-solid" id="sidebar-toggler"></i>
+            <div class="app-logo">
+                <img src="~/neptune_logo2.jpg" />
+            </div>
+            <div class="w-1000"></div>
+        </div>
+
+
+        @*the place for profile picture*@
+
+        <div class="profile-wrapper">
+            <img class="profilePic" src="~/neptunePic.jpg" />
+            <div class="titles d-flex flex-column p-3">
+                <h6 class="mb-0">@ViewBag.PortfolioName</h6>
+                <span class="text-muted">Neptune data manager</span>
+            </div>
+        </div>
+
+
+        <ejs-menu id="menu" items="menuItems" orientation="Vertical" hamburgerMode>
+
+        </ejs-menu>
+    </e-content-template>
+
+</ejs-sidebar>
+<!-- Onclick function in JavaScript for the sidebar -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dockBar = document.getElementById('sidebar').ej2_instances[0];
+        document.getElementById('sidebar-toggler').onclick = function () {
+            dockBar.toggle();
+        };
+    });
+</script>

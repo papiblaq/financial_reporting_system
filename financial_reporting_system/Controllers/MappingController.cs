@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 
 public class MappingController : Controller
 {
     private readonly string _connectionString;
+    private readonly ILogger<MappingController> _logger;
 
-    public MappingController(IConfiguration configuration)
+    public MappingController(IConfiguration configuration, ILogger<MappingController> logger)
     {
         _connectionString = configuration.GetConnectionString("OracleConnection");
+        _logger = logger;
     }
 
     [HttpGet]
@@ -40,44 +43,54 @@ public class MappingController : Controller
     }
 
     [HttpPost]
-    public JsonResult CombineGridData(List<int> selectedRowsGridA, int selectedRowGridB)
+    public JsonResult CombineGridData(List<Dictionary<string, object>> selectedRowsGridA, List<Dictionary<string, object>> selectedRowsGridB)
     {
-        if (selectedRowsGridA == null || selectedRowsGridA.Count == 0 || selectedRowGridB == 0)
+        Console.WriteLine("CombineGridData method called");
+        Console.WriteLine("Selected Rows from Grid2: " + JsonConvert.SerializeObject(selectedRowsGridB));
+
+        if (selectedRowsGridA == null || selectedRowsGridA.Count == 0 || selectedRowsGridB == null || selectedRowsGridB.Count == 0)
         {
             return Json(new { success = false, error = "Invalid selection. Please select rows from both grids." });
         }
 
         try
         {
-            var gridAData = FetchDataForGridA(selectedRowsGridA);
-            var gridBData = FetchDataForGridB(selectedRowGridB);
-
-            foreach (var rowA in gridAData)
+            foreach (var rowB in selectedRowsGridB)
             {
-                var combinedRow = new
-                {
-                    STMNT_ID = gridBData["STMNT_ID"],
-                    SHEET_ID = gridBData["SHEET_ID"],
-                    HEADER_ID = gridBData["HEADER_ID"],
-                    DETAIL_ID = gridBData["DETAIL_ID"],
-                    REF_CD = gridBData["REF_CD"],
-                    DESCRIPTION = gridBData["DESCRIPTION"],
-                    BAL_CD = rowA["BAL_CD"],
-                    GL_ACCT_ID = rowA["GL_ACCT_ID"],
-                    GL_ACCT_NO = rowA["GL_ACCT_NO"],
-                    GL_ACCT_CAT_CD = rowA["GL_ACCT_CAT_CD"],
-                    ACCT_DESC = rowA["ACCT_DESC"],
-                    SYS_CREATE_TS = DateTime.UtcNow,
-                    CREATED_BY = "User"
-                };
+                Console.WriteLine("STMNT_ID: " + rowB["STMNT_ID"]);
+            }
 
-                InsertCombinedDataIntoDatabase(combinedRow);
+            foreach (var rowA in selectedRowsGridA)
+            {
+                foreach (var rowB in selectedRowsGridB)
+                {
+                    var combinedRow = new
+                    {
+                        STMNT_ID = rowB["STMNT_ID"],
+                        SHEET_ID = rowB["SHEET_ID"],
+                        HEADER_ID = rowB["HEADER_ID"],
+                        DETAIL_ID = rowB["DETAIL_ID"],
+                        REF_CD = rowB["REF_CD"],
+                        DESCRIPTION = rowB["DESCRIPTION"],
+                        BAL_CD = rowA["BAL_CD"],
+                        GL_ACCT_ID = rowA["GL_ACCT_ID"],
+                        GL_ACCT_NO = rowA["GL_ACCT_NO"],
+                        GL_ACCT_CAT_CD = rowA["GL_ACCT_CAT_CD"],
+                        ACCT_DESC = rowA["ACCT_DESC"],
+                        SYS_CREATE_TS = DateTime.UtcNow,
+                        CREATED_BY = "User"
+                    };
+
+                    Console.WriteLine("Inserting Combined Row: " + JsonConvert.SerializeObject(combinedRow));
+                    InsertCombinedDataIntoDatabase(combinedRow);
+                }
             }
 
             return Json(new { success = true });
         }
         catch (Exception ex)
         {
+            Console.WriteLine("Exception: " + ex.Message);
             return Json(new { success = false, error = ex.Message });
         }
     }
@@ -150,13 +163,16 @@ public class MappingController : Controller
 
     private void InsertCombinedDataIntoDatabase(dynamic combinedRow)
     {
+        Console.WriteLine("InsertCombinedDataIntoDatabase method called");
+        Console.WriteLine("Combined Row: " + JsonConvert.SerializeObject(combinedRow));
+
         using (var connection = new OracleConnection(_connectionString))
         {
             connection.Open();
             string query = @"
-                INSERT INTO ORG_FINANCIAL_MAPPING
-                (STMNT_ID, SHEET_ID, HEADER_ID, DETAIL_ID, REF_CD, DESCRIPTION, BAL_CD, GL_ACCT_ID, GL_ACCT_NO, GL_ACCT_CAT_CD, ACCT_DESC, SYS_CREATE_TS, CREATED_BY)
-                VALUES (:STMNT_ID, :SHEET_ID, :HEADER_ID, :DETAIL_ID, :REF_CD, :DESCRIPTION, :BAL_CD, :GL_ACCT_ID, :GL_ACCT_NO, :GL_ACCT_CAT_CD, :ACCT_DESC, :SYS_CREATE_TS, :CREATED_BY)";
+            INSERT INTO ORG_FINANCIAL_MAPPING
+            (STMNT_ID, SHEET_ID, HEADER_ID, DETAIL_ID, REF_CD, DESCRIPTION, BAL_CD, GL_ACCT_ID, GL_ACCT_NO, GL_ACCT_CAT_CD, ACCT_DESC, SYS_CREATE_TS, CREATED_BY)
+            VALUES (:STMNT_ID, :SHEET_ID, :HEADER_ID, :DETAIL_ID, :REF_CD, :DESCRIPTION, :BAL_CD, :GL_ACCT_ID, :GL_ACCT_NO, :GL_ACCT_CAT_CD, :ACCT_DESC, :SYS_CREATE_TS, :CREATED_BY)";
             using (var command = new OracleCommand(query, connection))
             {
                 command.Parameters.Add(new OracleParameter("STMNT_ID", OracleDbType.Decimal) { Value = combinedRow.STMNT_ID });
@@ -172,7 +188,10 @@ public class MappingController : Controller
                 command.Parameters.Add(new OracleParameter("ACCT_DESC", OracleDbType.Varchar2) { Value = combinedRow.ACCT_DESC });
                 command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", OracleDbType.TimeStamp) { Value = combinedRow.SYS_CREATE_TS });
                 command.Parameters.Add(new OracleParameter("CREATED_BY", OracleDbType.Varchar2) { Value = combinedRow.CREATED_BY });
+
+                Console.WriteLine("Executing SQL Query: " + query);
                 command.ExecuteNonQuery();
+                Console.WriteLine("Data inserted successfully");
             }
         }
     }

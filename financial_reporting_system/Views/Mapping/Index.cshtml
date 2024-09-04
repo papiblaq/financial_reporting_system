@@ -3,7 +3,6 @@
 
 @{
     ViewData["PageTitle"] = "Financial Mapping";
-    ViewData["PageActionUrl"] = "/Categories/AddOrEdit";
     ViewBag.Title = "Portfolios";
     var portfolios = ViewBag.Portfolios as List<Dictionary<string, object>>;
     var orgFinancialMappings = ViewBag.OrgFinancialMappings as List<Dictionary<string, object>>;
@@ -11,7 +10,7 @@
     var accountCategories = ViewBag.AccountCategories as List<string>;
 }
 
-<form method="post" class="centered-form">
+<form method="post" id="searchForm" class="centered-form">
     <div class="floating-label-group">
         <ejs-dropdownlist id="statementIdDropdown" name="portfolioCodeInput" dataSource="@statementIds" placeholder="Select a Statement ID" floatLabelType="Auto"></ejs-dropdownlist>
         <ejs-dropdownlist id="accountCategoryDropdown" name="accountCategoryInput" dataSource="@accountCategories" placeholder="Select an Account Category" floatLabelType="Auto"></ejs-dropdownlist>
@@ -21,84 +20,46 @@
 
 @if (ViewBag.ErrorMessage != null)
 {
-    <div class="alert alert-danger">
-        @ViewBag.ErrorMessage
-    </div>
+    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
 }
 else
 {
     <div class="row mb-12">
         <div class="col-md-6">
-            <!-- First Grid View Column -->
             <div class="row mb-5">
-                <div id="custom-grid" class="dark-theme">
-                    @Html.EJS().Grid("Grid1").DataSource(portfolios).AllowSorting(true).Columns(col =>
+                <div id="grid1" class="dark-theme">
+                    @Html.EJS().Grid("Grid1").DataSource(portfolios).AllowSorting(true).AllowPaging(true).PageSettings(settings => settings.PageSize(12)).Columns(col =>
                              {
-                                 col.Field("Checkbox")
-                                 .HeaderText("")
-                                 .Template("#checkboxTemplate")
-                                 .TextAlign(Syncfusion.EJ2.Grids.TextAlign.Center)
-                                 .Width(50)
-                                 .Add();
-
+                                 col.Field("Checkbox").HeaderText("").Template("#checkboxTemplate").TextAlign(Syncfusion.EJ2.Grids.TextAlign.Center).Width(50).Add();
                                  if (portfolios != null && portfolios.Any())
                                  {
                                      foreach (var key in portfolios.First().Keys)
                                      {
-                                         col.Field(key)
-                                         .HeaderText(key)
-                                         .TextAlign(Syncfusion.EJ2.Grids.TextAlign.Left)
-                                         .Width(150)
-                                         .Add();
+                                         col.Field(key).HeaderText(key).TextAlign(Syncfusion.EJ2.Grids.TextAlign.Left).Width(150).Add();
                                      }
                                  }
-                             }).AllowPaging(true).PageSettings(settings =>
-                             {
-                                 settings.PageSize(12);
                              }).Render()
                 </div>
             </div>
         </div>
         <div class="col-md-1">
-            <!-- Button Column -->
-            <div class="row mb-2">
-                <button class="btn btn-primary">
-                    <i class="fa-solid fa-arrow-right mr-2"></i>
-                </button>
-            </div>
-            <div class="row mb-2">
-                <button class="btn btn-primary">
-                    <i class="fa-solid fa-arrow-left mr-2"></i>
-                </button>
-            </div>
+            <button id="combineButton" class="btn btn-primary" aria-label="Combine Selected Rows">
+                <i class="fa-solid fa-arrow-right mr-2"></i>
+            </button>
         </div>
         <div class="col-md-5">
-            <!-- Second Grid View Column -->
             <div class="row mb-5">
-                <div id="custom-grid" class="dark-theme">
-                    @Html.EJS().Grid("Grid2").DataSource(orgFinancialMappings).AllowSorting(true).Columns(col =>
+                <div id="grid2" class="dark-theme">
+                    @Html.EJS().Grid("Grid2").DataSource(orgFinancialMappings).AllowSorting(true).AllowPaging(true).PageSettings(settings => settings.PageSize(12)).Columns(col =>
                              {
-                                 col.Field("Checkbox")
-                                 .HeaderText("")
-                                 .Template("#checkboxTemplate")
-                                 .TextAlign(Syncfusion.EJ2.Grids.TextAlign.Center)
-                                 .Width(50)
-                                 .Add();
-
+                                 col.Field("Checkbox").HeaderText("").Template("#checkboxTemplate").TextAlign(Syncfusion.EJ2.Grids.TextAlign.Center).Width(50).Add();
                                  if (orgFinancialMappings != null && orgFinancialMappings.Any())
                                  {
                                      foreach (var key in orgFinancialMappings.First().Keys)
                                      {
-                                         col.Field(key)
-                                         .HeaderText(key)
-                                         .TextAlign(Syncfusion.EJ2.Grids.TextAlign.Left)
-                                         .Width(150)
-                                         .Add();
+                                         col.Field(key).HeaderText(key).TextAlign(Syncfusion.EJ2.Grids.TextAlign.Left).Width(150).Add();
                                      }
                                  }
-                             }).AllowPaging(true).PageSettings(settings =>
-                             {
-                                 settings.PageSize(12);
                              }).Render()
                 </div>
             </div>
@@ -111,18 +72,30 @@ else
 </script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('combineButton').addEventListener('click', combineSelectedRows);
+
+    function combineSelectedRows() {
         var grid1 = document.getElementById('Grid1').ej2_instances[0];
         var grid2 = document.getElementById('Grid2').ej2_instances[0];
 
-        grid1.addEventListener('checkboxChange', function (args) {
-            // Handle checkbox change event for Grid1
-            console.log('Checkbox changed in Grid1', args);
-        });
+        var selectedRowsGridA = grid1.getSelectedRecords().map(record => record.Id); // Adjust to match your key
+        var selectedRowsGridB = grid2.getSelectedRecords().map(record => record.Id)[0]; // Assume single selection from Grid B
 
-        grid2.addEventListener('checkboxChange', function (args) {
-            // Handle checkbox change event for Grid2
-            console.log('Checkbox changed in Grid2', args);
+        if (selectedRowsGridA.length === 0 || !selectedRowsGridB) {
+            alert('Please select rows from both grids.');
+            return;
+        }
+
+        // AJAX call to combine data on the server
+        $.post('/Mapping/CombineGridData', { selectedRowsGridA: selectedRowsGridA, selectedRowGridB: selectedRowsGridB }, function (response) {
+            if (response.success) {
+                alert('Data combined successfully!');
+                location.reload(); // Reload page to reflect changes
+            } else {
+                alert('Failed to combine data: ' + response.error);
+            }
+        }).fail(function () {
+            alert('An error occurred while trying to combine data. Please try again.');
         });
-    });
+    }
 </script>

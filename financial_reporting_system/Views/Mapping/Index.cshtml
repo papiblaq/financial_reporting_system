@@ -75,19 +75,29 @@ else
     document.getElementById('combineButton').addEventListener('click', combineSelectedRows);
 
     function combineSelectedRows() {
+        console.log('combineSelectedRows function called');
+
         var grid1 = document.getElementById('Grid1').ej2_instances[0];
         var grid2 = document.getElementById('Grid2').ej2_instances[0];
 
-        var selectedRowsGridA = grid1.getSelectedRecords().map(record => record.Id); // Adjust to match your key
-        var selectedRowsGridB = grid2.getSelectedRecords().map(record => record.Id)[0]; // Assume single selection from Grid B
+        if (!grid1 || !grid2) {
+            console.error('Grid instances not found');
+            return;
+        }
 
-        if (selectedRowsGridA.length === 0 || !selectedRowsGridB) {
+        var selectedRowsGridA = getCheckedRows(grid1); // All checked rows from Grid1
+        var selectedRowsGridB = grid2.getSelectedRecords(); // Entire selected records from Grid2
+
+        console.log('Selected Rows from Grid1:', selectedRowsGridA);
+        console.log('Selected Rows from Grid2:', selectedRowsGridB);
+
+        if (selectedRowsGridA.length === 0 || selectedRowsGridB.length === 0) {
             alert('Please select rows from both grids.');
             return;
         }
 
         // AJAX call to combine data on the server
-        $.post('/Mapping/CombineGridData', { selectedRowsGridA: selectedRowsGridA, selectedRowGridB: selectedRowsGridB }, function (response) {
+        $.post('/Mapping/CombineGridData', { selectedRowsGridA: selectedRowsGridA, selectedRowsGridB: selectedRowsGridB }, function (response) {
             if (response.success) {
                 alert('Data combined successfully!');
                 location.reload(); // Reload page to reflect changes
@@ -97,5 +107,24 @@ else
         }).fail(function () {
             alert('An error occurred while trying to combine data. Please try again.');
         });
+    }
+
+    function getCheckedRows(grid) {
+        console.log('getCheckedRows function called');
+
+        var checkedRows = [];
+        var gridElement = grid.element;
+        var checkboxes = gridElement.querySelectorAll('.checkbox:checked');
+
+        console.log('Checked Checkboxes:', checkboxes);
+
+        checkboxes.forEach(function (checkbox) {
+            var row = checkbox.closest('tr');
+            var rowData = grid.getRowInfo(row).rowData;
+            console.log('Checked Row Data:', rowData);
+            checkedRows.push(rowData);
+        });
+
+        return checkedRows;
     }
 </script>

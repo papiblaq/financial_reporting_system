@@ -7,7 +7,7 @@
     ViewBag.Title = "Portfolios";
     var portfolios = ViewBag.Portfolios as List<Dictionary<string, object>>;
     var orgFinancialMappings = ViewBag.OrgFinancialMappings as List<Dictionary<string, object>>;
-    var statementIds = ViewBag.StatementIds as List<string>;
+    var statementIds = ViewBag.StatementIds as List<int>;
     var accountCategories = ViewBag.AccountCategories as List<string>;
 }
 
@@ -34,6 +34,13 @@ else
                 <div id="custom-grid" class="dark-theme">
                     @Html.EJS().Grid("Grid1").DataSource(portfolios).AllowSorting(true).Columns(col =>
                              {
+                                 col.Field("Checkbox")
+                                 .HeaderText("")
+                                 .Template("#checkboxTemplate")
+                                 .TextAlign(Syncfusion.EJ2.Grids.TextAlign.Center)
+                                 .Width(50)
+                                 .Add();
+
                                  if (portfolios != null && portfolios.Any())
                                  {
                                      foreach (var key in portfolios.First().Keys)
@@ -71,6 +78,13 @@ else
                 <div id="custom-grid" class="dark-theme">
                     @Html.EJS().Grid("Grid2").DataSource(orgFinancialMappings).AllowSorting(true).Columns(col =>
                              {
+                                 col.Field("Checkbox")
+                                 .HeaderText("")
+                                 .Template("#checkboxTemplate")
+                                 .TextAlign(Syncfusion.EJ2.Grids.TextAlign.Center)
+                                 .Width(50)
+                                 .Add();
+
                                  if (orgFinancialMappings != null && orgFinancialMappings.Any())
                                  {
                                      foreach (var key in orgFinancialMappings.First().Keys)
@@ -91,3 +105,24 @@ else
         </div>
     </div>
 }
+
+<script id="checkboxTemplate" type="text/x-template">
+    <input type="checkbox" class="checkbox" />
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var grid1 = document.getElementById('Grid1').ej2_instances[0];
+        var grid2 = document.getElementById('Grid2').ej2_instances[0];
+
+        grid1.addEventListener('checkboxChange', function (args) {
+            // Handle checkbox change event for Grid1
+            console.log('Checkbox changed in Grid1', args);
+        });
+
+        grid2.addEventListener('checkboxChange', function (args) {
+            // Handle checkbox change event for Grid2
+            console.log('Checkbox changed in Grid2', args);
+        });
+    });
+</script>

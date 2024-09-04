@@ -23,9 +23,9 @@ public class MappingController : Controller
         return View();
     }
 
-    private List<string> GetStatementIds()
+    private List<int> GetStatementIds()
     {
-        List<string> statementIds = new List<string>();
+        List<int> statementIds = new List<int>();
 
         using (var connection = new OracleConnection(_connectionString))
         {
@@ -38,7 +38,7 @@ public class MappingController : Controller
                 {
                     while (reader.Read())
                     {
-                        statementIds.Add(reader["STMNT_ID"].ToString());
+                        statementIds.Add(Convert.ToInt32(reader["STMNT_ID"]));
                     }
                 }
             }
@@ -73,14 +73,14 @@ public class MappingController : Controller
 
     // POST: Portfolios/Index
     [HttpPost]
-    public IActionResult Index(string portfolioCodeInput, string accountCategoryInput)
+    public IActionResult Index(int portfolioCodeInput, string accountCategoryInput)
     {
         List<Dictionary<string, object>> portfolios = new List<Dictionary<string, object>>();
         List<Dictionary<string, object>> orgFinancialMappings = new List<Dictionary<string, object>>();
 
         try
         {
-            if (string.IsNullOrEmpty(portfolioCodeInput) || string.IsNullOrEmpty(accountCategoryInput))
+            if (portfolioCodeInput == 0 || string.IsNullOrEmpty(accountCategoryInput))
             {
                 ViewBag.ErrorMessage = "Please select valid values from both dropdowns.";
                 return View();
@@ -114,7 +114,7 @@ public class MappingController : Controller
                 string mappingQuery = "SELECT * FROM ORG_FINANCIAL_STMNT_DETAIL WHERE STMNT_ID = :portfolioCodeInput";
                 using (var mappingCommand = new OracleCommand(mappingQuery, connection))
                 {
-                    mappingCommand.Parameters.Add(new OracleParameter("portfolioCodeInput", OracleDbType.Varchar2) { Value = portfolioCodeInput });
+                    mappingCommand.Parameters.Add(new OracleParameter("portfolioCodeInput", OracleDbType.Decimal) { Value = portfolioCodeInput });
 
                     using (var reader = mappingCommand.ExecuteReader())
                     {
@@ -126,6 +126,7 @@ public class MappingController : Controller
                                 mapping[reader.GetName(i)] = reader[i];
                             }
                             orgFinancialMappings.Add(mapping);
+                            Console.WriteLine($"Fetched mapping: {string.Join(", ", mapping)}");
                         }
                     }
                 }

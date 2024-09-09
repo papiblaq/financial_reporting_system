@@ -1,0 +1,38 @@
+﻿@model financial_reporting_system.Statement_typesController.StatementInputModel
+@{
+    ViewData["Title"] = "Statement Data Form";
+}
+
+<div class="container">
+    <h1 class="mt-5">Enter Statement Data</h1>
+    <form method="post" asp-action="SaveData" class="mt-4">
+        <div class="form-group">
+            <label asp-for="STMNT_ID"></label>
+            <input asp-for="STMNT_ID" class="form-control" required />
+            <span asp-validation-for="STMNT_ID" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="REF_CD"></label>
+            <input asp-for="REF_CD" class="form-control" required />
+            <span asp-validation-for="REF_CD" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="DESCRIPTION"></label>
+            <input asp-for="DESCRIPTION" class="form-control" required />
+            <span asp-validation-for="DESCRIPTION" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="CREATED_BY"></label>
+            <input asp-for="CREATED_BY" class="form-control" required />
+            <span asp-validation-for="CREATED_BY" class="text-danger"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+        alert('@TempData["ErrorMessage"]');
+    </script>
+}

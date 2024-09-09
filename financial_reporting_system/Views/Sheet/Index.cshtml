@@ -7,14 +7,8 @@
     <h1 class="mt-5">Enter Sheet Data</h1>
     <form method="post" asp-action="SaveData" class="mt-4">
         <div class="form-group">
-            <label asp-for="SHEET_ID"></label>
-            <input asp-for="SHEET_ID" class="form-control" required />
-            <span asp-validation-for="SHEET_ID" class="text-danger"></span>
-        </div>
-
-        <div class="form-group">
             <label asp-for="STMNT_ID"></label>
-            <select asp-for="STMNT_ID" asp-items="ViewBag.StatementTypes" class="form-control" required>
+            <select asp-for="STMNT_ID" asp-items="Model.StatementTypes" class="form-control" required>
                 <option value="">-- Select Statement Type --</option>
             </select>
             <span asp-validation-for="STMNT_ID" class="text-danger"></span>
@@ -43,5 +37,12 @@
 {
     <script type="text/javascript">
         alert('@TempData["ErrorMessage"]');
+    </script>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script type="text/javascript">
+        alert('@TempData["SuccessMessage"]');
     </script>
 }

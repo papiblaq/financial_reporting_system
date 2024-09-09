@@ -23,8 +23,11 @@ namespace financial_reporting_system.Controllers
         // GET: /Sheet
         public IActionResult Index()
         {
-            var model = new SheetInputModel();
-            PopulateStatementTypes();
+            var model = new SheetInputModel
+            {
+                StatementTypes = GetStatementTypes() // Populate dropdown options
+            };
+
             return View(model);
         }
 
@@ -33,11 +36,23 @@ namespace financial_reporting_system.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SaveData(SheetInputModel input)
         {
-            PopulateStatementTypes(); // Ensure the dropdown data is always available
+            // Check if STMNT_ID is valid and present in the dropdown options
+            if (!IsValidStatementType(input.STMNT_ID))
+            {
+                ModelState.AddModelError("STMNT_ID", "Invalid STMNT_ID selected.");
+            }
 
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Invalid model state detected.");
+                foreach (var modelState in ModelState.Values)
+                {
+                    foreach (var error in modelState.Errors)
+                    {
+                        _logger.LogWarning($"ModelState error: {error.ErrorMessage}");
+                    }
+                }
+                input.StatementTypes = GetStatementTypes(); // Re-populate dropdown data
                 return View("Index", input);
             }
 
@@ -49,29 +64,15 @@ namespace financial_reporting_system.Controllers
                 {
                     connection.Open();
 
-                    // Check if SHEET_ID already exists
-                    string checkQuery = "SELECT COUNT(*) FROM ORG_FINANCIAL_STMNT_SHEET WHERE SHEET_ID = :SHEET_ID";
-                    using (var checkCommand = new OracleCommand(checkQuery, connection))
-                    {
-                        checkCommand.Parameters.Add(new OracleParameter("SHEET_ID", OracleDbType.Int32) { Value = input.SHEET_ID });
-                        int existingCount = Convert.ToInt32(checkCommand.ExecuteScalar());
-
-                        if (existingCount > 0)
-                        {
-                            TempData["ErrorMessage"] = "SHEET_ID already exists. Please enter a different SHEET_ID.";
-                            return View("Index", input);
-                        }
-                    }
-
                     // Insert the record
                     string insertQuery = @"
                         INSERT INTO ORG_FINANCIAL_STMNT_SHEET 
-                        (SHEET_ID, STMNT_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
-                        VALUES (:SHEET_ID, :STMNT_ID, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
+                        (STMNT_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
+                        VALUES (:STMNT_ID, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
 
                     using (var insertCommand = new OracleCommand(insertQuery, connection))
                     {
-                        AddParameter(insertCommand, "SHEET_ID", OracleDbType.Int32, input.SHEET_ID);
+                        // Use the values from the input model
                         AddParameter(insertCommand, "STMNT_ID", OracleDbType.Int32, input.STMNT_ID);
                         AddParameter(insertCommand, "REF_CD", OracleDbType.Varchar2, input.REF_CD);
                         AddParameter(insertCommand, "DESCRIPTION", OracleDbType.Varchar2, input.DESCRIPTION);
@@ -82,42 +83,50 @@ namespace financial_reporting_system.Controllers
                     }
                 }
 
-                _logger.LogInformation("Data saved successfully for SHEET_ID: {SHEET_ID}", input.SHEET_ID);
-                return RedirectToAction("Index");
+                _logger.LogInformation("Data saved successfully for STMNT_ID: {STMNT_ID}", input.STMNT_ID);
+                TempData["SuccessMessage"] = $"Created sheet for statement type {input.STMNT_ID}";
+                return RedirectToAction("Index"); // Redirect to clear input fields
             }
             catch (OracleException ex)
             {
                 _logger.LogError(ex, "Database error occurred while saving sheet data.");
-                TempData["ErrorMessage"] = "An error occurred while saving your data. Please try again.";
+                ModelState.AddModelError(string.Empty, "An error occurred while saving your data. Please try again.");
+                input.StatementTypes = GetStatementTypes(); // Re-populate dropdown data
                 return View("Index", input);
             }
         }
 
-        private void AddParameter(OracleCommand command, string name, OracleDbType type, object value)
+        // Helper method to validate the selected STMNT_ID
+        private bool IsValidStatementType(int stmntId)
         {
-            command.Parameters.Add(new OracleParameter(name, type) { Value = value });
+            var statementTypes = GetStatementTypes();
+            return statementTypes.Exists(item => item.Value == stmntId.ToString());
         }
 
-        private void PopulateStatementTypes()
+        private List<SelectListItem> GetStatementTypes()
         {
             var statementTypes = new List<SelectListItem>();
+
             try
             {
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT STMNT_ID, STMNT_NAME FROM ORG_FIN_STATEMENT_TYPE";
-
+                    string query = "SELECT STMNT_ID, DESCRIPTION FROM ORG_FIN_STATEMENT_TYPE";
                     using (var command = new OracleCommand(query, connection))
                     {
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
+                                int stmntId = Convert.ToInt32(reader["STMNT_ID"]);
+                                string description = reader["DESCRIPTION"].ToString();
+                                string formattedText = $"{stmntId} ({description})";
+
                                 statementTypes.Add(new SelectListItem
                                 {
-                                    Value = reader["STMNT_ID"].ToString(),
-                                    Text = reader["STMNT_NAME"].ToString()
+                                    Value = stmntId.ToString(), // Ensure Value is set to STMNT_ID
+                                    Text = formattedText
                                 });
                             }
                         }
@@ -129,13 +138,21 @@ namespace financial_reporting_system.Controllers
                 _logger.LogError(ex, "Database error occurred while fetching statement types.");
             }
 
-            ViewBag.StatementTypes = statementTypes;
+            return statementTypes;
         }
 
+        private void AddParameter(OracleCommand command, string name, OracleDbType type, object value)
+        {
+            command.Parameters.Add(new OracleParameter(name, type) { Value = value });
+        }
+
+        // Input model class
         public class SheetInputModel
         {
-            [Required(ErrorMessage = "SHEET_ID is required.")]
-            public int SHEET_ID { get; set; }
+            public SheetInputModel()
+            {
+                StatementTypes = new List<SelectListItem>();
+            }
 
             [Required(ErrorMessage = "STMNT_ID is required.")]
             public int STMNT_ID { get; set; }
@@ -153,6 +170,8 @@ namespace financial_reporting_system.Controllers
             [Required(ErrorMessage = "CREATED_BY is required.")]
             [StringLength(100, ErrorMessage = "CREATED_BY cannot be longer than 100 characters.")]
             public string CREATED_BY { get; set; }
+
+            public List<SelectListItem> StatementTypes { get; set; }
         }
     }
 }

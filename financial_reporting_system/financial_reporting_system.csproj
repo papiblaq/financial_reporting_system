@@ -19,6 +19,7 @@
     <PackageReference Include="Syncfusion.EJ2.AspNet.Core" Version="26.2.12" />
     <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
     <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="toastr" Version="2.1.1" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,91 @@
+﻿@model financial_reporting_system.Controllers.StatementHeaderInputModel
+
+@{
+    ViewData["Title"] = "Sheet Data Form";
+}
+
+<div class="container">
+    <h1 class="mt-5">Enter Sheet Data</h1>
+    <form method="post" asp-action="SaveData" class="mt-4">
+        @Html.AntiForgeryToken()
+        <div class="form-group">
+            <label asp-for="STMNT_ID"></label>
+            <select asp-for="STMNT_ID" asp-items="Model.StatementTypes" class="form-control" required id="STMNT_ID">
+                <option value="">-- Select Statement Type --</option>
+            </select>
+            <span asp-validation-for="STMNT_ID" class="text-danger"></span>
+        </div>
+
+        <!-- New dropdown for SHEET_ID -->
+        <div class="form-group">
+            <label asp-for="SHEET_ID"></label>
+            <select asp-for="SHEET_ID" asp-items="Model.SheetIds" class="form-control" required id="SHEET_ID">
+                <option value="">-- Select Sheet ID --</option>
+            </select>
+            <span asp-validation-for="SHEET_ID" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="REF_CD"></label>
+            <input asp-for="REF_CD" class="form-control" required />
+            <span asp-validation-for="REF_CD" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="GL_ACCT_CAT_CD"></label>
+            <select asp-for="GL_ACCT_CAT_CD" asp-items="Model.AccountCategories" class="form-control" required>
+                <option value="">-- Select Account Category --</option>
+            </select>
+            <span asp-validation-for="GL_ACCT_CAT_CD" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="DESCRIPTION"></label>
+            <input asp-for="DESCRIPTION" class="form-control" required />
+            <span asp-validation-for="DESCRIPTION" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="CREATED_BY"></label>
+            <input asp-for="CREATED_BY" class="form-control" required />
+            <span asp-validation-for="CREATED_BY" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <script>
+        $(document).ready(function () {
+            // Display success or error messages
+            if ('@TempData["ErrorMessage"]' !== '') {
+                toastr.error('@TempData["ErrorMessage"]');
+            }
+            if ('@TempData["SuccessMessage"]' !== '') {
+                toastr.success('@TempData["SuccessMessage"]');
+            }
+
+            // Fetch SHEET_ID options based on selected STMNT_ID
+            $('#STMNT_ID').change(function () {
+                var selectedStmntId = $(this).val();
+                if (selectedStmntId) {
+                    $.post('@Url.Action("GetSheetIdsByStatementId", "StatementHeader")', { stmntId: selectedStmntId }, function (data) {
+                        var sheetIdDropdown = $('#SHEET_ID');
+                        sheetIdDropdown.empty();
+                        sheetIdDropdown.append('<option value="">-- Select Sheet ID --</option>');
+                        $.each(data, function (i, item) {
+                            sheetIdDropdown.append('<option value="' + item.value + '">' + item.text + '</option>');
+                        });
+                    });
+                } else {
+                    $('#SHEET_ID').empty().append('<option value="">-- Select Sheet ID --</option>');
+                }
+            });
+        });
+    </script>
+}

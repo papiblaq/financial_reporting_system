@@ -1,0 +1,122 @@
+﻿@model financial_reporting_system.Controllers.StatementDetailsInputModel
+
+@{
+    ViewData["Title"] = "Statement Details";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<form asp-action="SaveData" method="post">
+    <div class="form-group">
+        <label asp-for="STMNT_ID" class="control-label"></label>
+        <select asp-for="STMNT_ID" class="form-control" asp-items="Model.StatementTypes">
+            <option value="">-- Select Statement ID --</option>
+        </select>
+        <span asp-validation-for="STMNT_ID" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="SHEET_ID" class="control-label"></label>
+        <select asp-for="SHEET_ID" class="form-control" asp-items="Model.SheetIds">
+            <option value="">-- Select Sheet ID --</option>
+        </select>
+        <span asp-validation-for="SHEET_ID" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="HEADER_ID" class="control-label"></label>
+        <select asp-for="HEADER_ID" class="form-control" asp-items="Model.HeaderIds">
+            <option value="">-- Select Header ID --</option>
+        </select>
+        <span asp-validation-for="HEADER_ID" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="GL_ACCT_CAT_CD" class="control-label"></label>
+        <select asp-for="GL_ACCT_CAT_CD" class="form-control" asp-items="Model.AccountCategories">
+            <option value="">-- Select GL_ACCT_CAT_CD --</option>
+        </select>
+        <span asp-validation-for="GL_ACCT_CAT_CD" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="REF_CD" class="control-label"></label>
+        <input asp-for="REF_CD" class="form-control" />
+        <span asp-validation-for="REF_CD" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="DESCRIPTION" class="control-label"></label>
+        <input asp-for="DESCRIPTION" class="form-control" />
+        <span asp-validation-for="DESCRIPTION" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="CREATED_BY" class="control-label"></label>
+        <input asp-for="CREATED_BY" class="form-control" />
+        <span asp-validation-for="CREATED_BY" class="text-danger"></span>
+    </div>
+
+    <input type="hidden" asp-for="SYS_CREATE_TS" value="@DateTime.Now" />
+
+    <button type="submit" class="btn btn-primary">Save</button>
+</form>
+
+@section Scripts {
+    <script src="~/js/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('select[name="STMNT_ID"]').change(function () {
+                var stmntId = $(this).val();
+                $.post('@Url.Action("GetSheetIdsByStatementId")', { stmntId: stmntId }, function (data) {
+                    var $sheetSelect = $('select[name="SHEET_ID"]');
+                    $sheetSelect.empty();
+                    if (data.length > 0) {
+                        $.each(data, function (index, item) {
+                            $sheetSelect.append($('<option>', {
+                                value: item.value,
+                                text: item.text
+                            }));
+                        });
+                    } else {
+                        $sheetSelect.append($('<option>', {
+                            value: '',
+                            text: 'No values for the above statement'
+                        }));
+                    }
+                });
+            });
+
+            $('select[name="SHEET_ID"]').change(function () {
+                var sheetId = $(this).val();
+                $.post('@Url.Action("GetHeaderIdsBySheetId")', { sheetId: sheetId }, function (data) {
+                    var $headerSelect = $('select[name="HEADER_ID"]');
+                    $headerSelect.empty();
+                    if (data.length > 0) {
+                        $.each(data, function (index, item) {
+                            $headerSelect.append($('<option>', {
+                                value: item.value,
+                                text: item.text
+                            }));
+                        });
+                    } else {
+                        $headerSelect.append($('<option>', {
+                            value: '',
+                            text: 'No values for the above statement'
+                        }));
+                    }
+                });
+            });
+        });
+    </script>
+}

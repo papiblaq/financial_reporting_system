@@ -1,0 +1,28 @@
+﻿@model List<financial_reporting_system.Controllers.StatementHeaderController.Header>
+@{
+    ViewData["Title"] = "Header Grid";
+}
+
+<ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+    <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+    <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+    <e-grid-columns>
+        
+        <e-grid-column field="STMNT_ID" headerText="Statement ID" textAlign="Right" width="120"></e-grid-column>
+        <e-grid-column field="SHEET_ID" headerText="Sheet ID" textAlign="Right" width="120"></e-grid-column>
+        <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="120"></e-grid-column>
+        <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="120"></e-grid-column>
+        <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="120"></e-grid-column>
+        <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
+        <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
+    </e-grid-columns>
+</ejs-grid>
+
+<style>
+    .white-grid {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+</style>

@@ -1,230 +1,241 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
-using Oracle.ManagedDataAccess.Client;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Oracle.ManagedDataAccess.Client;
+using System;
+using System.Collections.Generic;
 
-public class MappingController : Controller
+namespace syncfusion_grid.Controllers
 {
-    private readonly string _connectionString;
-
-    public MappingController(IConfiguration configuration)
+    public class MappingController : Controller
     {
-        _connectionString = configuration.GetConnectionString("OracleConnection");
-    }
+        private readonly string _connectionString;
 
-    [HttpGet]
-    public IActionResult Index()
-    {
-        ViewBag.StatementIds = GetStatementIds();
-        ViewBag.AccountCategories = GetAccountCategories();
-        return View();
-    }
-
-    [HttpPost]
-    public IActionResult Index(int portfolioCodeInput, string accountCategoryInput)
-    {
-        if (portfolioCodeInput == 0 || string.IsNullOrEmpty(accountCategoryInput))
+        public MappingController(IConfiguration configuration)
         {
-            ViewBag.ErrorMessage = "Please select valid values from both dropdowns.";
-            return View();
+            _connectionString = configuration.GetConnectionString("OracleConnection");
         }
 
-        var portfolios = FetchPortfolios(accountCategoryInput);
-        var orgFinancialMappings = FetchOrgFinancialMappings(portfolioCodeInput);
-
-        ViewBag.Portfolios = portfolios;
-        ViewBag.OrgFinancialMappings = orgFinancialMappings;
-
-        return View();
-    }
-
-    [HttpPost]
-    public JsonResult CombineGridData(List<int> selectedRowsGridA, int selectedRowGridB)
-    {
-        if (selectedRowsGridA == null || selectedRowsGridA.Count == 0 || selectedRowGridB == 0)
+        public IActionResult Index()
         {
-            return Json(new { success = false, error = "Invalid selection. Please select rows from both grids." });
+            var financialStatementDetails = GetFinancialStatementDetails();
+            var accountDetails = GetAccountDetails();
+            ViewBag.AccountDetails = accountDetails;
+            return View(financialStatementDetails);
         }
 
-        try
+        [HttpPost]
+        public IActionResult SaveCombinedRows([FromBody] List<CombinedRow> combinedRows)
         {
-            var gridAData = FetchDataForGridA(selectedRowsGridA);
-            var gridBData = FetchDataForGridB(selectedRowGridB);
-
-            foreach (var rowA in gridAData)
+            try
             {
-                var combinedRow = new
-                {
-                    STMNT_ID = gridBData["STMNT_ID"],
-                    SHEET_ID = gridBData["SHEET_ID"],
-                    HEADER_ID = gridBData["HEADER_ID"],
-                    DETAIL_ID = gridBData["DETAIL_ID"],
-                    REF_CD = gridBData["REF_CD"],
-                    DESCRIPTION = gridBData["DESCRIPTION"],
-                    BAL_CD = rowA["BAL_CD"],
-                    GL_ACCT_ID = rowA["GL_ACCT_ID"],
-                    GL_ACCT_NO = rowA["GL_ACCT_NO"],
-                    GL_ACCT_CAT_CD = rowA["GL_ACCT_CAT_CD"],
-                    ACCT_DESC = rowA["ACCT_DESC"],
-                    SYS_CREATE_TS = DateTime.UtcNow,
-                    CREATED_BY = "User"
-                };
-
-                InsertCombinedDataIntoDatabase(combinedRow);
+                InsertCombinedRows(combinedRows);
+                return Json(new { message = "Combined rows saved successfully" });
             }
-
-            return Json(new { success = true });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, error = ex.Message });
-        }
-    }
-
-    private List<Dictionary<string, object>> FetchPortfolios(string accountCategoryInput)
-    {
-        var portfolios = new List<Dictionary<string, object>>();
-        using (var connection = new OracleConnection(_connectionString))
-        {
-            connection.Open();
-            string query = "SELECT * FROM V_ORG_CHART_OF_ACCOUNT_DETAILS WHERE GL_ACCT_CAT_CD = :accountCategoryInput";
-            using (var command = new OracleCommand(query, connection))
+            catch (Exception ex)
             {
-                command.Parameters.Add(new OracleParameter("accountCategoryInput", OracleDbType.Varchar2) { Value = accountCategoryInput });
-                using (var reader = command.ExecuteReader())
+                return Json(new { error = ex.Message });
+            }
+        }
+
+        public class FinancialStatementDetail
+        {
+            public int DETAIL_ID { get; set; }
+            public int STMNT_ID { get; set; }
+            public int SHEET_ID { get; set; }
+            public int HEADER_ID { get; set; }
+            public string GL_ACCT_CAT_CD { get; set; }
+            public string REF_CD { get; set; }
+            public string DESCRIPTION { get; set; }
+            public DateTime SYS_CREATE_TS { get; set; }
+            public string CREATED_BY { get; set; }
+        }
+
+        public class AccountDetail
+        {
+            public string GL_ACCT_CAT_CD { get; set; }
+            public int GL_ACCT_ID { get; set; }
+            public string GL_ACCT_NO { get; set; }
+            public string LEDGER_NO { get; set; }
+            public string ACCT_DESC { get; set; }
+            public string BAL_CD { get; set; }
+        }
+
+        public class CombinedRow
+        {
+            public int DETAIL_ID { get; set; }
+            public int STMNT_ID { get; set; }
+            public int SHEET_ID { get; set; }
+            public int HEADER_ID { get; set; }
+            public string GL_ACCT_CAT_CD { get; set; }
+            public string REF_CD { get; set; }
+            public string DESCRIPTION { get; set; }
+            public DateTime SYS_CREATE_TS { get; set; }
+            public string CREATED_BY { get; set; }
+            public int GL_ACCT_ID { get; set; }
+            public string GL_ACCT_NO { get; set; }
+            public string LEDGER_NO { get; set; }
+            public string ACCT_DESC { get; set; }
+            public string BAL_CD { get; set; }
+        }
+
+        private List<FinancialStatementDetail> GetFinancialStatementDetails()
+        {
+            var financialStatementDetails = new List<FinancialStatementDetail>();
+
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
                 {
-                    while (reader.Read())
+                    command.CommandText = "SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_DETAIL";
+                    using (var reader = command.ExecuteReader())
                     {
-                        var portfolio = new Dictionary<string, object>();
-                        for (int i = 0; i < reader.FieldCount; i++)
+                        while (reader.Read())
                         {
-                            portfolio[reader.GetName(i)] = reader[i];
+                            financialStatementDetails.Add(new FinancialStatementDetail
+                            {
+                                DETAIL_ID = reader.GetInt32(0),
+                                STMNT_ID = reader.GetInt32(1),
+                                SHEET_ID = reader.GetInt32(2),
+                                HEADER_ID = reader.GetInt32(3),
+                                GL_ACCT_CAT_CD = reader.IsDBNull(4) ? null : reader.GetString(4),
+                                REF_CD = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                DESCRIPTION = reader.IsDBNull(6) ? null : reader.GetString(6),
+                                SYS_CREATE_TS = reader.GetDateTime(7),
+                                CREATED_BY = reader.IsDBNull(8) ? null : reader.GetString(8)
+                            });
                         }
-                        portfolios.Add(portfolio);
                     }
                 }
             }
-        }
-        return portfolios;
-    }
 
-    private List<Dictionary<string, object>> FetchOrgFinancialMappings(int portfolioCodeInput)
-    {
-        var orgFinancialMappings = new List<Dictionary<string, object>>();
-        using (var connection = new OracleConnection(_connectionString))
+            return financialStatementDetails;
+        }
+
+        private List<AccountDetail> GetAccountDetails()
         {
-            connection.Open();
-            string query = "SELECT * FROM ORG_FINANCIAL_STMNT_DETAIL WHERE STMNT_ID = :portfolioCodeInput";
-            using (var command = new OracleCommand(query, connection))
+            var accountDetails = new List<AccountDetail>();
+
+            using (var connection = new OracleConnection(_connectionString))
             {
-                command.Parameters.Add(new OracleParameter("portfolioCodeInput", OracleDbType.Decimal) { Value = portfolioCodeInput });
-                using (var reader = command.ExecuteReader())
+                connection.Open();
+                using (var command = connection.CreateCommand())
                 {
-                    while (reader.Read())
+                    command.CommandText = "SELECT GL_ACCT_CAT_CD, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD FROM V_ORG_CHART_OF_ACCOUNT_DETAILS";
+                    using (var reader = command.ExecuteReader())
                     {
-                        var mapping = new Dictionary<string, object>();
-                        for (int i = 0; i < reader.FieldCount; i++)
+                        while (reader.Read())
                         {
-                            mapping[reader.GetName(i)] = reader[i];
+                            accountDetails.Add(new AccountDetail
+                            {
+                                GL_ACCT_CAT_CD = reader.IsDBNull(0) ? null : reader.GetString(0),
+                                GL_ACCT_ID = reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
+                                GL_ACCT_NO = reader.IsDBNull(2) ? null : reader.GetString(2),
+                                LEDGER_NO = reader.IsDBNull(3) ? null : reader.GetString(3),
+                                ACCT_DESC = reader.IsDBNull(4) ? null : reader.GetString(4),
+                                BAL_CD = reader.IsDBNull(5) ? null : reader.GetString(5)
+                            });
                         }
-                        orgFinancialMappings.Add(mapping);
                     }
                 }
             }
+
+            return accountDetails;
         }
-        return orgFinancialMappings;
-    }
 
-    private List<Dictionary<string, object>> FetchDataForGridA(List<int> selectedRowsGridA)
-    {
-        // Implementation to fetch data from V_ORG_CHART_OF_ACCOUNT_DETAILS based on selected rows
-        return new List<Dictionary<string, object>>();
-    }
-
-    private Dictionary<string, object> FetchDataForGridB(int selectedRowGridB)
-    {
-        // Implementation to fetch data from ORG_FINANCIAL_STMNT_DETAIL based on selected row
-        return new Dictionary<string, object>();
-    }
-
-    private void InsertCombinedDataIntoDatabase(dynamic combinedRow)
-    {
-        using (var connection = new OracleConnection(_connectionString))
+        private void InsertCombinedRows(List<CombinedRow> combinedRows)
         {
-            connection.Open();
-            string query = @"
-                INSERT INTO ORG_FINANCIAL_MAPPING
-                (STMNT_ID, SHEET_ID, HEADER_ID, DETAIL_ID, REF_CD, DESCRIPTION, BAL_CD, GL_ACCT_ID, GL_ACCT_NO, GL_ACCT_CAT_CD, ACCT_DESC, SYS_CREATE_TS, CREATED_BY)
-                VALUES (:STMNT_ID, :SHEET_ID, :HEADER_ID, :DETAIL_ID, :REF_CD, :DESCRIPTION, :BAL_CD, :GL_ACCT_ID, :GL_ACCT_NO, :GL_ACCT_CAT_CD, :ACCT_DESC, :SYS_CREATE_TS, :CREATED_BY)";
-            using (var command = new OracleCommand(query, connection))
+            using (var connection = new OracleConnection(_connectionString))
             {
-                command.Parameters.Add(new OracleParameter("STMNT_ID", OracleDbType.Decimal) { Value = combinedRow.STMNT_ID });
-                command.Parameters.Add(new OracleParameter("SHEET_ID", OracleDbType.Varchar2) { Value = combinedRow.SHEET_ID });
-                command.Parameters.Add(new OracleParameter("HEADER_ID", OracleDbType.Decimal) { Value = combinedRow.HEADER_ID });
-                command.Parameters.Add(new OracleParameter("DETAIL_ID", OracleDbType.Decimal) { Value = combinedRow.DETAIL_ID });
-                command.Parameters.Add(new OracleParameter("REF_CD", OracleDbType.Varchar2) { Value = combinedRow.REF_CD });
-                command.Parameters.Add(new OracleParameter("DESCRIPTION", OracleDbType.Varchar2) { Value = combinedRow.DESCRIPTION });
-                command.Parameters.Add(new OracleParameter("BAL_CD", OracleDbType.Varchar2) { Value = combinedRow.BAL_CD });
-                command.Parameters.Add(new OracleParameter("GL_ACCT_ID", OracleDbType.Decimal) { Value = combinedRow.GL_ACCT_ID });
-                command.Parameters.Add(new OracleParameter("GL_ACCT_NO", OracleDbType.Varchar2) { Value = combinedRow.GL_ACCT_NO });
-                command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", OracleDbType.Varchar2) { Value = combinedRow.GL_ACCT_CAT_CD });
-                command.Parameters.Add(new OracleParameter("ACCT_DESC", OracleDbType.Varchar2) { Value = combinedRow.ACCT_DESC });
-                command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", OracleDbType.TimeStamp) { Value = combinedRow.SYS_CREATE_TS });
-                command.Parameters.Add(new OracleParameter("CREATED_BY", OracleDbType.Varchar2) { Value = combinedRow.CREATED_BY });
-                command.ExecuteNonQuery();
-            }
-        }
-    }
-
-    private List<int> GetStatementIds()
-    {
-        // Fetch list of Statement IDs from database
-
-        List<int> statementIds = new List<int>();
-
-        using (var connection = new OracleConnection(_connectionString))
-        {
-            connection.Open();
-            string query = "SELECT STMNT_ID FROM ORG_FIN_STATEMENT_TYPE";
-
-            using (var command = new OracleCommand(query, connection))
-            {
-                using (var reader = command.ExecuteReader())
+                connection.Open();
+                using (var command = connection.CreateCommand())
                 {
-                    while (reader.Read())
+                    command.CommandText = "INSERT INTO ORG_FINANCIAL_MAPPING (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD) VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :GL_ACCT_ID, :GL_ACCT_NO, :LEDGER_NO, :ACCT_DESC, :BAL_CD)";
+                    foreach (var row in combinedRows)
                     {
-                        statementIds.Add(Convert.ToInt32(reader["STMNT_ID"]));
+                        command.Parameters.Clear();
+                        command.Parameters.Add(new OracleParameter("DETAIL_ID", row.DETAIL_ID));
+                        command.Parameters.Add(new OracleParameter("STMNT_ID", row.STMNT_ID));
+                        command.Parameters.Add(new OracleParameter("SHEET_ID", row.SHEET_ID));
+                        command.Parameters.Add(new OracleParameter("HEADER_ID", row.HEADER_ID));
+                        command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", row.GL_ACCT_CAT_CD ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("REF_CD", row.REF_CD ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("DESCRIPTION", row.DESCRIPTION ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", row.SYS_CREATE_TS));
+                        command.Parameters.Add(new OracleParameter("CREATED_BY", row.CREATED_BY ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("GL_ACCT_ID", row.GL_ACCT_ID));
+                        command.Parameters.Add(new OracleParameter("GL_ACCT_NO", row.GL_ACCT_NO ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("ACCT_DESC", row.ACCT_DESC ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("BAL_CD", row.BAL_CD ?? (object)DBNull.Value));
+                        command.ExecuteNonQuery();
                     }
                 }
             }
         }
 
-        return statementIds;
-    }
-
-    private List<string> GetAccountCategories()
-    {
-        // Fetch list of Account Categories from database
-       List<string> accountCategories = new List<string>();
-
-        using (var connection = new OracleConnection(_connectionString))
+        // New action method to fetch data from ORG_FINANCIAL_MAPPING and display it in a grid
+        public IActionResult Grid()
         {
-            connection.Open();
-            string query = "SELECT DISTINCT GL_ACCT_CAT_CD FROM V_ORG_CHART_OF_ACCOUNT_DETAILS";
+            var mappings = GetMappings();
+            return View(mappings);
+        }
 
-            using (var command = new OracleCommand(query, connection))
+        private List<Mapping> GetMappings()
+        {
+            var mappings = new List<Mapping>();
+
+            using (var connection = new OracleConnection(_connectionString))
             {
-                using (var reader = command.ExecuteReader())
+                connection.Open();
+                using (var command = connection.CreateCommand())
                 {
-                    while (reader.Read())
+                    command.CommandText = "SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD FROM ORG_FINANCIAL_MAPPING";
+                    using (var reader = command.ExecuteReader())
                     {
-                        accountCategories.Add(reader["GL_ACCT_CAT_CD"].ToString());
+                        while (reader.Read())
+                        {
+                            mappings.Add(new Mapping
+                            {
+                                DETAIL_ID = reader.GetInt32(0),
+                                STMNT_ID = reader.GetInt32(1),
+                                SHEET_ID = reader.GetInt32(2),
+                                HEADER_ID = reader.GetInt32(3),
+                                GL_ACCT_CAT_CD = reader.IsDBNull(4) ? null : reader.GetString(4),
+                                REF_CD = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                DESCRIPTION = reader.IsDBNull(6) ? null : reader.GetString(6),
+                                SYS_CREATE_TS = reader.GetDateTime(7),
+                                CREATED_BY = reader.IsDBNull(8) ? null : reader.GetString(8),
+                                GL_ACCT_ID = reader.GetInt32(9),
+                                GL_ACCT_NO = reader.IsDBNull(10) ? null : reader.GetString(10),
+                                LEDGER_NO = reader.IsDBNull(11) ? null : reader.GetString(11),
+                                ACCT_DESC = reader.IsDBNull(12) ? null : reader.GetString(12),
+                                BAL_CD = reader.IsDBNull(13) ? null : reader.GetString(13)
+                            });
+                        }
                     }
                 }
             }
+
+            return mappings;
         }
 
-        return accountCategories;
+        public class Mapping
+        {
+            public int DETAIL_ID { get; set; }
+            public int STMNT_ID { get; set; }
+            public int SHEET_ID { get; set; }
+            public int HEADER_ID { get; set; }
+            public string GL_ACCT_CAT_CD { get; set; }
+            public string REF_CD { get; set; }
+            public string DESCRIPTION { get; set; }
+            public DateTime SYS_CREATE_TS { get; set; }
+            public string CREATED_BY { get; set; }
+            public int GL_ACCT_ID { get; set; }
+            public string GL_ACCT_NO { get; set; }
+            public string LEDGER_NO { get; set; }
+            public string ACCT_DESC { get; set; }
+            public string BAL_CD { get; set; }
+        }
     }
 }

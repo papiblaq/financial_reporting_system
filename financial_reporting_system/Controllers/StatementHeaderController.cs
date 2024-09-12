@@ -223,6 +223,64 @@ namespace financial_reporting_system.Controllers
         {
             command.Parameters.Add(new OracleParameter(name, dbType) { Value = value ?? DBNull.Value });
         }
+
+        // New action method to fetch data from ORG_FINANCIAL_STMNT_HEADER and display it in a grid
+        public IActionResult Grid()
+        {
+            var headers = GetHeaders();
+            return View(headers);
+        }
+
+        private List<Header> GetHeaders()
+        {
+            var headers = new List<Header>();
+
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT STMNT_ID, SHEET_ID, REF_CD, GL_ACCT_CAT_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_HEADER";
+                    using (var command = new OracleCommand(query, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                headers.Add(new Header
+                                {
+                                    STMNT_ID = Convert.ToInt32(reader["STMNT_ID"]),
+                                    SHEET_ID = Convert.ToInt32(reader["SHEET_ID"]),
+                                    REF_CD = reader["REF_CD"].ToString(),
+                                    GL_ACCT_CAT_CD = reader["GL_ACCT_CAT_CD"].ToString(),
+                                    DESCRIPTION = reader["DESCRIPTION"].ToString(),
+                                    SYS_CREATE_TS = Convert.ToDateTime(reader["SYS_CREATE_TS"]),
+                                    CREATED_BY = reader["CREATED_BY"].ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while fetching header data.");
+            }
+
+            return headers;
+        }
+
+        // Data model class for ORG_FINANCIAL_STMNT_HEADER
+        public class Header
+        {
+            public int STMNT_ID { get; set; }
+            public int SHEET_ID { get; set; }
+            public string REF_CD { get; set; }
+            public string GL_ACCT_CAT_CD { get; set; }
+            public string DESCRIPTION { get; set; }
+            public DateTime SYS_CREATE_TS { get; set; }
+            public string CREATED_BY { get; set; }
+        }
     }
 
     // Input model class

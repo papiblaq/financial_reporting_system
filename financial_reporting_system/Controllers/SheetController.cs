@@ -146,6 +146,50 @@ namespace financial_reporting_system.Controllers
             command.Parameters.Add(new OracleParameter(name, type) { Value = value });
         }
 
+        // New action method to fetch data from ORG_FINANCIAL_STMNT_SHEET and display it in a grid
+        public IActionResult Grid()
+        {
+            var sheets = GetSheets();
+            return View(sheets);
+        }
+
+        private List<Sheet> GetSheets()
+        {
+            var sheets = new List<Sheet>();
+
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT STMNT_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_SHEET";
+                    using (var command = new OracleCommand(query, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                sheets.Add(new Sheet
+                                {
+                                    STMNT_ID = Convert.ToInt32(reader["STMNT_ID"]),
+                                    REF_CD = reader["REF_CD"].ToString(),
+                                    DESCRIPTION = reader["DESCRIPTION"].ToString(),
+                                    SYS_CREATE_TS = Convert.ToDateTime(reader["SYS_CREATE_TS"]),
+                                    CREATED_BY = reader["CREATED_BY"].ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while fetching sheet data.");
+            }
+
+            return sheets;
+        }
+
         // Input model class
         public class SheetInputModel
         {
@@ -172,6 +216,16 @@ namespace financial_reporting_system.Controllers
             public string CREATED_BY { get; set; }
 
             public List<SelectListItem> StatementTypes { get; set; }
+        }
+
+        // Data model class for ORG_FINANCIAL_STMNT_SHEET
+        public class Sheet
+        {
+            public int STMNT_ID { get; set; }
+            public string REF_CD { get; set; }
+            public string DESCRIPTION { get; set; }
+            public DateTime SYS_CREATE_TS { get; set; }
+            public string CREATED_BY { get; set; }
         }
     }
 }

@@ -1,10 +1,10 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using System.Data;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace financial_reporting_system
 {
@@ -44,29 +44,14 @@ namespace financial_reporting_system
                 {
                     connection.Open();
 
-                    // Check if STMNT_ID already exists
-                    string checkQuery = "SELECT COUNT(*) FROM ORG_FIN_STATEMENT_TYPE WHERE STMNT_ID = :STMNT_ID";
-                    using (var checkCommand = new OracleCommand(checkQuery, connection))
-                    {
-                        checkCommand.Parameters.Add(new OracleParameter("STMNT_ID", OracleDbType.Int32) { Value = input.STMNT_ID });
-                        int existingCount = Convert.ToInt32(checkCommand.ExecuteScalar());
-
-                        if (existingCount > 0)
-                        {
-                            TempData["ErrorMessage"] = "STMNT_ID already exists. Please enter a different STMNT_ID.";
-                            return View("Index", input);
-                        }
-                    }
-
                     // Insert the record
                     string insertQuery = @"
                         INSERT INTO ORG_FIN_STATEMENT_TYPE 
-                        (STMNT_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
-                        VALUES (:STMNT_ID, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
+                        (REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
+                        VALUES (:REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
 
                     using (var insertCommand = new OracleCommand(insertQuery, connection))
                     {
-                        AddParameter(insertCommand, "STMNT_ID", OracleDbType.Int32, input.STMNT_ID);
                         AddParameter(insertCommand, "REF_CD", OracleDbType.Varchar2, input.REF_CD);
                         AddParameter(insertCommand, "DESCRIPTION", OracleDbType.Varchar2, input.DESCRIPTION);
                         AddParameter(insertCommand, "SYS_CREATE_TS", OracleDbType.TimeStamp, input.SYS_CREATE_TS);
@@ -76,7 +61,7 @@ namespace financial_reporting_system
                     }
                 }
 
-                _logger.LogInformation("Data saved successfully for STMNT_ID: {STMNT_ID}", input.STMNT_ID);
+                _logger.LogInformation("Data saved successfully.");
                 return RedirectToAction("Index");
             }
             catch (OracleException ex)
@@ -92,11 +77,15 @@ namespace financial_reporting_system
             command.Parameters.Add(new OracleParameter(name, type) { Value = value });
         }
 
+        // GET: /Statement_types/Grid
+        public IActionResult Grid()
+        {
+            var statementTypes = GetStatementTypes();
+            return View(statementTypes);
+        }
+
         public class StatementInputModel
         {
-            [Required(ErrorMessage = "STMNT_ID is required.")]
-            public int STMNT_ID { get; set; }
-
             [Required(ErrorMessage = "REF_CD is required.")]
             [StringLength(50, ErrorMessage = "REF_CD cannot be longer than 50 characters.")]
             public string REF_CD { get; set; }
@@ -110,6 +99,43 @@ namespace financial_reporting_system
             [Required(ErrorMessage = "CREATED_BY is required.")]
             [StringLength(100, ErrorMessage = "CREATED_BY cannot be longer than 100 characters.")]
             public string CREATED_BY { get; set; }
+        }
+
+        public class StatementType
+        {
+            public string REF_CD { get; set; }
+            public string DESCRIPTION { get; set; }
+            public DateTime SYS_CREATE_TS { get; set; }
+            public string CREATED_BY { get; set; }
+        }
+
+        private List<StatementType> GetStatementTypes()
+        {
+            var statementTypes = new List<StatementType>();
+
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FIN_STATEMENT_TYPE";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            statementTypes.Add(new StatementType
+                            {
+                                REF_CD = reader.GetString(0),
+                                DESCRIPTION = reader.GetString(1),
+                                SYS_CREATE_TS = reader.GetDateTime(2),
+                                CREATED_BY = reader.GetString(3)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return statementTypes;
         }
     }
 }

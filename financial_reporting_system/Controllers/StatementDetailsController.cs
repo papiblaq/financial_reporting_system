@@ -272,6 +272,66 @@ namespace financial_reporting_system.Controllers
         {
             command.Parameters.Add(new OracleParameter(name, type) { Value = value });
         }
+
+        // New action method to fetch data from ORG_FINANCIAL_STMNT_DETAIL and display it in a grid
+        public IActionResult Grid()
+        {
+            var details = GetDetails();
+            return View(details);
+        }
+
+        private List<Detail> GetDetails()
+        {
+            var details = new List<Detail>();
+
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_DETAIL";
+                    using (var command = new OracleCommand(query, connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                details.Add(new Detail
+                                {
+                                    STMNT_ID = Convert.ToInt32(reader["STMNT_ID"]),
+                                    SHEET_ID = Convert.ToInt32(reader["SHEET_ID"]),
+                                    HEADER_ID = Convert.ToInt32(reader["HEADER_ID"]),
+                                    GL_ACCT_CAT_CD = reader["GL_ACCT_CAT_CD"].ToString(),
+                                    REF_CD = reader["REF_CD"].ToString(),
+                                    DESCRIPTION = reader["DESCRIPTION"].ToString(),
+                                    SYS_CREATE_TS = Convert.ToDateTime(reader["SYS_CREATE_TS"]),
+                                    CREATED_BY = reader["CREATED_BY"].ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while fetching detail data.");
+            }
+
+            return details;
+        }
+
+        // Data model class for ORG_FINANCIAL_STMNT_DETAIL
+        public class Detail
+        {
+            public int STMNT_ID { get; set; }
+            public int SHEET_ID { get; set; }
+            public int HEADER_ID { get; set; }
+            public string GL_ACCT_CAT_CD { get; set; }
+            public string REF_CD { get; set; }
+            public string DESCRIPTION { get; set; }
+            public DateTime SYS_CREATE_TS { get; set; }
+            public string CREATED_BY { get; set; }
+        }
     }
 
     // Input model class

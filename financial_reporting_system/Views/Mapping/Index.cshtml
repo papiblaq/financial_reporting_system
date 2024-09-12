@@ -1,101 +1,170 @@
-﻿@using Syncfusion.EJ2
-@using Syncfusion.EJ2.Grids
+﻿@using syncfusion_grid.Controllers
+@model List<MappingController.FinancialStatementDetail>
 
 @{
-    ViewData["PageTitle"] = "Financial Mapping";
-    ViewBag.Title = "Portfolios";
-    var portfolios = ViewBag.Portfolios as List<Dictionary<string, object>>;
-    var orgFinancialMappings = ViewBag.OrgFinancialMappings as List<Dictionary<string, object>>;
-    var statementIds = ViewBag.StatementIds as List<int>;
-    var accountCategories = ViewBag.AccountCategories as List<string>;
+    ViewData["Title"] = "Index";
 }
 
-<form method="post" id="searchForm" class="centered-form">
-    <div class="floating-label-group">
-        <ejs-dropdownlist id="statementIdDropdown" name="portfolioCodeInput" dataSource="@statementIds" placeholder="Select a Statement ID" floatLabelType="Auto"></ejs-dropdownlist>
-        <ejs-dropdownlist id="accountCategoryDropdown" name="accountCategoryInput" dataSource="@accountCategories" placeholder="Select an Account Category" floatLabelType="Auto"></ejs-dropdownlist>
-        <input type="submit" value="Search" class="btn btn-blue" />
+<div class="container">
+    <h1 class="mt-5">Mapping Category</h1>
+    <!-- First Grid -->
+
+    <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+        <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+        <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+        <e-grid-columns>
+            <e-grid-column type="checkbox" width="50"></e-grid-column>
+            <e-grid-column field="DETAIL_ID" headerText="Detail ID" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="STMNT_ID" headerText="Statement ID" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="SHEET_ID" headerText="Sheet ID" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="HEADER_ID" headerText="Header ID" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
+            <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
+        </e-grid-columns>
+    </ejs-grid>
+
+    <!-- Spacer between grids -->
+    <div class="grid-spacer"></div>
+    <h1 class="mt-5">Unmapped Gl</h1>
+    <!-- Second Grid -->
+    <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+        <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+        <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+        <e-grid-columns>
+            <e-grid-column type="checkbox" width="50"></e-grid-column>
+            <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="120"></e-grid-column>
+        </e-grid-columns>
+    </ejs-grid>
+
+    <!-- Centered Button -->
+    <div class="button-container">
+        <button id="saveCombinedRows">Save Combined Rows</button>
     </div>
-</form>
 
-@if (ViewBag.ErrorMessage != null)
-{
-    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
-}
-else
-{
-    <div class="row mb-12">
-        <div class="col-md-6">
-            <div class="row mb-5">
-                <div id="grid1" class="dark-theme">
-                    @Html.EJS().Grid("Grid1").DataSource(portfolios).AllowSorting(true).AllowPaging(true).PageSettings(settings => settings.PageSize(12)).Columns(col =>
-                             {
-                                 col.Field("Checkbox").HeaderText("").Template("#checkboxTemplate").TextAlign(Syncfusion.EJ2.Grids.TextAlign.Center).Width(50).Add();
-                                 if (portfolios != null && portfolios.Any())
-                                 {
-                                     foreach (var key in portfolios.First().Keys)
-                                     {
-                                         col.Field(key).HeaderText(key).TextAlign(Syncfusion.EJ2.Grids.TextAlign.Left).Width(150).Add();
-                                     }
-                                 }
-                             }).Render()
-                </div>
-            </div>
-        </div>
-        <div class="col-md-1">
-            <button id="combineButton" class="btn btn-primary" aria-label="Combine Selected Rows">
-                <i class="fa-solid fa-arrow-right mr-2"></i>
-            </button>
-        </div>
-        <div class="col-md-5">
-            <div class="row mb-5">
-                <div id="grid2" class="dark-theme">
-                    @Html.EJS().Grid("Grid2").DataSource(orgFinancialMappings).AllowSorting(true).AllowPaging(true).PageSettings(settings => settings.PageSize(12)).Columns(col =>
-                             {
-                                 col.Field("Checkbox").HeaderText("").Template("#checkboxTemplate").TextAlign(Syncfusion.EJ2.Grids.TextAlign.Center).Width(50).Add();
-                                 if (orgFinancialMappings != null && orgFinancialMappings.Any())
-                                 {
-                                     foreach (var key in orgFinancialMappings.First().Keys)
-                                     {
-                                         col.Field(key).HeaderText(key).TextAlign(Syncfusion.EJ2.Grids.TextAlign.Left).Width(150).Add();
-                                     }
-                                 }
-                             }).Render()
-                </div>
-            </div>
-        </div>
+    <!-- Add the "View Grid" button -->
+    <div class="button-container">
+        <a asp-action="Grid" class="btn btn-secondary">View Grid</a>
     </div>
-}
-
-<script id="checkboxTemplate" type="text/x-template">
-    <input type="checkbox" class="checkbox" />
-</script>
+</div>
 
 <script>
-    document.getElementById('combineButton').addEventListener('click', combineSelectedRows);
+    document.getElementById('saveCombinedRows').addEventListener('click', function () {
+        var orderGrid = document.getElementById('grid').ej2_instances[0];
+        var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
 
-    function combineSelectedRows() {
-        var grid1 = document.getElementById('Grid1').ej2_instances[0];
-        var grid2 = document.getElementById('Grid2').ej2_instances[0];
+        var selectedOrderRow = orderGrid.getSelectedRecords();
+        var selectedAccountRows = accountGrid.getSelectedRecords();
 
-        var selectedRowsGridA = grid1.getSelectedRecords().map(record => record.Id); // Adjust to match your key
-        var selectedRowsGridB = grid2.getSelectedRecords().map(record => record.Id)[0]; // Assume single selection from Grid B
-
-        if (selectedRowsGridA.length === 0 || !selectedRowsGridB) {
-            alert('Please select rows from both grids.');
+        // Check if exactly one row is selected in the first grid
+        if (selectedOrderRow.length !== 1) {
+            alert('Please select exactly one row in the first grid.');
             return;
         }
 
-        // AJAX call to combine data on the server
-        $.post('/Mapping/CombineGridData', { selectedRowsGridA: selectedRowsGridA, selectedRowGridB: selectedRowsGridB }, function (response) {
-            if (response.success) {
-                alert('Data combined successfully!');
-                location.reload(); // Reload page to reflect changes
-            } else {
-                alert('Failed to combine data: ' + response.error);
-            }
-        }).fail(function () {
-            alert('An error occurred while trying to combine data. Please try again.');
-        });
-    }
+        // Proceed with combining rows if exactly one row is selected in the first grid
+        if (selectedOrderRow.length > 0 && selectedAccountRows.length > 0) {
+            var combinedRows = selectedAccountRows.map(accountRow => ({
+                DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
+                STMNT_ID: selectedOrderRow[0].STMNT_ID,
+                SHEET_ID: selectedOrderRow[0].SHEET_ID,
+                HEADER_ID: selectedOrderRow[0].HEADER_ID,
+                GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
+                REF_CD: selectedOrderRow[0].REF_CD,
+                DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
+                SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
+                CREATED_BY: selectedOrderRow[0].CREATED_BY,
+                GL_ACCT_ID: accountRow.GL_ACCT_ID,
+                GL_ACCT_NO: accountRow.GL_ACCT_NO,
+                LEDGER_NO: accountRow.LEDGER_NO,
+                ACCT_DESC: accountRow.ACCT_DESC,
+                BAL_CD: accountRow.BAL_CD
+            }));
+
+            fetch('/Mapping/SaveCombinedRows', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(combinedRows)
+            }).then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        alert(data.message);
+                        // Reload the page after a successful save
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                });
+        } else {
+            alert('No rows selected');
+        }
+    });
 </script>
+
+<style>
+    .container {
+        width: 100vw; /* Full width of the viewport */
+        height: 100vh; /* Full height of the viewport */
+        background-color: #f8f9fa; /* Light gray background for contrast */
+        padding: 20px; /* Adds padding around the container */
+        border-radius: 0; /* No rounded corners for a fullscreen look */
+        box-shadow: none; /* Remove shadow for a flat full-screen design */
+        margin: 0; /* Remove any margin */
+        display: flex; /* Flexbox for content alignment */
+        flex-direction: column; /* Align children vertically */
+        justify-content: center; /* Center content vertically */
+        align-items: center; /* Center content horizontally */
+    }
+
+    .button-container {
+        margin-top: 20px; /* Adds space above the button */
+        display: flex;
+        justify-content: center; /* Centers the button horizontally */
+    }
+
+    #saveCombinedRows {
+        background-color: #007bff; /* Primary blue color */
+        color: #fff; /* White text color */
+        border: none; /* Removes default border */
+        padding: 12px 24px; /* Adds padding for a larger clickable area */
+        font-size: 1rem; /* Sets font size */
+        border-radius: 5px; /* Rounded corners */
+        cursor: pointer; /* Changes cursor to pointer on hover */
+        margin: 10px; /* Adds margin around the button */
+        transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition for hover effects */
+    }
+
+        #saveCombinedRows:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+            transform: scale(1.05); /* Slightly enlarges the button on hover */
+        }
+
+    .btn-secondary {
+        background-color: #6c757d; /* Secondary button color */
+        color: #fff; /* White text color */
+        border: none; /* Removes default border */
+        padding: 12px 24px; /* Adds padding for a larger clickable area */
+        font-size: 1rem; /* Sets font size */
+        border-radius: 5px; /* Rounded corners */
+        cursor: pointer; /* Changes cursor to pointer on hover */
+        margin: 10px; /* Adds margin around the button */
+        transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition for hover effects */
+    }
+
+        .btn-secondary:hover {
+            background-color: #5a6268; /* Darker secondary color on hover */
+            transform: scale(1.05); /* Slightly enlarges the button on hover */
+        }
+</style>

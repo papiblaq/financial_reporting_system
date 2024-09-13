@@ -112,16 +112,17 @@ namespace financial_reporting_system.Controllers
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT STMNT_ID, DESCRIPTION FROM ORG_FIN_STATEMENT_TYPE";
+                    string query = "SELECT STMNT_ID, REF_CD, DESCRIPTION FROM ORG_FIN_STATEMENT_TYPE";
                     using (var command = new OracleCommand(query, connection))
                     {
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                int stmntId = Convert.ToInt32(reader["STMNT_ID"]);
-                                string description = reader["DESCRIPTION"].ToString();
-                                string formattedText = $"{stmntId} ({description})";
+                                int stmntId = Convert.ToInt32(reader["STMNT_ID"]); // Use STMNT_ID
+                                string ref_cd = reader["REF_CD"].ToString();
+                                string refCd = reader["DESCRIPTION"].ToString();
+                                string formattedText = $"{ref_cd} ({refCd})";
 
                                 statementTypes.Add(new SelectListItem
                                 {

@@ -37,6 +37,20 @@ namespace syncfusion_grid.Controllers
             }
         }
 
+        [HttpPost]
+        public IActionResult DeleteMappings([FromBody] List<int> mappingIds)
+        {
+            try
+            {
+                DeleteMappingRows(mappingIds);
+                return Json(new { message = "Selected rows deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message });
+            }
+        }
+
         public class FinancialStatementDetail
         {
             public int DETAIL_ID { get; set; }
@@ -174,6 +188,19 @@ namespace syncfusion_grid.Controllers
             }
         }
 
+        private void DeleteMappingRows(List<int> mappingIds)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "DELETE FROM ORG_FINANCIAL_MAPPING WHERE MAPPING_ID IN (" + string.Join(",", mappingIds) + ")";
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
+
         // New action method to fetch data from ORG_FINANCIAL_MAPPING and display it in a grid
         public IActionResult Grid()
         {
@@ -190,27 +217,28 @@ namespace syncfusion_grid.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD FROM ORG_FINANCIAL_MAPPING";
+                    command.CommandText = "SELECT MAPPING_ID, DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD FROM ORG_FINANCIAL_MAPPING";
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
                             mappings.Add(new Mapping
                             {
-                                DETAIL_ID = reader.GetInt32(0),
-                                STMNT_ID = reader.GetInt32(1),
-                                SHEET_ID = reader.GetInt32(2),
-                                HEADER_ID = reader.GetInt32(3),
-                                GL_ACCT_CAT_CD = reader.IsDBNull(4) ? null : reader.GetString(4),
-                                REF_CD = reader.IsDBNull(5) ? null : reader.GetString(5),
-                                DESCRIPTION = reader.IsDBNull(6) ? null : reader.GetString(6),
-                                SYS_CREATE_TS = reader.GetDateTime(7),
-                                CREATED_BY = reader.IsDBNull(8) ? null : reader.GetString(8),
-                                GL_ACCT_ID = reader.GetInt32(9),
-                                GL_ACCT_NO = reader.IsDBNull(10) ? null : reader.GetString(10),
-                                LEDGER_NO = reader.IsDBNull(11) ? null : reader.GetString(11),
-                                ACCT_DESC = reader.IsDBNull(12) ? null : reader.GetString(12),
-                                BAL_CD = reader.IsDBNull(13) ? null : reader.GetString(13)
+                                MAPPING_ID = reader.GetInt32(0),
+                                DETAIL_ID = reader.GetInt32(1),
+                                STMNT_ID = reader.GetInt32(2),
+                                SHEET_ID = reader.GetInt32(3),
+                                HEADER_ID = reader.GetInt32(4),
+                                GL_ACCT_CAT_CD = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                REF_CD = reader.IsDBNull(6) ? null : reader.GetString(6),
+                                DESCRIPTION = reader.IsDBNull(7) ? null : reader.GetString(7),
+                                SYS_CREATE_TS = reader.GetDateTime(8),
+                                CREATED_BY = reader.IsDBNull(9) ? null : reader.GetString(9),
+                                GL_ACCT_ID = reader.GetInt32(10),
+                                GL_ACCT_NO = reader.IsDBNull(11) ? null : reader.GetString(11),
+                                LEDGER_NO = reader.IsDBNull(12) ? null : reader.GetString(12),
+                                ACCT_DESC = reader.IsDBNull(13) ? null : reader.GetString(13),
+                                BAL_CD = reader.IsDBNull(14) ? null : reader.GetString(14)
                             });
                         }
                     }
@@ -222,6 +250,7 @@ namespace syncfusion_grid.Controllers
 
         public class Mapping
         {
+            public int MAPPING_ID { get; set; }
             public int DETAIL_ID { get; set; }
             public int STMNT_ID { get; set; }
             public int SHEET_ID { get; set; }

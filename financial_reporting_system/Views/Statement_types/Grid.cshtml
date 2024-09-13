@@ -5,23 +5,43 @@
     ViewData["Title"] = "Grid";
 }
 
-<ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-    <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
-    <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
-    <e-grid-columns>
-       
-        <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
-        <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
-    </e-grid-columns>
-</ejs-grid>
+<div class="container">
+    <!-- Grid Title -->
+    <h1 class="grid-title">grid for ststement type</h1>
+
+    <!-- Syncfusion Grid -->
+    <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+        <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+        <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+        <e-grid-columns>
+            <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
+            <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="150"></e-grid-column>
+        </e-grid-columns>
+    </ejs-grid>
+</div>
 
 <style>
+    .container {
+        max-width: 1200px; /* Maximum width for the container */
+        margin: 20px auto; /* Center the container and add vertical margins */
+        padding: 20px; /* Padding inside the container */
+        border: 1px solid #e0e0e0; /* Light border for visual separation */
+        border-radius: 8px; /* Rounded corners */
+        background-color: #f9f9f9; /* Light grey background */
+    }
+
     .white-grid {
         background-color: white;
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 20px;
+    }
+
+    .grid-title {
+        font-size: 16px;
+        color: #6c757d; /* Greyish color */
+        margin-bottom: 15px; /* Space below the title */
     }
 </style>

@@ -3,33 +3,153 @@
     ViewData["Title"] = "Mapping Grid";
 }
 
-<ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-    <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
-    <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
-    <e-grid-columns>
-        <e-grid-column type="checkbox" width="50"></e-grid-column>
-        <e-grid-column field="DETAIL_ID" headerText="Detail ID" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="STMNT_ID" headerText="Statement ID" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="SHEET_ID" headerText="Sheet ID" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="HEADER_ID" headerText="Header ID" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
-        <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="120"></e-grid-column>
-        <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="120"></e-grid-column>
-    </e-grid-columns>
-</ejs-grid>
+<!-- Include jQuery -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<!-- Include Toastr CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+
+<div class="container">
+    <div class="button-container">
+        <button id="deleteButton" class="custom-delete-button" onclick="deleteSelectedRows()">Delete Selected Rows</button>
+    </div>
+
+    <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+        <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+        <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+        <e-grid-columns>
+            <e-grid-column type="checkbox" width="50"></e-grid-column>
+            <e-grid-column field="MAPPING_ID" headerText="Mapping ID" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="DETAIL_ID" headerText="Detail ID" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="STMNT_ID" headerText="Statement ID" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="SHEET_ID" headerText="Sheet ID" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="HEADER_ID" headerText="Header ID" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
+            <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="200"></e-grid-column>
+            <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
+            <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="150"></e-grid-column>
+        </e-grid-columns>
+    </ejs-grid>
+</div>
 
 <style>
+    .container {
+        margin: 20px; /* Margin around the container */
+        padding: 20px; /* Padding inside the container */
+        border: 1px solid #ddd; /* Optional: border for the container */
+        border-radius: 8px; /* Rounded corners for the container */
+        background-color: #f8f9fa; /* Light grey background for the container */
+    }
+
     .white-grid {
         background-color: white;
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         padding: 20px;
     }
+
+    .button-container {
+        display: flex; /* Use Flexbox */
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+        margin-bottom: 20px; /* Add space below the button */
+    }
+
+    .custom-delete-button {
+        background-color: #d9534f; /* Red background color */
+        color: white; /* White text color */
+        border: none; /* No border */
+        padding: 10px 20px; /* Padding for spacing */
+        font-size: 16px; /* Font size */
+        border-radius: 5px; /* Rounded corners */
+        cursor: pointer; /* Pointer cursor on hover */
+        transition: background-color 0.3s ease; /* Smooth transition effect */
+    }
+
+        .custom-delete-button:hover {
+            background-color: #c9302c; /* Darker red on hover */
+        }
 </style>
+
+
+
+
+<!-- Include Toastr JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+<script>
+    // Function to delete selected rows
+    function deleteSelectedRows() {
+        console.log('Delete Selected Rows button clicked');
+        var grid = document.getElementById('grid').ej2_instances[0];
+        var selectedRows = grid.getSelectedRecords();
+
+        if (selectedRows.length === 0) {
+            alert('Please select at least one row to delete.');
+            return;
+        }
+
+        var mappingIds = selectedRows.map(row => row.MAPPING_ID); // Assuming MAPPING_ID is the unique identifier
+
+        fetch('/Mapping/DeleteMappings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(mappingIds)
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        }).then(data => {
+            if (data.error) {
+                console.log('Error:', data.error);
+                showToast('error', 'Error', data.error);
+            } else {
+                console.log('Success:', data.message);
+                showToast('success', 'Success', 'Selected rows deleted successfully.');
+                // Delay the page reload to allow the toast notification to show
+                setTimeout(function () {
+                    window.location.reload();
+                }, 1000); // 1000 milliseconds (1 second) delay
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'Error', 'An error occurred while deleting the rows.');
+        });
+    }
+
+    // Function to show a toast notification
+    function showToast(type, title, message) {
+        console.log('Showing toast:', type, title, message);
+        toastr[type](message, title);
+    }
+
+    // Initialize Toastr
+    $(document).ready(function () {
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+    });
+</script>

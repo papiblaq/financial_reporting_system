@@ -15,15 +15,11 @@
     </div>
 
     <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-        <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+        <e-grid-pagesettings pageSize="15"></e-grid-pagesettings>
         <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
         <e-grid-columns>
             <e-grid-column type="checkbox" width="50"></e-grid-column>
-            <e-grid-column field="MAPPING_ID" headerText="Mapping ID" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="DETAIL_ID" headerText="Detail ID" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="STMNT_ID" headerText="Statement ID" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="SHEET_ID" headerText="Sheet ID" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="HEADER_ID" headerText="Header ID" textAlign="Right" width="150"></e-grid-column>
+            
             <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
             <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="150"></e-grid-column>
             <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="200"></e-grid-column>
@@ -47,12 +43,77 @@
         background-color: #f8f9fa; /* Light grey background for the container */
     }
 
+    /* Define the white-grid class */
     .white-grid {
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 20px;
+        background-color: white !important; /* Set the background color to white */
+        color: black; /* Set the text color to black */
     }
+
+        /* Style the header */
+        .white-grid .e-gridheader {
+            background-color: white !important; /* Set the header background color to white */
+            color: aquamarine; /* Set the header text color to black */
+            border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of the header */
+        }
+
+        /* Style the rows */
+        .white-grid .e-gridcontent .e-rowcell {
+            background-color: white; /* Set the row cell background color to white */
+            color: #6c757d !important; /* Set the row cell text color to #6c757d */
+            border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of each row */
+            border: none;
+        }
+        /* Style the rows on hover */
+        .white-grid .e-gridcontent .e-row:hover .e-rowcell {
+            background-color: lightgray !important;
+            color: aquamarine !important; /* Set the row cell text color to aquamarine on hover */
+        }
+
+        /* Style the pager */
+        .white-grid .e-gridpager {
+            background-color: white; /* Set the pager background color to white */
+            color: black; /* Set the pager text color to black */
+            border-top: 1px solid #dee2e6; /* Add a border at the top of the pager */
+        }
+
+        /* Style the filter row */
+        .white-grid .e-filterbarcell {
+            background-color: white !important; /* Set the filter row background color to white */
+            color: black !important; /* Set the filter row text color to black */
+            border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of the filter row */
+        }
+
+            /* Style the filter input */
+            .white-grid .e-filterbarcell input {
+                background-color: white; /* Set the filter input background color to white */
+                color: #6c757d !important; /* Set the filter input text color to #6c757d */
+                border: 1px solid #ced4da; /* Add a border to the filter input */
+            }
+
+            /* Style the filter dropdown */
+            .white-grid .e-filterbarcell .e-dropdownlist {
+                background-color: white !important; /* Set the filter dropdown background color to white */
+                color: #6c757d; /* Set the filter dropdown text color to #6c757d */
+                border: 1px solid #ced4da; /* Add a border to the filter dropdown */
+            }
+
+                /* Style the filter dropdown options */
+                .white-grid .e-filterbarcell .e-dropdownlist .e-list-item {
+                    background-color: white; /* Set the filter dropdown option background color to white */
+                    color: #6c757d; /* Set the filter dropdown option text color to #6c757d */
+                }
+
+                    /* Style the filter dropdown options on hover */
+                    .white-grid .e-filterbarcell .e-dropdownlist .e-list-item:hover {
+                        background-color: hotpink !important; /* Set the filter dropdown option background color on hover */
+                        color: aquamarine !important; /* Set the filter dropdown option text color on hover */
+                    }
+
+                    /* Style the filter dropdown options on focus */
+                    .white-grid .e-filterbarcell .e-dropdownlist .e-list-item.e-active {
+                        background-color: #e9ecef; /* Set the filter dropdown option background color on focus */
+                        color: #6c757d; /* Set the filter dropdown option text color on focus */
+                    }
 
     .button-container {
         display: flex; /* Use Flexbox */

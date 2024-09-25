@@ -239,45 +239,6 @@ body {
     background-color: #ffffff; /* Light background color */
 }
 
-/* Custom light theme for EJS Grid */
-.dark-theme .e-grid .e-header-row {
-    background-color: #ffffff; /* Light background color */
-    color: #000000; /* Dark text color */
-}
-
-.dark-theme .e-grid .e-row {
-    background-color: #f8f9fa; /* Light background color */
-    color: #000000; /* Dark text color */
-}
-
-.dark-theme .e-grid .e-rowcell {
-    border-color: #dee2e6; /* Light border color */
-}
-
-.dark-theme .e-grid .e-headercell {
-    border-color: #dee2e6; /* Light border color */
-}
-
-    .dark-theme .e-grid .e-headercell .e-headercelldiv {
-        color: #000000; /* Dark text color */
-    }
-
-.dark-theme .e-grid .e-columnheader .e-sortfilter .e-headercelldiv {
-    color: #000000; /* Dark text color */
-}
-
-.dark-theme .e-grid .e-headercell .e-headercelldiv::after {
-    border-color: #000000; /* Dark arrow color */
-}
-
-.dark-theme .e-grid .e-pager .e-pagercontainer .e-numericcontainer {
-    background-color: #ffffff; /* Light background color */
-    color: #000000; /* Dark text color */
-}
-
-.dark-theme .e-grid .e-pager .e-numericcontainer .e-icons {
-    color: #000000; /* Dark text color */
-}
 
 /* Button */
 .btn:focus, .btn:active {
@@ -335,61 +296,4 @@ body {
 .container {
     margin-top: 20px;
 }
-/* Base Color */
-.dark-theme {
-    --base-color: #505a63;
-    --split-complementary-color-1: #635050;
-    --split-complementary-color-2: #506350;
-    --split-complementary-color-1-dark: #4f3e3e; /* 10% darker */
-    --split-complementary-color-2-dark: #3c4d3e; /* 10% darker */
-}
 
-    /* Header */
-    .dark-theme .e-grid .e-headercell {
-        background-color: var(--base-color);
-        color: white; /* Set header text color to white */
-    }
-
-    /* Grid Rows */
-    .dark-theme .e-grid .e-row {
-        background-color: var(--split-complementary-color-1);
-        color: white;
-    }
-
-    .dark-theme .e-grid .e-altrow {
-        background-color: var(--split-complementary-color-2);
-        color: white;
-    }
-
-    /* Pager */
-    .dark-theme .e-grid .e-pager {
-        background-color: var(--base-color);
-        color: white;
-    }
-
-    /* Sorting Icons */
-    .dark-theme .e-grid .e-sortfilterdiv.e-ascending::before,
-    .dark-theme .e-grid .e-sortfilterdiv.e-descending::before {
-        color: white;
-    }
-
-    /* Border Colors */
-    .dark-theme .e-grid .e-rowcell,
-    .dark-theme .e-grid .e-headercell {
-        border-color: var(--base-color);
-    }
-
-    /* Hover and Active States */
-    .dark-theme .e-grid .e-row:hover {
-        background-color: var(--split-complementary-color-1-dark);
-    }
-
-    .dark-theme .e-grid .e-row.e-selectionbackground {
-        background-color: var(--split-complementary-color-2-dark);
-        color: white;
-    }
-
-    /* Column Resizer */
-    .dark-theme .e-grid .e-columnheader .e-headercellresize {
-        background-color: var(--base-color);
-    }

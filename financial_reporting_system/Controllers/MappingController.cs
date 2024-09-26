@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
+using Syncfusion.XlsIO;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Drawing;
 
 namespace syncfusion_grid.Controllers
 {
@@ -48,6 +51,68 @@ namespace syncfusion_grid.Controllers
             catch (Exception ex)
             {
                 return Json(new { error = ex.Message });
+            }
+        }
+
+        // for exell printing 
+        public IActionResult ExportToExcel()
+        {
+            try
+            {
+                var mappings = GetMappings();
+
+                using (ExcelEngine excelEngine = new ExcelEngine())
+                {
+                    IApplication application = excelEngine.Excel;
+                    application.DefaultVersion = ExcelVersion.Excel2016;
+
+                    IWorkbook workbook = application.Workbooks.Create(1);
+                    IWorksheet worksheet = workbook.Worksheets[0];
+
+                    // Set header
+                    worksheet.Range["A1"].Text = "GL Account Category Code";
+                    worksheet.Range["B1"].Text = "Reference Code";
+                    worksheet.Range["C1"].Text = "Description";
+                    worksheet.Range["D1"].Text = "System Create Timestamp";
+                    worksheet.Range["E1"].Text = "Created By";
+                    worksheet.Range["F1"].Text = "GL Account ID";
+                    worksheet.Range["G1"].Text = "GL Account No";
+                    worksheet.Range["H1"].Text = "Ledger No";
+                    worksheet.Range["I1"].Text = "Account Description";
+                    worksheet.Range["J1"].Text = "Balance Code";
+
+                    // Set data
+                    for (int i = 0; i < mappings.Count; i++)
+                    {
+                        worksheet.Range["A" + (i + 2)].Text = mappings[i].GL_ACCT_CAT_CD;
+                        worksheet.Range["B" + (i + 2)].Text = mappings[i].REF_CD;
+                        worksheet.Range["C" + (i + 2)].Text = mappings[i].DESCRIPTION;
+                        worksheet.Range["D" + (i + 2)].Text = mappings[i].SYS_CREATE_TS.ToString("yyyy-MM-dd");
+                        worksheet.Range["E" + (i + 2)].Text = mappings[i].CREATED_BY;
+                        worksheet.Range["F" + (i + 2)].Text = mappings[i].GL_ACCT_ID.ToString();
+                        worksheet.Range["G" + (i + 2)].Text = mappings[i].GL_ACCT_NO;
+                        worksheet.Range["H" + (i + 2)].Text = mappings[i].LEDGER_NO;
+                        worksheet.Range["I" + (i + 2)].Text = mappings[i].ACCT_DESC;
+                        worksheet.Range["J" + (i + 2)].Text = mappings[i].BAL_CD;
+                    }
+
+                    // Save the workbook to a memory stream
+                    MemoryStream stream = new MemoryStream();
+                    workbook.SaveAs(stream);
+
+                    // Return the file as a download
+                    stream.Position = 0;
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Mappings.xlsx");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                // You can use a logging framework like NLog, Serilog, etc.
+                Console.WriteLine(ex.Message);
+
+                // Return a JSON response with the error message
+                return Json(new { error = "An error occurred while exporting to Excel." });
             }
         }
 

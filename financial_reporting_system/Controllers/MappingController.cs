@@ -5,7 +5,6 @@ using Syncfusion.XlsIO;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Drawing;
 
 namespace syncfusion_grid.Controllers
 {
@@ -20,10 +19,20 @@ namespace syncfusion_grid.Controllers
 
         public IActionResult Index()
         {
-            var financialStatementDetails = GetFinancialStatementDetails();
+            var financialStatementDetails = GetFinancialStatementDetails(0); // Fetch all financial statement details initially
             var accountDetails = GetAccountDetails();
+            var statementTypes = GetOrgFinStatementTypes(); // Fetch financial statement types
             ViewBag.AccountDetails = accountDetails;
+            ViewBag.StatementTypes = statementTypes; // Pass financial statement types to the view
             return View(financialStatementDetails);
+        }
+
+        // New action to fetch filtered financial statements based on STMNT_ID
+        [HttpGet]
+        public IActionResult GetFilteredFinancialStatements(int stmntId)
+        {
+            var financialStatementDetails = GetFinancialStatementDetails(stmntId); // Filter by STMNT_ID
+            return Json(financialStatementDetails); // Return filtered data as JSON
         }
 
         [HttpPost]
@@ -54,7 +63,7 @@ namespace syncfusion_grid.Controllers
             }
         }
 
-        // for exell printing 
+        // Export mappings to Excel
         public IActionResult ExportToExcel()
         {
             try
@@ -108,56 +117,13 @@ namespace syncfusion_grid.Controllers
             catch (Exception ex)
             {
                 // Log the exception
-                // You can use a logging framework like NLog, Serilog, etc.
                 Console.WriteLine(ex.Message);
-
-                // Return a JSON response with the error message
                 return Json(new { error = "An error occurred while exporting to Excel." });
             }
         }
 
-        public class FinancialStatementDetail
-        {
-            public int DETAIL_ID { get; set; }
-            public int STMNT_ID { get; set; }
-            public int SHEET_ID { get; set; }
-            public int HEADER_ID { get; set; }
-            public string GL_ACCT_CAT_CD { get; set; }
-            public string REF_CD { get; set; }
-            public string DESCRIPTION { get; set; }
-            public DateTime SYS_CREATE_TS { get; set; }
-            public string CREATED_BY { get; set; }
-        }
-
-        public class AccountDetail
-        {
-            public string GL_ACCT_CAT_CD { get; set; }
-            public int GL_ACCT_ID { get; set; }
-            public string GL_ACCT_NO { get; set; }
-            public string LEDGER_NO { get; set; }
-            public string ACCT_DESC { get; set; }
-            public string BAL_CD { get; set; }
-        }
-
-        public class CombinedRow
-        {
-            public int DETAIL_ID { get; set; }
-            public int STMNT_ID { get; set; }
-            public int SHEET_ID { get; set; }
-            public int HEADER_ID { get; set; }
-            public string GL_ACCT_CAT_CD { get; set; }
-            public string REF_CD { get; set; }
-            public string DESCRIPTION { get; set; }
-            public DateTime SYS_CREATE_TS { get; set; }
-            public string CREATED_BY { get; set; }
-            public int GL_ACCT_ID { get; set; }
-            public string GL_ACCT_NO { get; set; }
-            public string LEDGER_NO { get; set; }
-            public string ACCT_DESC { get; set; }
-            public string BAL_CD { get; set; }
-        }
-
-        private List<FinancialStatementDetail> GetFinancialStatementDetails()
+        // Method to fetch all financial statement details or filter by STMNT_ID
+        private List<FinancialStatementDetail> GetFinancialStatementDetails(int stmntId)
         {
             var financialStatementDetails = new List<FinancialStatementDetail>();
 
@@ -166,7 +132,12 @@ namespace syncfusion_grid.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_DETAIL";
+                    command.CommandText = @"
+                        SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY 
+                        FROM ORG_FINANCIAL_STMNT_DETAIL 
+                        WHERE :stmntId = 0 OR STMNT_ID = :stmntId";
+                    command.Parameters.Add(new OracleParameter("stmntId", stmntId));
+
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
@@ -229,7 +200,11 @@ namespace syncfusion_grid.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "INSERT INTO ORG_FINANCIAL_MAPPING (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD) VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :GL_ACCT_ID, :GL_ACCT_NO, :LEDGER_NO, :ACCT_DESC, :BAL_CD)";
+                    command.CommandText = @"
+                        INSERT INTO ORG_FINANCIAL_MAPPING 
+                        (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD) 
+                        VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :GL_ACCT_ID, :GL_ACCT_NO, :LEDGER_NO, :ACCT_DESC, :BAL_CD)";
+
                     foreach (var row in combinedRows)
                     {
                         command.Parameters.Clear();
@@ -266,7 +241,7 @@ namespace syncfusion_grid.Controllers
             }
         }
 
-        // New action method to fetch data from ORG_FINANCIAL_MAPPING and display it in a grid
+        // Fetches all mappings for the Grid view
         public IActionResult Grid()
         {
             var mappings = GetMappings();
@@ -313,6 +288,75 @@ namespace syncfusion_grid.Controllers
             return mappings;
         }
 
+        // Fetch financial statement types (used for dropdown)
+        private List<OrgFinStatementType> GetOrgFinStatementTypes()
+        {
+            var statementTypes = new List<OrgFinStatementType>();
+
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT STMNT_ID, DESCRIPTION FROM ORG_FIN_STATEMENT_TYPE";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            statementTypes.Add(new OrgFinStatementType
+                            {
+                                STMNT_ID = reader.GetInt32(0),
+                                DESCRIPTION = reader.GetString(1)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return statementTypes;
+        }
+
+        public class FinancialStatementDetail
+        {
+            public int DETAIL_ID { get; set; }
+            public int STMNT_ID { get; set; }
+            public int SHEET_ID { get; set; }
+            public int HEADER_ID { get; set; }
+            public string GL_ACCT_CAT_CD { get; set; }
+            public string REF_CD { get; set; }
+            public string DESCRIPTION { get; set; }
+            public DateTime SYS_CREATE_TS { get; set; }
+            public string CREATED_BY { get; set; }
+        }
+
+        public class AccountDetail
+        {
+            public string GL_ACCT_CAT_CD { get; set; }
+            public int GL_ACCT_ID { get; set; }
+            public string GL_ACCT_NO { get; set; }
+            public string LEDGER_NO { get; set; }
+            public string ACCT_DESC { get; set; }
+            public string BAL_CD { get; set; }
+        }
+
+        public class CombinedRow
+        {
+            public int DETAIL_ID { get; set; }
+            public int STMNT_ID { get; set; }
+            public int SHEET_ID { get; set; }
+            public int HEADER_ID { get; set; }
+            public string GL_ACCT_CAT_CD { get; set; }
+            public string REF_CD { get; set; }
+            public string DESCRIPTION { get; set; }
+            public DateTime SYS_CREATE_TS { get; set; }
+            public string CREATED_BY { get; set; }
+            public int GL_ACCT_ID { get; set; }
+            public string GL_ACCT_NO { get; set; }
+            public string LEDGER_NO { get; set; }
+            public string ACCT_DESC { get; set; }
+            public string BAL_CD { get; set; }
+        }
+
         public class Mapping
         {
             public int MAPPING_ID { get; set; }
@@ -330,6 +374,12 @@ namespace syncfusion_grid.Controllers
             public string LEDGER_NO { get; set; }
             public string ACCT_DESC { get; set; }
             public string BAL_CD { get; set; }
+        }
+
+        public class OrgFinStatementType
+        {
+            public int STMNT_ID { get; set; }
+            public string DESCRIPTION { get; set; }
         }
     }
 }

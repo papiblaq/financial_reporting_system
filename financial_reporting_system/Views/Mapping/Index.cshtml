@@ -1,4 +1,4 @@
-﻿﻿@using syncfusion_grid.Controllers
+﻿@using syncfusion_grid.Controllers
 @model List<MappingController.FinancialStatementDetail>
 
 @{
@@ -6,6 +6,15 @@
 }
 
 <div class="container">
+    <h1 class="mt-5">Select a Financial Statement Type</h1>
+    <select id="statementTypeDropdown">
+    <option value="">-- Select a Statement Type --</option>
+    @foreach (var item in ViewBag.StatementTypes)
+    {
+        <option value="@item.STMNT_ID">@item.DESCRIPTION</option>
+    }
+</select>
+
     <h1 class="mt-5">Available Statement types</h1>
     <!-- First Grid -->
     <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
@@ -13,7 +22,6 @@
         <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
         <e-grid-columns>
             <e-grid-column type="checkbox" width="50"></e-grid-column>
-            
             <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
             <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
             <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="300"></e-grid-column>
@@ -53,6 +61,38 @@
 </div>
 
 <style>
+
+
+
+
+     #statementTypeDropdown {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        font-family: Arial, sans-serif;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+        cursor: pointer;
+        transition: border-color 0.3s ease;
+    }
+
+    #statementTypeDropdown:hover {
+        border-color: #888;
+    }
+
+    #statementTypeDropdown:focus {
+        border-color: #5b9bd5;
+        outline: none;
+        box-shadow: 0 0 3px rgba(91, 155, 213, 0.5);
+    }
+
+    #statementTypeDropdown option {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+
     .container {
         margin: 20px 10px; /* Margin around the container */
         padding: 0px; /* Padding inside the container */
@@ -164,10 +204,11 @@
         color: #6c757d; /* Greyish color */
         font-weight: normal; /* Normal font weight */
         margin-bottom: 10px; /* Margin below the heading */
+    }
 </style>
 
-
 <script>
+    // Event listener for saving combined rows
     document.getElementById('saveCombinedRows').addEventListener('click', function () {
         var orderGrid = document.getElementById('grid').ej2_instances[0];
         var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
@@ -182,7 +223,7 @@
         }
 
         // Proceed with combining rows if exactly one row is selected in the first grid
-        if (selectedOrderRow.length > 0 && selectedAccountRows.length > 0) {
+        if (selectedAccountRows.length > 0) {
             var combinedRows = selectedAccountRows.map(accountRow => ({
                 DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
                 STMNT_ID: selectedOrderRow[0].STMNT_ID,
@@ -200,29 +241,83 @@
                 BAL_CD: accountRow.BAL_CD
             }));
 
+            // Fetch request to save combined rows
             fetch('/Mapping/SaveCombinedRows', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(combinedRows)
-            }).then(response => response.json())
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    alert(data.message);
+                    // Reload the page after a successful save
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        } else {
+            alert('No rows selected in the account grid.');
+        }
+    });
+
+    // Event listener for dropdown change
+    document.getElementById('statementTypeDropdown').addEventListener('change', function () {
+        var selectedValue = this.value; // Get the STMNT_ID
+
+        // Alert the user about the selected value
+        var selectedOption = this.options[this.selectedIndex].text;
+        alert('You selected: ' + selectedOption);
+
+        console.log('Selected STMNT_ID:', selectedValue); // Log selected value for debugging
+
+        if (selectedValue) {
+            // Make an AJAX call to fetch the filtered data
+            fetch(`/Mapping/GetFilteredFinancialStatements?stmntId=${encodeURIComponent(selectedValue)}`)
+                .then(response => {
+                    // Check if the response is ok
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.statusText);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.error) {
-                        alert('Error: ' + data.error);
+                    console.log('Fetched data:', data); // Log the fetched data for debugging
+
+                    // Check if data is an array and has elements
+                    if (Array.isArray(data) && data.length > 0) {
+                        var grid = document.getElementById('grid').ej2_instances[0];
+                        grid.dataSource = data; // Update the grid's data source
+                        grid.refresh(); // Refresh the grid to display the new data
+
+                        console.log('Grid data source:', grid.dataSource); // Debugging statement
                     } else {
-                        alert(data.message);
-                        // Reload the page after a successful save
-                        location.reload();
+                        alert('No data returned for the selected statement type.');
+                        console.warn('Data returned was not an array or was empty:', data);
+
+                        // Clear grid data if no data is returned
+                        var grid = document.getElementById('grid').ej2_instances[0];
+                        grid.dataSource = []; // Clear the data
+                        grid.refresh(); // Refresh the grid to reflect the empty state
                     }
                 })
                 .catch(error => {
-                    alert('Error: ' + error);
+                    console.error('Error fetching data:', error); // Log any errors
+                    alert('Error fetching data: ' + error.message);
                 });
         } else {
-            alert('No rows selected');
+            alert('Please select a valid statement type.');
         }
     });
 </script>
-
-

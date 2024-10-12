@@ -17,15 +17,19 @@ namespace syncfusion_grid.Controllers
             _connectionString = configuration.GetConnectionString("OracleConnection");
         }
 
-        public IActionResult Index()
+        public IActionResult Index(int stmntId = 0)
         {
-            var financialStatementDetails = GetFinancialStatementDetails(0); // Fetch all financial statement details initially
+            // Fetch filtered financial statement details based on the STMNT_ID
+            var financialStatementDetails = GetFinancialStatementDetails(stmntId);
             var accountDetails = GetAccountDetails();
-            var statementTypes = GetOrgFinStatementTypes(); // Fetch financial statement types
+            var statementTypes = GetOrgFinStatementTypes();
+
             ViewBag.AccountDetails = accountDetails;
-            ViewBag.StatementTypes = statementTypes; // Pass financial statement types to the view
-            return View(financialStatementDetails);
+            ViewBag.StatementTypes = statementTypes;
+
+            return View(financialStatementDetails); // Pass the filtered data to the view
         }
+
 
         // New action to fetch filtered financial statements based on STMNT_ID
         [HttpGet]

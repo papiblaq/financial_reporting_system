@@ -78,48 +78,38 @@
 @section Scripts {
     <script src="~/js/jquery.min.js"></script>
     <script>
-        $(document).ready(function () {
-            $('select[name="STMNT_ID"]').change(function () {
-                var stmntId = $(this).val();
-                $.post('@Url.Action("GetSheetIdsByStatementId")', { stmntId: stmntId }, function (data) {
-                    var $sheetSelect = $('select[name="SHEET_ID"]');
-                    $sheetSelect.empty();
-                    if (data.length > 0) {
-                        $.each(data, function (index, item) {
-                            $sheetSelect.append($('<option>', {
-                                value: item.value,
-                                text: item.text
-                            }));
-                        });
-                    } else {
-                        $sheetSelect.append($('<option>', {
-                            value: '',
-                            text: 'No values for the above statement'
-                        }));
-                    }
+        // Fetch SHEET_ID options based on selected STMNT_ID
+        $('#STMNT_ID').change(function () {
+            var selectedStmntId = $(this).val();
+            if (selectedStmntId) {
+                $.post('@Url.Action("GetSheetIdsByStatementId", "StatementDetails")', { stmntId: selectedStmntId }, function (data) {
+                    var sheetIdDropdown = $('#SHEET_ID');
+                    sheetIdDropdown.empty();
+                    sheetIdDropdown.append('<option value="">-- Select Sheet ID --</option>');
+                    $.each(data, function (i, item) {
+                        sheetIdDropdown.append('<option value="' + item.value + '">' + item.text + '</option>');
+                    });
                 });
-            });
+            } else {
+                $('#SHEET_ID').empty().append('<option value="">-- Select Sheet ID --</option>');
+            }
+        });
 
-            $('select[name="SHEET_ID"]').change(function () {
-                var sheetId = $(this).val();
-                $.post('@Url.Action("GetHeaderIdsBySheetId")', { sheetId: sheetId }, function (data) {
-                    var $headerSelect = $('select[name="HEADER_ID"]');
-                    $headerSelect.empty();
-                    if (data.length > 0) {
-                        $.each(data, function (index, item) {
-                            $headerSelect.append($('<option>', {
-                                value: item.value,
-                                text: item.text
-                            }));
-                        });
-                    } else {
-                        $headerSelect.append($('<option>', {
-                            value: '',
-                            text: 'No values for the above statement'
-                        }));
-                    }
+        // Fetch HEADER_ID options based on selected SHEET_ID
+        $('#SHEET_ID').change(function () {
+            var selectedSheetId = $(this).val();
+            if (selectedSheetId) {
+                $.post('@Url.Action("GetHeaderIdsBySheetId", "StatementDetails")', { sheetId: selectedSheetId }, function (data) {
+                    var headerIdDropdown = $('#HEADER_ID');
+                    headerIdDropdown.empty();
+                    headerIdDropdown.append('<option value="">-- Select Header ID --</option>');
+                    $.each(data, function (i, item) {
+                        headerIdDropdown.append('<option value="' + item.value + '">' + item.text + '</option>');
+                    });
                 });
-            });
+            } else {
+                $('#HEADER_ID').empty().append('<option value="">-- Select Header ID --</option>');
+            }
         });
     </script>
 }

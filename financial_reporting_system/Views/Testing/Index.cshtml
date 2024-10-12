@@ -1,0 +1,82 @@
+﻿@{
+    ViewData["Title"] = "Financial Statement Types";
+}
+
+<h1>Select a Financial Statement Type</h1>
+
+<select id="statementTypeDropdown" style="width: 100%;">
+    <option value="">-- Select a Statement Type --</option>
+    @foreach (var item in ViewBag.StatementTypes)
+    {
+        <option value="@item.STMNT_ID">@item.DESCRIPTION</option>
+    }
+</select>
+
+<h2>Table Data</h2>
+<table id="dataTable" class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Detail ID</th>
+            <th>Statement ID</th>
+            <th>Sheet ID</th>
+            <th>Header ID</th>
+            <th>GL Account Category Code</th>
+            <th>Reference Code</th>
+            <th>Description</th>
+            <th>System Create Timestamp</th>
+            <th>Created By</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Table rows will be populated here -->
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#statementTypeDropdown').select2();
+
+            $('#statementTypeDropdown').on('change', function () {
+                const selectedStmntId = this.value;
+                if (selectedStmntId) {
+                    fetchTableData(selectedStmntId);
+                } else {
+                    document.querySelector('#dataTable tbody').innerHTML = '';
+                }
+            });
+        });
+
+        function fetchTableData(stmntId) {
+            fetch(`/Testing/GetData?stmntId=${stmntId}`)
+                .then(response => response.json())
+                .then(data => {
+                    populateTable(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching data for table:', error);
+                });
+        }
+
+        function populateTable(data) {
+            const tableBody = document.querySelector('#dataTable tbody');
+            tableBody.innerHTML = ''; // Clear previous data
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                            <td>${item.detailId}</td>
+                            <td>${item.stmntId}</td>
+                            <td>${item.sheetId}</td>
+                            <td>${item.headerId}</td>
+                            <td>${item.glAcctCatCd}</td>
+                            <td>${item.refCd}</td>
+                            <td>${item.description}</td>
+                            <td>${new Date(item.sysCreateTs).toLocaleString()}</td>
+                            <td>${item.createdBy}</td>
+                        `;
+                tableBody.appendChild(row);
+            });
+        }
+    </script>
+}

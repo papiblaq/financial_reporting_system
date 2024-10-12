@@ -21,7 +21,7 @@ namespace syncfusion_grid.Controllers
         {
             // Fetch filtered financial statement details based on the STMNT_ID
             var financialStatementDetails = GetFinancialStatementDetails(stmntId);
-            var accountDetails = GetAccountDetails();
+            var accountDetails = GetAccountDetails(stmntId); // Pass stmntId to GetAccountDetails
             var statementTypes = GetOrgFinStatementTypes();
 
             ViewBag.AccountDetails = accountDetails;
@@ -166,7 +166,7 @@ namespace syncfusion_grid.Controllers
             return financialStatementDetails;
         }
 
-        private List<AccountDetail> GetAccountDetails()
+        private List<AccountDetail> GetAccountDetails(int stmntId)
         {
             var accountDetails = new List<AccountDetail>();
 
@@ -175,7 +175,16 @@ namespace syncfusion_grid.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT GL_ACCT_CAT_CD, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD FROM V_ORG_CHART_OF_ACCOUNT_DETAILS";
+                    command.CommandText = @"
+                SELECT GL_ACCT_CAT_CD, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD 
+                FROM V_ORG_CHART_OF_ACCOUNT_DETAILS A
+                WHERE A.GL_ACCT_ID NOT IN (
+                    SELECT GL_ACCT_ID 
+                    FROM ORG_FINANCIAL_MAPPING 
+                    WHERE STMNT_ID = :stmntId
+                )";
+                    command.Parameters.Add(new OracleParameter("stmntId", stmntId));
+
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())

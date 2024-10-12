@@ -1,4 +1,4 @@
-﻿﻿@using syncfusion_grid.Controllers
+﻿@using syncfusion_grid.Controllers
 @model List<MappingController.FinancialStatementDetail>
 
 @{
@@ -6,7 +6,16 @@
 }
 
 <div class="container">
-    <h1 class="mt-5">Available Statement types</h1>
+    <h1 class="mt-5">Select a Financial Statement Type</h1>
+    <select id="statementTypeDropdown">
+    <option value="">-- Select a Statement Type --</option>
+    @foreach (var item in ViewBag.StatementTypes)
+    {
+        <option value="@item.STMNT_ID">@item.DESCRIPTION</option>
+    }
+</select>
+
+    <h1 class="mt-5">Available Statement details</h1>
     <!-- First Grid -->
     <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
         <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
@@ -53,6 +62,38 @@
 </div>
 
 <style>
+
+
+
+
+     #statementTypeDropdown {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        font-family: Arial, sans-serif;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+        cursor: pointer;
+        transition: border-color 0.3s ease;
+    }
+
+    #statementTypeDropdown:hover {
+        border-color: #888;
+    }
+
+    #statementTypeDropdown:focus {
+        border-color: #5b9bd5;
+        outline: none;
+        box-shadow: 0 0 3px rgba(91, 155, 213, 0.5);
+    }
+
+    #statementTypeDropdown option {
+        padding: 10px;
+        font-size: 16px;
+    }
+
+
     .container {
         margin: 20px 10px; /* Margin around the container */
         padding: 0px; /* Padding inside the container */
@@ -164,10 +205,23 @@
         color: #6c757d; /* Greyish color */
         font-weight: normal; /* Normal font weight */
         margin-bottom: 10px; /* Margin below the heading */
+    }
 </style>
 
-
 <script>
+    // Event listener for dropdown change
+    document.getElementById('statementTypeDropdown').addEventListener('change', function () {
+        var selectedValue = this.value; // Get the STMNT_ID
+
+        if (selectedValue) {
+            // Reload the entire page with the selected STMNT_ID as a query parameter
+            window.location.href = `/Mapping/Index?stmntId=${encodeURIComponent(selectedValue)}`;
+        } else {
+            alert('Please select a valid statement type.');
+        }
+    });
+
+    // Event listener for saving combined rows
     document.getElementById('saveCombinedRows').addEventListener('click', function () {
         var orderGrid = document.getElementById('grid').ej2_instances[0];
         var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
@@ -182,7 +236,7 @@
         }
 
         // Proceed with combining rows if exactly one row is selected in the first grid
-        if (selectedOrderRow.length > 0 && selectedAccountRows.length > 0) {
+        if (selectedAccountRows.length > 0) {
             var combinedRows = selectedAccountRows.map(accountRow => ({
                 DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
                 STMNT_ID: selectedOrderRow[0].STMNT_ID,
@@ -200,13 +254,20 @@
                 BAL_CD: accountRow.BAL_CD
             }));
 
+            // Fetch request to save combined rows
             fetch('/Mapping/SaveCombinedRows', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(combinedRows)
-            }).then(response => response.json())
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.statusText);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.error) {
                         alert('Error: ' + data.error);
@@ -217,12 +278,11 @@
                     }
                 })
                 .catch(error => {
-                    alert('Error: ' + error);
+                    alert('Error: ' + error.message);
                 });
         } else {
-            alert('No rows selected');
+            alert('No rows selected in the account grid.');
         }
     });
 </script>
-
 

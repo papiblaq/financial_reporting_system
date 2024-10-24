@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Export Financial Data</title>
+    <script>
+        function validateForm() {
+            var refCodeInput = document.getElementById("ref_cd");
+            if (refCodeInput.value === "") {
+                alert("Please enter a reference code");
+                return false;
+            }
+            return true;
+        }
+
+        function logErrorToConsole(error) {
+            console.error("Error: " + error.error);
+            console.error("Details: " + error.details);
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            var form = event.target;
+            var formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(error => {
+                            throw new Error(error.error + " - " + error.details);
+                        });
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "FinancialData.xls";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                })
+                .catch(error => {
+                    console.error("Fetch error: " + error);
+                });
+        }
+    </script>
+</head>
+<body>
+    <h2>Export Financial Data to Excel</h2>
+    <form method="post" action="/Documentation/ExportFinancialDataToExcel" onsubmit="handleFormSubmit(event)">
+        <label for="ref_cd">Enter Reference Code:</label>
+        <input type="text" id="ref_cd" name="ref_cd" required>
+        <button type="submit">Export</button>
+    </form>
+</body>
+</html>

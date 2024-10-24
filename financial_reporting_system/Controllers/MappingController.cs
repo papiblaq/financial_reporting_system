@@ -24,8 +24,12 @@ namespace syncfusion_grid.Controllers
             var accountDetails = GetAccountDetails(stmntId); // Pass stmntId to GetAccountDetails
             var statementTypes = GetOrgFinStatementTypes();
 
+            // Find the selected statement type description
+            var selectedDescription = statementTypes.FirstOrDefault(st => st.STMNT_ID == stmntId)?.DESCRIPTION ?? "All statement types";
+
             ViewBag.AccountDetails = accountDetails;
             ViewBag.StatementTypes = statementTypes;
+            ViewBag.SelectedDescription = selectedDescription; // Pass the selected description to the view
 
             return View(financialStatementDetails); // Pass the filtered data to the view
         }
@@ -127,7 +131,7 @@ namespace syncfusion_grid.Controllers
         }
 
         // Method to fetch all financial statement details or filter by STMNT_ID
-        private List<FinancialStatementDetail> GetFinancialStatementDetails(int stmntId)
+        private  List<FinancialStatementDetail> GetFinancialStatementDetails(int stmntId)
         {
             var financialStatementDetails = new List<FinancialStatementDetail>();
 
@@ -161,10 +165,13 @@ namespace syncfusion_grid.Controllers
                         }
                     }
                 }
+                Console.WriteLine("financial details ", financialStatementDetails);
             }
 
             return financialStatementDetails;
         }
+
+        
 
         private List<AccountDetail> GetAccountDetails(int stmntId)
         {

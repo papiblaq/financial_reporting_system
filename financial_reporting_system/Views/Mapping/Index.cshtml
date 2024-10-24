@@ -15,7 +15,7 @@
     }
 </select>
 
-    <h1 class="mt-5">Available Statement details</h1>
+    <h1 class="mt-5">Available Statement details for @ViewBag.SelectedDescription</h1>
     <!-- First Grid -->
     <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
         <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
@@ -35,9 +35,22 @@
     <div class="grid-spacer"></div>
 
     <h1 class="mt-5">Unmapped GL</h1>
+    <!-- Dropdown for Page Size Selection -->
+    <div class="mb-3">
+        <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
+
+        <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
+            <option value="15" selected>15</option>
+            <option value="30">30</option>
+            <option value="42">42</option>
+            <option value="70">70</option>
+            <option value="100">100</option>
+        </select>
+    </div>
+
     <!-- Second Grid -->
     <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-        <e-grid-pagesettings pageSize="15"></e-grid-pagesettings>
+        <e-grid-pagesettings pageSize="15"></e-grid-pagesettings> <!-- Default page size is 15 -->
         <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
         <e-grid-columns>
             <e-grid-column type="checkbox" width="50"></e-grid-column>
@@ -206,9 +219,32 @@
         font-weight: normal; /* Normal font weight */
         margin-bottom: 10px; /* Margin below the heading */
     }
+
+    .custom-label {
+        font-size: 18px; /* Smaller font size */
+        color: #6c757d; /* Greyish color */
+        font-weight: normal; /* Normal font weight */
+        margin-bottom: 10px; /* Margin below the heading */
+    }
+
 </style>
 
 <script>
+
+    // Get the page size dropdown element
+    var pageSizeDropdown = document.getElementById('pageSizeDropdown');
+
+    // Event listener for dropdown change
+    pageSizeDropdown.addEventListener('change', function () {
+        var selectedPageSize = parseInt(this.value); // Get the selected value as an integer
+
+        // Get the grid instance
+        var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
+
+        // Update the pageSize of the grid
+        accountGrid.pageSettings.pageSize = selectedPageSize;
+    });
+
     // Event listener for dropdown change
     document.getElementById('statementTypeDropdown').addEventListener('change', function () {
         var selectedValue = this.value; // Get the STMNT_ID

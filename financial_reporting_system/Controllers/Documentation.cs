@@ -87,7 +87,7 @@ namespace financial_reporting_system.Controllers
                 SELECT SUM(gas.ledger_bal) 
                 FROM ORG_FINANCIAL_MAPPING a, gl_account_summary gas 
                 WHERE a.gl_acct_id = gas.gl_acct_id 
-                AND description = 'Cash and Cash equivalent'
+                
                 AND a.REF_CD = :ref_cd";
 
             // Debugging: Print the SQL query and parameter values

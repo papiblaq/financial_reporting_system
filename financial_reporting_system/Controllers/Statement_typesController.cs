@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 
 namespace financial_reporting_system
 {
@@ -28,11 +30,11 @@ namespace financial_reporting_system
         // POST: /Statement_types/SaveData
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult SaveData(StatementInputModel input)
+        public IActionResult SaveData(StatementInputModel input, IFormFile fileUpload)
         {
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Invalid model state detected.");
+                TempData["ErrorMessage"] = "Invalid model state(make shure you have uploaded your exell sheet).";
                 return View("Index", input);
             }
 
@@ -40,6 +42,16 @@ namespace financial_reporting_system
 
             try
             {
+                // Handle file upload
+                if (fileUpload != null && fileUpload.Length > 0)
+                {
+                    var filePath = Path.Combine("C:\\Users\\hp\\source\\repos\\financial_reporting_system\\financial_reporting_system\\wwwroot\\Templates\\", fileUpload.FileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        fileUpload.CopyTo(stream);
+                    }
+                }
+
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
@@ -61,13 +73,19 @@ namespace financial_reporting_system
                     }
                 }
 
-                _logger.LogInformation("Data saved successfully.");
+                TempData["SuccessMessage"] = "Data saved successfully.";
                 return RedirectToAction("Index");
             }
             catch (OracleException ex)
             {
+                TempData["ErrorMessage"] = "Database error occurred while saving statement data. Please try again.";
                 _logger.LogError(ex, "Database error occurred while saving statement data.");
-                ModelState.AddModelError(string.Empty, "An error occurred while saving your data. Please try again.");
+                return View("Index", input);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while processing the file upload. Please try again.";
+                _logger.LogError(ex, "An error occurred while processing the file upload.");
                 return View("Index", input);
             }
         }

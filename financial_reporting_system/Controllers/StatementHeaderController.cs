@@ -322,5 +322,6 @@ namespace financial_reporting_system.Controllers
         public List<SelectListItem> StatementTypes { get; set; }
         public List<SelectListItem> AccountCategories { get; set; }
         public List<SelectListItem> SheetIds { get; set; }
+        public List<SelectListItem> AvailableExcelSheets { get; internal set; }
     }
 }

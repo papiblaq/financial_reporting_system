@@ -1,0 +1,62 @@
+﻿@model financial_reporting_system.Controllers.StatementHeaderInputModel
+
+@{
+    ViewData["Title"] = "Sheet Data Form";
+}
+
+<div class="container">
+    <h1 class="mt-5">choose the reports details</h1>
+    <form method="post" asp-action="SaveData" class="mt-4">
+        @Html.AntiForgeryToken()
+        <div class="form-group">
+            <label asp-for="STMNT_ID"></label>
+            <select asp-for="STMNT_ID" asp-items="Model.StatementTypes" class="form-control" required id="STMNT_ID">
+                <option value="">-- Select Statement Type --</option>
+            </select>
+            <span asp-validation-for="STMNT_ID" class="text-danger"></span>
+        </div>
+
+        <!-- New dropdown for SHEET_ID -->
+        <div class="form-group">
+            <label asp-for="SHEET_ID"></label>
+            <select asp-for="SHEET_ID" class="form-control" required id="SHEET_ID">
+                <option value="">-- Select Sheet ID --</option>
+            </select>
+            <span asp-validation-for="SHEET_ID" class="text-danger"></span>
+        </div>
+
+        <!-- New dropdown for Available Excel Sheets -->
+        <div class="form-group">
+            <label>Available Excel Sheets</label>
+            <select asp-items="Model.AvailableExcelSheets" class="form-control">
+                <option value="">-- Select Excel Sheet --</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Fetch SHEET_ID options based on selected STMNT_ID
+            $('#STMNT_ID').change(function () {
+                var selectedStmntId = $(this).val();
+                if (selectedStmntId) {
+                    $.post('@Url.Action("GetSheetIdsByStatementId", "FinancialReporting")', { stmntId: selectedStmntId }, function (data) {
+                        var sheetIdDropdown = $('#SHEET_ID');
+                        sheetIdDropdown.empty();
+                        sheetIdDropdown.append('<option value="">-- Select Sheet ID --</option>');
+                        $.each(data, function (i, item) {
+                            sheetIdDropdown.append('<option value="' + item.value + '">' + item.text + '</option>');
+                        });
+                    });
+                } else {
+                    $('#SHEET_ID').empty().append('<option value="">-- Select Sheet ID --</option>');
+                }
+            });
+        });
+    </script>
+}

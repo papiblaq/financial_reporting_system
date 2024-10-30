@@ -4,8 +4,10 @@ using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
 using Syncfusion.XlsIO;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Linq;
 
 namespace financial_reporting_system.Controllers
 {
@@ -22,19 +24,25 @@ namespace financial_reporting_system.Controllers
 
         public IActionResult Index()
         {
+            var templates = GetAvailableTemplates();
+            ViewBag.Templates = templates;
             return View();
         }
 
         [HttpPost]
-        public IActionResult ExportFinancialDataToExcel(string ref_cd)
+        public IActionResult ExportFinancialDataToExcel(List<UserDefinedCellValues> exellCellsMappingInfo, string selectedTemplate)
         {
             try
             {
-                // Execute the SQL query to fetch the specific value
-                double specificValue = GetSpecificValueFromDatabase(ref_cd);
+                // Debugging: Print the received list
+                Console.WriteLine("Received List:");
+                foreach (var item in exellCellsMappingInfo)
+                {
+                    Console.WriteLine($"SQL Query: {item.SqlQuery}, Value for Cells: {item.ValueForCells}");
+                }
 
                 // Load the predefined Excel template
-                string templatePath = Path.Combine(_hostingEnvironment.WebRootPath, "Templates", "FinancialTemplate.xls");
+                string templatePath = Path.Combine(_hostingEnvironment.WebRootPath, "Templates", selectedTemplate);
 
                 // Debugging: Print the template path
                 Console.WriteLine($"Template Path: {templatePath}");
@@ -56,8 +64,15 @@ namespace financial_reporting_system.Controllers
                         IWorkbook workbook = application.Workbooks.Open(fileStream);
                         IWorksheet worksheet = workbook.Worksheets[0];
 
-                        // Insert the specific value into cell C10
-                        worksheet.Range["C11"].Value = specificValue.ToString();
+                        // Loop through the list of UserDefinedCellValues
+                        foreach (var cellValue in exellCellsMappingInfo)
+                        {
+                            // Execute the SQL query to fetch the specific value
+                            double specificValue = GetSpecificValueFromDatabase(cellValue.SqlQuery);
+
+                            // Insert the specific value into the specified cell
+                            worksheet.Range[cellValue.ValueForCells].Value = specificValue.ToString();
+                        }
 
                         // Save the modified workbook to a memory stream
                         MemoryStream stream = new MemoryStream();
@@ -78,21 +93,12 @@ namespace financial_reporting_system.Controllers
             }
         }
 
-        private double GetSpecificValueFromDatabase(string ref_cd)
+        private double GetSpecificValueFromDatabase(string sqlQuery)
         {
             double specificValue = 0;
 
-            // Example SQL query with reference code filter
-            string sqlQuery = @"
-                SELECT SUM(gas.ledger_bal) 
-                FROM ORG_FINANCIAL_MAPPING a, gl_account_summary gas 
-                WHERE a.gl_acct_id = gas.gl_acct_id 
-                
-                AND a.REF_CD = :ref_cd";
-
-            // Debugging: Print the SQL query and parameter values
+            // Debugging: Print the SQL query
             Console.WriteLine($"SQL Query: {sqlQuery}");
-            Console.WriteLine($"Reference Code Parameter: {ref_cd}");
 
             // Execute the query and fetch the result
             using (var connection = new OracleConnection(_connectionString))
@@ -100,12 +106,6 @@ namespace financial_reporting_system.Controllers
                 connection.Open();
                 using (var command = new OracleCommand(sqlQuery, connection))
                 {
-                    // Add the reference code parameter to the command
-                    command.Parameters.Add(new OracleParameter("ref_cd", ref_cd));
-
-                    // Debugging: Print the parameter value
-                    Console.WriteLine($"Parameter Value: {ref_cd}");
-
                     try
                     {
                         object result = command.ExecuteScalar();
@@ -127,5 +127,17 @@ namespace financial_reporting_system.Controllers
 
             return specificValue;
         }
+
+        private List<string> GetAvailableTemplates()
+        {
+            string templatesPath = Path.Combine(_hostingEnvironment.WebRootPath, "Templates");
+            return Directory.GetFiles(templatesPath, "*.xls").Select(Path.GetFileName).ToList();
+        }
+    }
+
+    public class UserDefinedCellValues
+    {
+        public string SqlQuery { get; set; }
+        public string ValueForCells { get; set; }
     }
 }

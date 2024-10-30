@@ -1,60 +1,215 @@
-﻿<!DOCTYPE html>
-<html>
-<head>
-    <title>Export Financial Data</title>
-    <script>
-        function validateForm() {
-            var refCodeInput = document.getElementById("ref_cd");
-            if (refCodeInput.value === "") {
-                alert("Please enter a reference code");
-                return false;
-            }
-            return true;
+﻿@model List<financial_reporting_system.Controllers.UserDefinedCellValues>
+
+@{
+    ViewData["Title"] = "Export Financial Data to Excel";
+}
+
+<style>
+    .container {
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+
+    .cellValueRow {
+        margin-bottom: 15px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #ffffff;
+    }
+
+        .cellValueRow label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
         }
 
-        function logErrorToConsole(error) {
-            console.error("Error: " + error.error);
-            console.error("Details: " + error.details);
+        .cellValueRow input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
 
-        function handleFormSubmit(event) {
-            event.preventDefault();
-            var form = event.target;
-            var formData = new FormData(form);
+        .cellValueRow button {
+            margin-top: 5px;
+        }
 
-            fetch(form.action, {
-                method: 'POST',
-                body: new URLSearchParams(formData)
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(error => {
-                            throw new Error(error.error + " - " + error.details);
-                        });
+    .buttonContainer {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+        .buttonContainer button {
+            margin: 5px;
+            padding: 10px 20px;
+        }
+
+    .formContainer {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        position: relative;
+    }
+
+    .formContent {
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #ffffff;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+    .helpIcon {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        cursor: pointer;
+        font-size: 20px;
+        color: #007bff;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 30%;
+        text-align: center;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+</style>
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="container">
+    <div class="formContainer">
+        <form asp-action="ExportFinancialDataToExcel" method="post" class="formContent">
+            <div class="form-group">
+                <label for="selectedTemplate">Select  the Exell Sheet :</label>
+                <select name="selectedTemplate" class="form-control" required>
+                    <option value="">-- Select Excel Sheet --</option>
+                    @foreach (var template in ViewBag.Templates)
+                    {
+                        <option value="@template">@template</option>
                     }
-                    return response.blob();
-                })
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = "FinancialData.xls";
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                })
-                .catch(error => {
-                    console.error("Fetch error: " + error);
-                });
+                </select>
+            </div>
+            <div id="cellValuesContainer">
+                <!-- Initial input fields -->
+                <div class="cellValueRow">
+                    <label for="SqlQuery">SQL Query:</label>
+                    <input type="text" name="exellCellsMappingInfo[0].SqlQuery" class="form-control" required />
+                    <label for="ValueForCells">Value for Cells:</label>
+                    <input type="text" name="exellCellsMappingInfo[0].ValueForCells" class="form-control" required />
+                    <button type="button" class="btn btn-danger removeRow">Remove</button>
+                </div>
+            </div>
+            <div class="buttonContainer">
+                <button type="button" id="addRow" class="btn btn-primary">Update new cell</button>
+                <button type="submit" class="btn btn-success">Export to Excel</button>
+            </div>
+        </form>
+        <div class="helpIcon" onclick="showHelpPopup()">?</div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeHelpPopup()">&times;</span>
+        <p>
+            Hello! Are you stuck? 😊 I'm here to help!
+
+            Here's a quick breakdown of what each part means:
+
+            Select Template: This dropdown lets you choose the specific template you want to work with.
+            SQL Query: Here, you’ll enter the SQL query that retrieves the exact value you need from the database.
+            Cell Value: Input the absolute cell reference (e.g., C11) where you want the queried data to display.
+            If you have any questions or need further guidance, just let me know!
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var rowIndex = 1;
+
+            // Add new row
+            $("#addRow").click(function () {
+                var newRow = `
+                            <div class="cellValueRow">
+                                <label for="SqlQuery">SQL Query:</label>
+                                <input type="text" name="exellCellsMappingInfo[${rowIndex}].SqlQuery" class="form-control" required />
+                                <label for="ValueForCells">Value for Cells:</label>
+                                <input type="text" name="exellCellsMappingInfo[${rowIndex}].ValueForCells" class="form-control" required />
+                                <button type="button" class="btn btn-danger removeRow">Remove</button>
+                            </div>
+                        `;
+                $("#cellValuesContainer").append(newRow);
+                rowIndex++;
+            });
+
+            // Remove row
+            $("#cellValuesContainer").on("click", ".removeRow", function () {
+                $(this).closest(".cellValueRow").remove();
+            });
+        });
+
+        function showHelpPopup() {
+            document.getElementById("helpModal").style.display = "block";
+        }
+
+        function closeHelpPopup() {
+            document.getElementById("helpModal").style.display = "none";
         }
     </script>
-</head>
-<body>
-    <h2>Export Financial Data to Excel</h2>
-    <form method="post" action="/Documentation/ExportFinancialDataToExcel" onsubmit="handleFormSubmit(event)">
-        <label for="ref_cd">Enter Reference Code:</label>
-        <input type="text" id="ref_cd" name="ref_cd" required>
-        <button type="submit">Export</button>
-    </form>
-</body>
-</html>
+}

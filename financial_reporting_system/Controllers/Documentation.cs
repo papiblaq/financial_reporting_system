@@ -22,11 +22,43 @@ namespace financial_reporting_system.Controllers
             _connectionString = configuration.GetConnectionString("OracleConnection"); // Replace with your actual connection string
         }
 
-        public IActionResult Index()
+        public IActionResult Index(string selectedTemplate)
         {
             var templates = GetAvailableTemplates();
+            var refCodes = GetRefCodes();
             ViewBag.Templates = templates;
+            ViewBag.RefCodes = refCodes;
+
+            // Retrieve saved values from the temporary table
+            var savedValues = GetSavedValues(selectedTemplate);
+            ViewBag.SavedValues = savedValues;
+
+            // Check if there are no saved values for the selected template
+            if (savedValues == null || savedValues.Count == 0)
+            {
+                ViewBag.NoSavedValues = true;
+            }
+            else
+            {
+                ViewBag.NoSavedValues = false;
+            }
+
+            // Pass the selected template to the view
+            ViewBag.SelectedTemplate = selectedTemplate;
+
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult InsertValues(string selectedTemplate)
+        {
+            var templates = GetAvailableTemplates();
+            var refCodes = GetRefCodes();
+            ViewBag.Templates = templates;
+            ViewBag.RefCodes = refCodes;
+            ViewBag.SelectedTemplate = selectedTemplate;
+
+            return View("InsertValues");
         }
 
         [HttpPost]
@@ -38,7 +70,7 @@ namespace financial_reporting_system.Controllers
                 Console.WriteLine("Received List:");
                 foreach (var item in exellCellsMappingInfo)
                 {
-                    Console.WriteLine($"SQL Query: {item.SqlQuery}, Value for Cells: {item.ValueForCells}");
+                    Console.WriteLine($"RefCd: {item.RefCd}, Value for Cells: {item.ValueForCells}");
                 }
 
                 // Load the predefined Excel template
@@ -67,8 +99,11 @@ namespace financial_reporting_system.Controllers
                         // Loop through the list of UserDefinedCellValues
                         foreach (var cellValue in exellCellsMappingInfo)
                         {
+                            // Construct the SQL query using the ref_cd
+                            string sqlQuery = $"SELECT SUM(gas.ledger_bal) FROM ORG_FINANCIAL_MAPPING a, gl_account_summary gas WHERE a.gl_acct_id = gas.gl_acct_id AND ref_cd = '{cellValue.RefCd}'";
+
                             // Execute the SQL query to fetch the specific value
-                            double specificValue = GetSpecificValueFromDatabase(cellValue.SqlQuery);
+                            double specificValue = GetSpecificValueFromDatabase(sqlQuery);
 
                             // Insert the specific value into the specified cell
                             worksheet.Range[cellValue.ValueForCells].Value = specificValue.ToString();
@@ -91,6 +126,77 @@ namespace financial_reporting_system.Controllers
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return Json(new { error = "An error occurred while exporting to Excel.", details = ex.Message });
             }
+        }
+
+        [HttpPost]
+        public IActionResult SaveExportingData([FromBody] SaveExportingDataModel model)
+        {
+            try
+            {
+                // Debugging: Print the received model
+                Console.WriteLine("Received Model:");
+                Console.WriteLine($"Selected Template: {model.SelectedTemplate}");
+                foreach (var item in model.ExellCellsMappingInfo)
+                {
+                    Console.WriteLine($"RefCd: {item.RefCd}, Value for Cells: {item.ValueForCells}");
+                }
+
+                // Check for null values
+                if (model == null || model.ExellCellsMappingInfo == null || model.SelectedTemplate == null)
+                {
+                    return Json(new { success = false, message = "Invalid data received." });
+                }
+
+                // Save the values to the temporary table
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+
+                    foreach (var item in model.ExellCellsMappingInfo)
+                    {
+                        // Check for duplicate values
+                        using (var checkCommand = new OracleCommand("SELECT COUNT(*) FROM TEMP_EXPORT_DATA WHERE TEMPLATE_NAME = :templateName AND REF_CD = :refCd AND VALUE_FOR_CELLS = :valueForCells", connection))
+                        {
+                            checkCommand.Parameters.Add(new OracleParameter("templateName", model.SelectedTemplate));
+                            checkCommand.Parameters.Add(new OracleParameter("refCd", item.RefCd));
+                            checkCommand.Parameters.Add(new OracleParameter("valueForCells", item.ValueForCells));
+
+                            int duplicateCount = Convert.ToInt32(checkCommand.ExecuteScalar());
+
+                            if (duplicateCount > 0)
+                            {
+                                Console.WriteLine($"Duplicate found for Template: {model.SelectedTemplate}, RefCd: {item.RefCd}, Value for Cells: {item.ValueForCells}. Skipping insertion.");
+                                continue; // Skip insertion if duplicate is found
+                            }
+                        }
+
+                        // Insert the value if no duplicate is found
+                        using (var insertCommand = new OracleCommand("INSERT INTO TEMP_EXPORT_DATA (TEMPLATE_NAME, REF_CD, VALUE_FOR_CELLS) VALUES (:templateName, :refCd, :valueForCells)", connection))
+                        {
+                            insertCommand.Parameters.Add(new OracleParameter("templateName", model.SelectedTemplate));
+                            insertCommand.Parameters.Add(new OracleParameter("refCd", item.RefCd));
+                            insertCommand.Parameters.Add(new OracleParameter("valueForCells", item.ValueForCells));
+                            insertCommand.ExecuteNonQuery();
+                        }
+                    }
+                }
+
+                return Json(new { success = true, message = "Exporting data saved successfully." });
+            }
+            catch (Exception ex)
+            {
+                // Log the full exception details
+                Console.WriteLine($"Exception: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return Json(new { success = false, message = "An error occurred while saving exporting data.", details = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public IActionResult CheckSavedValues(string selectedTemplate)
+        {
+            var savedValues = GetSavedValues(selectedTemplate);
+            return Json(new { noSavedValues = savedValues == null || savedValues.Count == 0 });
         }
 
         private double GetSpecificValueFromDatabase(string sqlQuery)
@@ -133,11 +239,72 @@ namespace financial_reporting_system.Controllers
             string templatesPath = Path.Combine(_hostingEnvironment.WebRootPath, "Templates");
             return Directory.GetFiles(templatesPath, "*.xls").Select(Path.GetFileName).ToList();
         }
-    }
 
-    public class UserDefinedCellValues
-    {
-        public string SqlQuery { get; set; }
-        public string ValueForCells { get; set; }
+        private List<RefCode> GetRefCodes()
+        {
+            var refCodes = new List<RefCode>();
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = new OracleCommand("SELECT DISTINCT ref_cd, description FROM ORG_FINANCIAL_MAPPING", connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            refCodes.Add(new RefCode
+                            {
+                                RefCd = reader["ref_cd"].ToString(),
+                                Description = reader["description"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            return refCodes;
+        }
+
+        private List<UserDefinedCellValues> GetSavedValues(string selectedTemplate)
+        {
+            var savedValues = new List<UserDefinedCellValues>();
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = new OracleCommand("SELECT REF_CD, VALUE_FOR_CELLS FROM TEMP_EXPORT_DATA WHERE TEMPLATE_NAME = :templateName", connection))
+                {
+                    command.Parameters.Add(new OracleParameter("templateName", selectedTemplate));
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            savedValues.Add(new UserDefinedCellValues
+                            {
+                                RefCd = reader["REF_CD"].ToString(),
+                                ValueForCells = reader["VALUE_FOR_CELLS"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            return savedValues;
+        }
+
+        public class RefCode
+        {
+            public string RefCd { get; set; }
+            public string Description { get; set; }
+        }
+
+        public class UserDefinedCellValues
+        {
+            public string RefCd { get; set; }
+            public string ValueForCells { get; set; }
+        }
+
+        public class SaveExportingDataModel
+        {
+            public List<UserDefinedCellValues> ExellCellsMappingInfo { get; set; }
+            public string SelectedTemplate { get; set; }
+        }
     }
 }

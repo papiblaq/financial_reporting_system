@@ -31,7 +31,7 @@ namespace financial_reporting_system.Controllers
             {
                 StatementTypes = GetStatementTypes(),
                 SheetIds = new List<SelectListItem>(), // Initialize empty list
-                AvailableExcelSheets = GetAvailableExcelSheets()
+                
             };
 
             return View(model);

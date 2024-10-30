@@ -25,13 +25,7 @@
             <span asp-validation-for="SHEET_ID" class="text-danger"></span>
         </div>
 
-        <!-- New dropdown for Available Excel Sheets -->
-        <div class="form-group">
-            <label>Available Excel Sheets</label>
-            <select asp-items="Model.AvailableExcelSheets" class="form-control">
-                <option value="">-- Select Excel Sheet --</option>
-            </select>
-        </div>
+        
 
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>

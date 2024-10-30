@@ -1,7 +1,7 @@
 ﻿@model List<financial_reporting_system.Controllers.Documentation.UserDefinedCellValues>
 
 @{
-    ViewData["Title"] = "Export Financial Data to Excel";
+    ViewData["Title"] = "Insert Values for Excel Template";
 }
 
 <style>
@@ -134,58 +134,24 @@
     <div class="formContainer">
         <form asp-action="ExportFinancialDataToExcel" method="post" class="formContent">
             <div class="form-group">
-                <label for="selectedTemplate">Select the Excel Sheet:</label>
-                <select name="selectedTemplate" class="form-control" required onchange="updateSelectedTemplate(this.value)">
-                    <option value="">-- Select Excel Sheet --</option>
-                    @foreach (var template in ViewBag.Templates)
-                    {
-                        <option value="@template" selected="@(template == ViewBag.SelectedTemplate ? "selected" : null)">@template</option>
-                    }
-                </select>
+                <label for="selectedTemplate">Selected Excel Sheet:</label>
+                <input type="text" name="selectedTemplate" class="form-control" value="@ViewBag.SelectedTemplate" readonly />
             </div>
-            <input type="hidden" id="selectedTemplateHidden" name="selectedTemplate" value="@ViewBag.SelectedTemplate" />
             <div id="cellValuesContainer">
                 <!-- Initial input fields -->
-                @if (ViewBag.SavedValues != null)
-                {
-                    var savedValues = ViewBag.SavedValues as List<financial_reporting_system.Controllers.Documentation.UserDefinedCellValues>;
-                    var rowIndex = 0;
-                    foreach (var item in savedValues)
-                    {
-                        <div class="cellValueRow">
-                            <label for="RefCd">Reference Code:</label>
-                            <select name="exellCellsMappingInfo[@rowIndex].RefCd" class="form-control" required>
-                                <option value="">-- Select Reference Code --</option>
-                                @foreach (var refCode in ViewBag.RefCodes)
-                                {
-                                    <option value="@refCode.RefCd" selected="@(refCode.RefCd == item.RefCd ? "selected" : null)">
-                                        @refCode.RefCd (@refCode.Description)
-                                    </option>
-                                }
-                            </select>
-                            <label for="ValueForCells">Value for Cells:</label>
-                            <input type="text" name="exellCellsMappingInfo[@rowIndex].ValueForCells" class="form-control" value="@item.ValueForCells" required />
-                            <button type="button" class="btn btn-danger removeRow">Remove</button>
-                        </div>
-                        rowIndex++;
-                    }
-                }
-                else
-                {
-                    <div class="cellValueRow">
-                        <label for="RefCd">Reference Code:</label>
-                        <select name="exellCellsMappingInfo[0].RefCd" class="form-control" required>
-                            <option value="">-- Select Reference Code --</option>
-                            @foreach (var refCode in ViewBag.RefCodes)
-                            {
-                                <option value="@refCode.RefCd">@refCode.RefCd (@refCode.Description)</option>
-                            }
-                        </select>
-                        <label for="ValueForCells">Value for Cells:</label>
-                        <input type="text" name="exellCellsMappingInfo[0].ValueForCells" class="form-control" required />
-                        <button type="button" class="btn btn-danger removeRow">Remove</button>
-                    </div>
-                }
+                <div class="cellValueRow">
+                    <label for="RefCd">Reference Code:</label>
+                    <select name="exellCellsMappingInfo[0].RefCd" class="form-control" required>
+                        <option value="">-- Select Reference Code --</option>
+                        @foreach (var refCode in ViewBag.RefCodes)
+                        {
+                            <option value="@refCode.RefCd">@refCode.RefCd (@refCode.Description)</option>
+                        }
+                    </select>
+                    <label for="ValueForCells">Value for Cells:</label>
+                    <input type="text" name="exellCellsMappingInfo[0].ValueForCells" class="form-control" required />
+                    <button type="button" class="btn btn-danger removeRow">Remove</button>
+                </div>
             </div>
             <div class="buttonContainer">
                 <button type="button" id="addRow" class="btn btn-primary">Add new cell</button>
@@ -216,39 +182,8 @@
 
 @section Scripts {
     <script>
-        function updateSelectedTemplate(value) {
-            document.getElementById("selectedTemplateHidden").value = value;
-            var selectedTemplate = $("select[name='selectedTemplate']").val();
-
-            // Check if there are no saved values for the selected template
-            $.ajax({
-                url: '@Url.Action("CheckSavedValues", "Documentation")',
-                type: 'GET',
-                data: { selectedTemplate: selectedTemplate },
-                success: function (response) {
-                    if (response.noSavedValues) {
-                        if (confirm("No saved cells found for the selected template. Would you like to add new cells?")) {
-                            window.location.href = '@Url.Action("InsertValues", "Documentation")' + '?selectedTemplate=' + selectedTemplate;
-                        }
-                    } else {
-                        window.location.href = '@Url.Action("Index", "Documentation")' + '?selectedTemplate=' + selectedTemplate;
-                    }
-                },
-                error: function () {
-                    alert("An error occurred while checking saved values.");
-                }
-            });
-        }
-
         $(document).ready(function () {
-            var rowIndex = @if (ViewBag.SavedValues != null)
-        {
-            <text>@((ViewBag.SavedValues as List<financial_reporting_system.Controllers.Documentation.UserDefinedCellValues>).Count)</text>
-        }
-        else
-        {
-            <text>1</text>
-        };
+            var rowIndex = 1;
 
             // Add new row
             $("#addRow").click(function () {
@@ -280,7 +215,7 @@
             $("#saveExportingData").click(function () {
                 var formData = $("form").serializeArray();
                 var exellCellsMappingInfo = [];
-                var selectedTemplate = $("select[name='selectedTemplate']").val();
+                var selectedTemplate = $("input[name='selectedTemplate']").val();
 
                 formData.forEach(function (item) {
                     if (item.name.startsWith("exellCellsMappingInfo")) {

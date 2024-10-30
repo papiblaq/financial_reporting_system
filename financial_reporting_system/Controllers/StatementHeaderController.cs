@@ -111,9 +111,9 @@ namespace financial_reporting_system.Controllers
 
                     // Insert the record
                     string insertQuery = @"
-                        INSERT INTO ORG_FINANCIAL_STMNT_HEADER 
-                        (STMNT_ID, SHEET_ID, REF_CD, GL_ACCT_CAT_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
-                        VALUES (:STMNT_ID, :SHEET_ID, :REF_CD, :GL_ACCT_CAT_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
+                INSERT INTO ORG_FINANCIAL_STMNT_HEADER 
+                (STMNT_ID, SHEET_ID, REF_CD, GL_ACCT_CAT_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
+                VALUES (:STMNT_ID, :SHEET_ID, :REF_CD, :GL_ACCT_CAT_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
 
                     using (var insertCommand = new OracleCommand(insertQuery, connection))
                     {
@@ -322,6 +322,5 @@ namespace financial_reporting_system.Controllers
         public List<SelectListItem> StatementTypes { get; set; }
         public List<SelectListItem> AccountCategories { get; set; }
         public List<SelectListItem> SheetIds { get; set; }
-        public List<SelectListItem> AvailableExcelSheets { get; internal set; }
     }
 }

@@ -5,7 +5,6 @@ using Oracle.ManagedDataAccess.Client;
 using Syncfusion.XlsIO;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Linq;
 
@@ -192,6 +191,88 @@ namespace financial_reporting_system.Controllers
             }
         }
 
+        [HttpPost]
+        public IActionResult EditExportingData([FromBody] EditExportingDataModel model)
+        {
+            try
+            {
+                // Debugging: Print the received model
+                Console.WriteLine("Received Model for Edit:");
+                Console.WriteLine($"Selected Template: {model.SelectedTemplate}");
+                Console.WriteLine($"RefCd: {model.RefCd}, Value for Cells: {model.ValueForCells}");
+
+                // Check for null values
+                if (model == null || model.SelectedTemplate == null || model.RefCd == null || model.ValueForCells == null)
+                {
+                    return Json(new { success = false, message = "Invalid data received." });
+                }
+
+                // Update the values in the temporary table
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+
+                    using (var updateCommand = new OracleCommand("UPDATE TEMP_EXPORT_DATA SET VALUE_FOR_CELLS = :valueForCells WHERE TEMPLATE_NAME = :templateName AND REF_CD = :refCd", connection))
+                    {
+                        updateCommand.Parameters.Add(new OracleParameter("valueForCells", model.ValueForCells));
+                        updateCommand.Parameters.Add(new OracleParameter("templateName", model.SelectedTemplate));
+                        updateCommand.Parameters.Add(new OracleParameter("refCd", model.RefCd));
+                        updateCommand.ExecuteNonQuery();
+                    }
+                }
+
+                return Json(new { success = true, message = "Exporting data updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                // Log the full exception details
+                Console.WriteLine($"Exception: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return Json(new { success = false, message = "An error occurred while updating exporting data.", details = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult DeleteExportingData([FromBody] DeleteExportingDataModel model)
+        {
+            try
+            {
+                // Debugging: Print the received model
+                Console.WriteLine("Received Model for Delete:");
+                Console.WriteLine($"Selected Template: {model.SelectedTemplate}");
+                Console.WriteLine($"RefCd: {model.RefCd}, Value for Cells: {model.ValueForCells}");
+
+                // Check for null values
+                if (model == null || model.SelectedTemplate == null || model.RefCd == null || model.ValueForCells == null)
+                {
+                    return Json(new { success = false, message = "Invalid data received." });
+                }
+
+                // Delete the values from the temporary table
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+
+                    using (var deleteCommand = new OracleCommand("DELETE FROM TEMP_EXPORT_DATA WHERE TEMPLATE_NAME = :templateName AND REF_CD = :refCd AND VALUE_FOR_CELLS = :valueForCells", connection))
+                    {
+                        deleteCommand.Parameters.Add(new OracleParameter("templateName", model.SelectedTemplate));
+                        deleteCommand.Parameters.Add(new OracleParameter("refCd", model.RefCd));
+                        deleteCommand.Parameters.Add(new OracleParameter("valueForCells", model.ValueForCells));
+                        deleteCommand.ExecuteNonQuery();
+                    }
+                }
+
+                return Json(new { success = true, message = "Exporting data deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                // Log the full exception details
+                Console.WriteLine($"Exception: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return Json(new { success = false, message = "An error occurred while deleting exporting data.", details = ex.Message });
+            }
+        }
+
         [HttpGet]
         public IActionResult CheckSavedValues(string selectedTemplate)
         {
@@ -305,6 +386,20 @@ namespace financial_reporting_system.Controllers
         {
             public List<UserDefinedCellValues> ExellCellsMappingInfo { get; set; }
             public string SelectedTemplate { get; set; }
+        }
+
+        public class EditExportingDataModel
+        {
+            public string SelectedTemplate { get; set; }
+            public string RefCd { get; set; }
+            public string ValueForCells { get; set; }
+        }
+
+        public class DeleteExportingDataModel
+        {
+            public string SelectedTemplate { get; set; }
+            public string RefCd { get; set; }
+            public string ValueForCells { get; set; }
         }
     }
 }

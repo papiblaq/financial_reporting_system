@@ -25,7 +25,7 @@
             
             <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
             <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
-            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="300"></e-grid-column>
+            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
             <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
             <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
         </e-grid-columns>
@@ -40,11 +40,12 @@
         <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
 
         <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
-            <option value="15" selected>15</option>
-            <option value="30">30</option>
-            <option value="42">42</option>
-            <option value="70">70</option>
+            <option value="20" selected>20</option>
+            <option value="60">60</option>
             <option value="100">100</option>
+            <option value="150">150</option>
+            <option value="400">400</option>
+            <option value="600">600</option>
         </select>
     </div>
 

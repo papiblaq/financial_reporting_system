@@ -37,6 +37,7 @@
 
         .cellValueRow button {
             margin-top: 5px;
+            margin-right: 5px; /* Add margin between buttons */
         }
 
     .buttonContainer {
@@ -165,7 +166,9 @@
                             </select>
                             <label for="ValueForCells">Value for Cells:</label>
                             <input type="text" name="exellCellsMappingInfo[@rowIndex].ValueForCells" class="form-control" value="@item.ValueForCells" required />
-                            <button type="button" class="btn btn-danger removeRow">Remove</button>
+                            <button type="button" class="btn btn-warning removeRow">Remove</button>
+                            <button type="button" class="btn btn-primary editRow">Edit</button>
+                            <button type="button" class="btn btn-danger deleteRow">Delete</button>
                         </div>
                         rowIndex++;
                     }
@@ -184,6 +187,8 @@
                         <label for="ValueForCells">Value for Cells:</label>
                         <input type="text" name="exellCellsMappingInfo[0].ValueForCells" class="form-control" required />
                         <button type="button" class="btn btn-danger removeRow">Remove</button>
+                        <button type="button" class="btn btn-primary editRow">Edit</button>
+                        <button type="button" class="btn btn-warning deleteRow">Delete</button>
                     </div>
                 }
             </div>
@@ -265,6 +270,8 @@
                                 <label for="ValueForCells">Value for Cells:</label>
                                 <input type="text" name="exellCellsMappingInfo[${rowIndex}].ValueForCells" class="form-control" required />
                                 <button type="button" class="btn btn-danger removeRow">Remove</button>
+                                <button type="button" class="btn btn-primary editRow">Edit</button>
+                                <button type="button" class="btn btn-warning deleteRow">Delete</button>
                             </div>
                         `;
                 $("#cellValuesContainer").append(newRow);
@@ -274,7 +281,93 @@
             // Remove row
             $("#cellValuesContainer").on("click", ".removeRow", function () {
                 $(this).closest(".cellValueRow").remove();
+                adjustIndices();
             });
+
+            // Edit row
+            $("#cellValuesContainer").on("click", ".editRow", function () {
+                var row = $(this).closest(".cellValueRow");
+                var refCd = row.find("select").val();
+                var valueForCells = row.find("input").val();
+                var selectedTemplate = $("select[name='selectedTemplate']").val();
+
+                // Display the first confirmation dialog
+                if (confirm("Are you sure you want to edit this row?")) {
+                    // Show the "Save Edits" button
+                    var saveEditsButton = $('<button type="button" class="btn btn-success saveEdits">Save Edits</button>');
+                    row.append(saveEditsButton);
+
+                    // Event handler for the "Save Edits" button
+                    saveEditsButton.click(function () {
+                        // Display the second confirmation dialog
+                        if (confirm("Are you sure you want to save the edits?")) {
+                            // Perform the AJAX request to save the edits
+                            $.ajax({
+                                url: '@Url.Action("EditExportingData", "Documentation")',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    SelectedTemplate: selectedTemplate,
+                                    RefCd: refCd,
+                                    ValueForCells: valueForCells
+                                }),
+                                success: function (response) {
+                                    if (response.success) {
+                                        alert(response.message);
+                                        // Hide the "Save Edits" button after saving
+                                        saveEditsButton.remove();
+                                    } else {
+                                        alert("Error: " + response.message);
+                                    }
+                                },
+                                error: function () {
+                                    alert("An error occurred while editing exporting data.");
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Delete row
+            $("#cellValuesContainer").on("click", ".deleteRow", function () {
+                var row = $(this).closest(".cellValueRow");
+                var refCd = row.find("select").val();
+                var valueForCells = row.find("input").val();
+                var selectedTemplate = $("select[name='selectedTemplate']").val();
+
+                if (confirm("Are you sure you want to delete this row?")) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteExportingData", "Documentation")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            SelectedTemplate: selectedTemplate,
+                            RefCd: refCd,
+                            ValueForCells: valueForCells
+                        }),
+                        success: function (response) {
+                            if (response.success) {
+                                alert(response.message);
+                                row.remove();
+                                adjustIndices();
+                            } else {
+                                alert("Error: " + response.message);
+                            }
+                        },
+                        error: function () {
+                            alert("An error occurred while deleting exporting data.");
+                        }
+                    });
+                }
+            });
+
+            function adjustIndices() {
+                $("#cellValuesContainer .cellValueRow").each(function (index) {
+                    $(this).find("select").attr("name", `exellCellsMappingInfo[${index}].RefCd`);
+                    $(this).find("input").attr("name", `exellCellsMappingInfo[${index}].ValueForCells`);
+                });
+            }
 
             // Save exporting data
             $("#saveExportingData").click(function () {

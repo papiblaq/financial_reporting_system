@@ -35,7 +35,7 @@ namespace financial_reporting_system.Controllers
 
         // Fetch Sheet IDs based on selected Statement ID
         [HttpPost]
-        public JsonResult GetSheetIdsByStatementId(int stmntId)
+        public List<SelectListItem> GetSheetIdsByStatementId(int stmntId)
         {
             var sheetIds = new List<SelectListItem>();
 
@@ -73,7 +73,7 @@ namespace financial_reporting_system.Controllers
                 _logger.LogError(ex, "Database error occurred while fetching sheet IDs.");
             }
 
-            return Json(sheetIds);
+            return sheetIds;
         }
 
         // POST: /StatementHeader/SaveData
@@ -242,7 +242,7 @@ namespace financial_reporting_system.Controllers
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT STMNT_ID, SHEET_ID, REF_CD, GL_ACCT_CAT_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_HEADER";
+                    string query = "SELECT HEADER_ID, STMNT_ID, SHEET_ID, REF_CD, GL_ACCT_CAT_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_HEADER";
                     using (var command = new OracleCommand(query, connection))
                     {
                         using (var reader = command.ExecuteReader())
@@ -251,6 +251,7 @@ namespace financial_reporting_system.Controllers
                             {
                                 headers.Add(new Header
                                 {
+                                    HEADER_ID = Convert.ToInt32(reader["HEADER_ID"]),
                                     STMNT_ID = Convert.ToInt32(reader["STMNT_ID"]),
                                     SHEET_ID = Convert.ToInt32(reader["SHEET_ID"]),
                                     REF_CD = reader["REF_CD"].ToString(),
@@ -272,9 +273,164 @@ namespace financial_reporting_system.Controllers
             return headers;
         }
 
+        // GET: /StatementHeader/Edit/{id}
+        public IActionResult Edit(int id)
+        {
+            var header = GetHeaderById(id);
+            if (header == null)
+            {
+                return NotFound();
+            }
+
+            var model = new StatementHeaderInputModel
+            {
+                HEADER_ID = header.HEADER_ID,
+                STMNT_ID = header.STMNT_ID,
+                SHEET_ID = header.SHEET_ID,
+                REF_CD = header.REF_CD,
+                GL_ACCT_CAT_CD = header.GL_ACCT_CAT_CD,
+                DESCRIPTION = header.DESCRIPTION,
+                SYS_CREATE_TS = header.SYS_CREATE_TS,
+                CREATED_BY = header.CREATED_BY,
+                StatementTypes = GetStatementTypes(),
+                AccountCategories = GetAccountCategories(),
+                SheetIds = GetSheetIdsByStatementId(header.STMNT_ID)
+            };
+
+            return View(model);
+        }
+
+        // POST: /StatementHeader/Edit/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, [Bind("HEADER_ID,STMNT_ID,SHEET_ID,REF_CD,GL_ACCT_CAT_CD,DESCRIPTION,SYS_CREATE_TS,CREATED_BY")] StatementHeaderInputModel model)
+        {
+            if (id != model.HEADER_ID)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    using (var connection = new OracleConnection(_connectionString))
+                    {
+                        connection.Open();
+
+                        string updateQuery = @"
+                            UPDATE ORG_FINANCIAL_STMNT_HEADER 
+                            SET REF_CD = :REF_CD, 
+                                DESCRIPTION = :DESCRIPTION 
+                            WHERE HEADER_ID = :HEADER_ID";
+
+                        using (var updateCommand = new OracleCommand(updateQuery, connection))
+                        {
+                            AddParameter(updateCommand, "REF_CD", OracleDbType.Varchar2, model.REF_CD);
+                            AddParameter(updateCommand, "DESCRIPTION", OracleDbType.Varchar2, model.DESCRIPTION);
+                            AddParameter(updateCommand, "HEADER_ID", OracleDbType.Int32, model.HEADER_ID);
+
+                            updateCommand.ExecuteNonQuery();
+                        }
+                    }
+
+                    TempData["SuccessMessage"] = "Data updated successfully.";
+                    return RedirectToAction("Grid");
+                }
+                catch (OracleException ex)
+                {
+                    TempData["ErrorMessage"] = "Database error occurred while updating statement header data. Please try again.";
+                    _logger.LogError(ex, "Database error occurred while updating statement header data.");
+                    return View(model);
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = "An error occurred while processing the request. Please try again.";
+                    _logger.LogError(ex, "An error occurred while processing the request.");
+                    return View(model);
+                }
+            }
+
+            // If we got this far, something failed; redisplay form
+            model.StatementTypes = GetStatementTypes();
+            model.AccountCategories = GetAccountCategories();
+            model.SheetIds = GetSheetIdsByStatementId(model.STMNT_ID);
+            return View(model);
+        }
+
+        private Header GetHeaderById(int id)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                string query = "SELECT HEADER_ID, STMNT_ID, SHEET_ID, REF_CD, GL_ACCT_CAT_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_HEADER WHERE HEADER_ID = :HEADER_ID";
+                using (var command = new OracleCommand(query, connection))
+                {
+                    AddParameter(command, "HEADER_ID", OracleDbType.Int32, id);
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new Header
+                            {
+                                HEADER_ID = Convert.ToInt32(reader["HEADER_ID"]),
+                                STMNT_ID = Convert.ToInt32(reader["STMNT_ID"]),
+                                SHEET_ID = Convert.ToInt32(reader["SHEET_ID"]),
+                                REF_CD = reader["REF_CD"].ToString(),
+                                GL_ACCT_CAT_CD = reader["GL_ACCT_CAT_CD"].ToString(),
+                                DESCRIPTION = reader["DESCRIPTION"].ToString(),
+                                SYS_CREATE_TS = Convert.ToDateTime(reader["SYS_CREATE_TS"]),
+                                CREATED_BY = reader["CREATED_BY"].ToString()
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        // POST: /StatementHeader/Delete/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+
+                    // Delete the record
+                    string deleteQuery = "DELETE FROM ORG_FINANCIAL_STMNT_HEADER WHERE HEADER_ID = :HEADER_ID";
+
+                    using (var deleteCommand = new OracleCommand(deleteQuery, connection))
+                    {
+                        AddParameter(deleteCommand, "HEADER_ID", OracleDbType.Int32, id);
+                        deleteCommand.ExecuteNonQuery();
+                    }
+                }
+
+                
+                return RedirectToAction("Grid");
+            }
+            catch (OracleException ex)
+            {
+                TempData["ErrorMessage"] = "Database error occurred while deleting statement header data. Please try again.";
+                _logger.LogError(ex, "Database error occurred while deleting statement header data.");
+                return RedirectToAction("Grid");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while processing the request. Please try again.";
+                _logger.LogError(ex, "An error occurred while processing the request.");
+                return RedirectToAction("Grid");
+            }
+        }
+
         // Data model class for ORG_FINANCIAL_STMNT_HEADER
         public class Header
         {
+            public int HEADER_ID { get; set; }
             public int STMNT_ID { get; set; }
             public int SHEET_ID { get; set; }
             public string REF_CD { get; set; }
@@ -294,6 +450,8 @@ namespace financial_reporting_system.Controllers
             AccountCategories = new List<SelectListItem>();
             SheetIds = new List<SelectListItem>();
         }
+
+        public int HEADER_ID { get; set; }
 
         [Required(ErrorMessage = "STMNT_ID is required.")]
         public int STMNT_ID { get; set; }

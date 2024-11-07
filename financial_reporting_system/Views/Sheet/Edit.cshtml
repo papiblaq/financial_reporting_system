@@ -1,0 +1,76 @@
+﻿@using Syncfusion.EJ2
+@model financial_reporting_system.Controllers.SheetController.SheetInputModel
+
+@{
+    ViewData["PageTitle"] = "Edit sheet";
+}
+
+<h1>@ViewData["PageTitle"]</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-7">
+        <div class="widget p-5" style="background-color:#212b36">
+            <form asp-action="Edit" asp-route-id="@Model.SHEET_ID" method="post" onsubmit="logFormData(event)">
+                <!-- Hidden input fields -->
+                <input type="hidden" name="STMNT_ID" value="@Model.STMNT_ID" />
+                <input type="hidden" name="SHEET_ID" value="@Model.SHEET_ID" />
+                <input type="hidden" name="SYS_CREATE_TS" value="@Model.SYS_CREATE_TS.ToString("yyyy-MM-ddTHH:mm:ss")" />
+                <input type="hidden" name="CREATED_BY" value="@Model.CREATED_BY" />
+
+                <div class="mb-3">
+                    @Html.EJS().TextBox("REF_CD").Placeholder("REF_CD").Value(Model?.REF_CD ?? "").FloatLabelType(Syncfusion.EJ2.Inputs.FloatLabelType.Auto).Render()
+                </div>
+                <div class="mb-3">
+                    @Html.EJS().TextBox("DESCRIPTION").Placeholder("DESCRIPTION").Value(Model?.DESCRIPTION ?? "").FloatLabelType(Syncfusion.EJ2.Inputs.FloatLabelType.Auto).Render()
+                </div>
+                <div class="mb-3">
+                    <input type="submit" value="Save" class="btn btn-success" />
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="widget h-100 d-flex justify-content-center align-items-center">
+            <i class="fa-solid fa-shapes fa-2xl"></i>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    <script>
+        function logFormData(event) {
+            event.preventDefault(); // Prevent the form from submitting immediately
+
+            // Log the STMNT_ID
+            var stmntId = @Model.STMNT_ID;
+            console.log("STMNT_ID: " + stmntId);
+
+            // Log the SHEET_ID
+            var sheetId = @Model.SHEET_ID;
+            console.log("SHEET_ID: " + sheetId);
+
+            // Log the form data
+            var formData = new FormData(event.target);
+            for (var pair of formData.entries()) {
+                console.log(pair[0] + ": " + pair[1]);
+            }
+
+            // Display Toastr notification
+            toastr.success('Data saved successfully!', 'Success', { timeOut: 2000 });
+
+            // Redirect after 2 seconds
+            setTimeout(function () {
+                event.target.submit();
+            }, 2000);
+        }
+    </script>
+}

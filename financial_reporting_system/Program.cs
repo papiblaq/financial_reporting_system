@@ -8,6 +8,10 @@ using static syncfusion_grid.Controllers.MappingController;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Check if the environment is set to Production
+var environment = builder.Environment.EnvironmentName;
+Console.WriteLine($"Current Environment: {environment}");  // Outputs "Production" if correctly set
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 

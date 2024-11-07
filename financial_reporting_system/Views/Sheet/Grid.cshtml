@@ -5,20 +5,35 @@
 
 <div class="container">
     <!-- Grid Title -->
-    <h1 class="grid-title">data for sheet controller</h1>
+    <h1 class="grid-title">Data for Sheet Controller</h1>
 
     <!-- Syncfusion Grid -->
     <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
         <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
         <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
         <e-grid-columns>
-            
-            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="2000"></e-grid-column>
+            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="200"></e-grid-column>
             <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="150" format="yMd"></e-grid-column>
             <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
+            <e-grid-column headerText="Actions" template="#ActionColumnTemplate" width="100"></e-grid-column>
         </e-grid-columns>
     </ejs-grid>
 </div>
+
+<script id="ActionColumnTemplate" type="text/x-template">
+    <div class="d-flex flex-row justify-content-start">
+        <a class="btn no-a-decoration btn-sm" href="/Sheet/Edit/${SHEET_ID}">
+            <i class="fa-solid fa-pen fa-lg"></i>
+        </a>
+        <form action="/Sheet/Delete/${SHEET_ID}" method="post">
+    @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-sm btn-link no-a-decoration"
+                    onclick="return confirm(&quot;Are you sure you want to delete this record?&quot;)">
+                <i class="fa-solid fa-trash-can fa-lg text-danger"></i>
+            </button>
+        </form>
+    </div>
+</script>
 
 <style>
     .container {

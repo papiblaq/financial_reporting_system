@@ -31,71 +31,6 @@ namespace financial_reporting_system.Controllers
             return View(model);
         }
 
-        // POST: /Sheet/SaveData
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult SaveData(SheetInputModel input)
-        {
-            // Check if STMNT_ID is valid and present in the dropdown options
-            if (!IsValidStatementType(input.STMNT_ID))
-            {
-                ModelState.AddModelError("STMNT_ID", "Invalid STMNT_ID selected.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Invalid model state detected.");
-                foreach (var modelState in ModelState.Values)
-                {
-                    foreach (var error in modelState.Errors)
-                    {
-                        _logger.LogWarning($"ModelState error: {error.ErrorMessage}");
-                    }
-                }
-                input.StatementTypes = GetStatementTypes(); // Re-populate dropdown data
-                return View("Index", input);
-            }
-
-            input.SYS_CREATE_TS = DateTime.Now;
-
-            try
-            {
-                using (var connection = new OracleConnection(_connectionString))
-                {
-                    connection.Open();
-
-                    // Insert the record
-                    string insertQuery = @"
-                        INSERT INTO ORG_FINANCIAL_STMNT_SHEET 
-                        (STMNT_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
-                        VALUES (:STMNT_ID, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
-
-                    using (var insertCommand = new OracleCommand(insertQuery, connection))
-                    {
-                        // Use the values from the input model
-                        AddParameter(insertCommand, "STMNT_ID", OracleDbType.Int32, input.STMNT_ID);
-                        AddParameter(insertCommand, "REF_CD", OracleDbType.Varchar2, input.REF_CD);
-                        AddParameter(insertCommand, "DESCRIPTION", OracleDbType.Varchar2, input.DESCRIPTION);
-                        AddParameter(insertCommand, "SYS_CREATE_TS", OracleDbType.TimeStamp, input.SYS_CREATE_TS);
-                        AddParameter(insertCommand, "CREATED_BY", OracleDbType.Varchar2, input.CREATED_BY);
-
-                        insertCommand.ExecuteNonQuery();
-                    }
-                }
-
-                _logger.LogInformation("Data saved successfully for STMNT_ID: {STMNT_ID}", input.STMNT_ID);
-                TempData["SuccessMessage"] = $"Created sheet for statement type {input.STMNT_ID}";
-                return RedirectToAction("Index"); // Redirect to clear input fields
-            }
-            catch (OracleException ex)
-            {
-                _logger.LogError(ex, "Database error occurred while saving sheet data.");
-                ModelState.AddModelError(string.Empty, "An error occurred while saving your data. Please try again.");
-                input.StatementTypes = GetStatementTypes(); // Re-populate dropdown data
-                return View("Index", input);
-            }
-        }
-
         // Helper method to validate the selected STMNT_ID
         private bool IsValidStatementType(int stmntId)
         {
@@ -163,7 +98,7 @@ namespace financial_reporting_system.Controllers
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT STMNT_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_SHEET";
+                    string query = "SELECT SHEET_ID, STMNT_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_SHEET";
                     using (var command = new OracleCommand(query, connection))
                     {
                         using (var reader = command.ExecuteReader())
@@ -172,6 +107,7 @@ namespace financial_reporting_system.Controllers
                             {
                                 sheets.Add(new Sheet
                                 {
+                                    SHEET_ID = Convert.ToInt32(reader["SHEET_ID"]),
                                     STMNT_ID = Convert.ToInt32(reader["STMNT_ID"]),
                                     REF_CD = reader["REF_CD"].ToString(),
                                     DESCRIPTION = reader["DESCRIPTION"].ToString(),
@@ -191,6 +127,152 @@ namespace financial_reporting_system.Controllers
             return sheets;
         }
 
+        // GET: /Sheet/Edit/{id}
+        public IActionResult Edit(int id)
+        {
+            var sheet = GetSheetById(id);
+            if (sheet == null)
+            {
+                return NotFound();
+            }
+
+            var model = new SheetInputModel
+            {
+                SHEET_ID = sheet.SHEET_ID,
+                STMNT_ID = sheet.STMNT_ID,
+                REF_CD = sheet.REF_CD,
+                DESCRIPTION = sheet.DESCRIPTION,
+                SYS_CREATE_TS = sheet.SYS_CREATE_TS,
+                CREATED_BY = sheet.CREATED_BY,
+                StatementTypes = GetStatementTypes()
+            };
+
+            return View(model);
+        }
+
+        // POST: /Sheet/Edit/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, [Bind("SHEET_ID,REF_CD,DESCRIPTION,SYS_CREATE_TS,CREATED_BY")] SheetInputModel model)
+        {
+            if (id != model.SHEET_ID)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    using (var connection = new OracleConnection(_connectionString))
+                    {
+                        connection.Open();
+
+                        string updateQuery = @"
+                    UPDATE ORG_FINANCIAL_STMNT_SHEET 
+                    SET REF_CD = :REF_CD, 
+                        DESCRIPTION = :DESCRIPTION, 
+                        SYS_CREATE_TS = :SYS_CREATE_TS, 
+                        CREATED_BY = :CREATED_BY 
+                    WHERE SHEET_ID = :SHEET_ID";
+
+                        using (var updateCommand = new OracleCommand(updateQuery, connection))
+                        {
+                            AddParameter(updateCommand, "REF_CD", OracleDbType.Varchar2, model.REF_CD);
+                            AddParameter(updateCommand, "DESCRIPTION", OracleDbType.Varchar2, model.DESCRIPTION);
+                            AddParameter(updateCommand, "SYS_CREATE_TS", OracleDbType.Date, model.SYS_CREATE_TS);
+                            AddParameter(updateCommand, "CREATED_BY", OracleDbType.Varchar2, model.CREATED_BY);
+                            AddParameter(updateCommand, "SHEET_ID", OracleDbType.Int32, model.SHEET_ID);
+
+                            updateCommand.ExecuteNonQuery();
+                        }
+                    }
+
+                    _logger.LogInformation("Data updated successfully for SHEET_ID: {SHEET_ID}", model.SHEET_ID);
+                    
+                    return RedirectToAction("Grid");
+                }
+                catch (OracleException ex)
+                {
+                    _logger.LogError(ex, "Database error occurred while updating sheet data.");
+                    ModelState.AddModelError(string.Empty, "An error occurred while updating your data. Please try again.");
+                }
+            }
+
+            // If we got this far, something failed; redisplay form
+            model.StatementTypes = GetStatementTypes();
+            return View(model);
+        }
+        // POST: /Sheet/Delete/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+
+                    // Delete the record
+                    string deleteQuery = "DELETE FROM ORG_FINANCIAL_STMNT_SHEET WHERE SHEET_ID = :SHEET_ID";
+
+                    using (var deleteCommand = new OracleCommand(deleteQuery, connection))
+                    {
+                        AddParameter(deleteCommand, "SHEET_ID", OracleDbType.Int32, id);
+                        deleteCommand.ExecuteNonQuery();
+                    }
+                }
+
+                _logger.LogInformation("Data deleted successfully for SHEET_ID: {SHEET_ID}", id);
+                TempData["SuccessMessage"] = $"Deleted sheet with SHEET_ID {id}";
+                return RedirectToAction("Grid");
+            }
+            catch (OracleException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while deleting sheet data.");
+                ModelState.AddModelError(string.Empty, "An error occurred while deleting your data. Please try again.");
+                return RedirectToAction("Grid");
+            }
+        }
+
+        private Sheet GetSheetById(int id)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT SHEET_ID, STMNT_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_SHEET WHERE SHEET_ID = :SHEET_ID";
+                    using (var command = new OracleCommand(query, connection))
+                    {
+                        AddParameter(command, "SHEET_ID", OracleDbType.Int32, id);
+                        using (var reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                return new Sheet
+                                {
+                                    SHEET_ID = Convert.ToInt32(reader["SHEET_ID"]),
+                                    STMNT_ID = Convert.ToInt32(reader["STMNT_ID"]),
+                                    REF_CD = reader["REF_CD"].ToString(),
+                                    DESCRIPTION = reader["DESCRIPTION"].ToString(),
+                                    SYS_CREATE_TS = Convert.ToDateTime(reader["SYS_CREATE_TS"]),
+                                    CREATED_BY = reader["CREATED_BY"].ToString()
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while fetching sheet data by ID.");
+            }
+
+            return null;
+        }
+
         // Input model class
         public class SheetInputModel
         {
@@ -198,6 +280,9 @@ namespace financial_reporting_system.Controllers
             {
                 StatementTypes = new List<SelectListItem>();
             }
+
+            [Required(ErrorMessage = "SHEET_ID is required.")]
+            public int SHEET_ID { get; set; }
 
             [Required(ErrorMessage = "STMNT_ID is required.")]
             public int STMNT_ID { get; set; }
@@ -222,6 +307,7 @@ namespace financial_reporting_system.Controllers
         // Data model class for ORG_FINANCIAL_STMNT_SHEET
         public class Sheet
         {
+            public int SHEET_ID { get; set; }
             public int STMNT_ID { get; set; }
             public string REF_CD { get; set; }
             public string DESCRIPTION { get; set; }

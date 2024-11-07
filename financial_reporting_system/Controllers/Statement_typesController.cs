@@ -34,7 +34,7 @@ namespace financial_reporting_system
         {
             if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Invalid model state(make shure you have uploaded your exell sheet).";
+                TempData["ErrorMessage"] = "Invalid model state(make sure you have uploaded your Excel sheet).";
                 return View("Index", input);
             }
 
@@ -117,6 +117,9 @@ namespace financial_reporting_system
             [Required(ErrorMessage = "CREATED_BY is required.")]
             [StringLength(100, ErrorMessage = "CREATED_BY cannot be longer than 100 characters.")]
             public string CREATED_BY { get; set; }
+
+            // New properties for SHEET_ID and STMNT_ID
+            public int STMNT_ID { get; set; }
         }
 
         public class StatementType
@@ -125,6 +128,7 @@ namespace financial_reporting_system
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }
             public string CREATED_BY { get; set; }
+            public int STMNT_ID { get; set; }
         }
 
         private List<StatementType> GetStatementTypes()
@@ -136,17 +140,27 @@ namespace financial_reporting_system
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FIN_STATEMENT_TYPE";
+                    command.CommandText = @"
+                        SELECT 
+                            t.STMNT_ID, 
+                            t.REF_CD, 
+                            t.DESCRIPTION, 
+                            t.SYS_CREATE_TS, 
+                            t.CREATED_BY 
+                        FROM 
+                            ORG_FIN_STATEMENT_TYPE t";
+
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
                             statementTypes.Add(new StatementType
                             {
-                                REF_CD = reader.GetString(0),
-                                DESCRIPTION = reader.GetString(1),
-                                SYS_CREATE_TS = reader.GetDateTime(2),
-                                CREATED_BY = reader.GetString(3)
+                                STMNT_ID = reader.GetInt32(0),
+                                REF_CD = reader.GetString(1),
+                                DESCRIPTION = reader.GetString(2),
+                                SYS_CREATE_TS = reader.GetDateTime(3),
+                                CREATED_BY = reader.GetString(4)
                             });
                         }
                     }
@@ -154,6 +168,160 @@ namespace financial_reporting_system
             }
 
             return statementTypes;
+        }
+
+        // GET: /Statement_types/Edit/{id}
+        public IActionResult Edit(int id)
+        {
+            var statementType = GetStatementTypeByStmntId(id);
+            if (statementType == null)
+            {
+                return NotFound();
+            }
+
+            var model = new StatementInputModel
+            {
+                STMNT_ID = statementType.STMNT_ID,
+                REF_CD = statementType.REF_CD,
+                DESCRIPTION = statementType.DESCRIPTION,
+                SYS_CREATE_TS = statementType.SYS_CREATE_TS,
+                CREATED_BY = statementType.CREATED_BY
+            };
+
+            return View(model);
+        }
+
+        // POST: /Statement_types/Edit/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, [Bind("STMNT_ID,REF_CD,DESCRIPTION,SYS_CREATE_TS,CREATED_BY")] StatementInputModel model)
+        {
+            if (id != model.STMNT_ID)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    using (var connection = new OracleConnection(_connectionString))
+                    {
+                        connection.Open();
+
+                        string updateQuery = @"
+                            UPDATE ORG_FIN_STATEMENT_TYPE 
+                            SET REF_CD = :REF_CD, 
+                                DESCRIPTION = :DESCRIPTION 
+                            WHERE STMNT_ID = :STMNT_ID";
+
+                        using (var updateCommand = new OracleCommand(updateQuery, connection))
+                        {
+                            AddParameter(updateCommand, "REF_CD", OracleDbType.Varchar2, model.REF_CD);
+                            AddParameter(updateCommand, "DESCRIPTION", OracleDbType.Varchar2, model.DESCRIPTION);
+                            AddParameter(updateCommand, "STMNT_ID", OracleDbType.Int32, model.STMNT_ID);
+
+                            updateCommand.ExecuteNonQuery();
+                        }
+                    }
+
+                    TempData["SuccessMessage"] = "Data updated successfully.";
+                    return RedirectToAction("Grid");
+                }
+                catch (OracleException ex)
+                {
+                    TempData["ErrorMessage"] = "Database error occurred while updating statement data. Please try again.";
+                    _logger.LogError(ex, "Database error occurred while updating statement data.");
+                    return View(model);
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = "An error occurred while processing the request. Please try again.";
+                    _logger.LogError(ex, "An error occurred while processing the request.");
+                    return View(model);
+                }
+            }
+
+            // If we got this far, something failed; redisplay form
+            return View(model);
+        }
+
+        private StatementType GetStatementTypeByStmntId(int stmntId)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = @"
+                        SELECT 
+                            t.STMNT_ID, 
+                            t.REF_CD, 
+                            t.DESCRIPTION, 
+                            t.SYS_CREATE_TS, 
+                            t.CREATED_BY 
+                        FROM 
+                            ORG_FIN_STATEMENT_TYPE t
+                        WHERE 
+                            t.STMNT_ID = :STMNT_ID";
+
+                    AddParameter(command, "STMNT_ID", OracleDbType.Int32, stmntId);
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new StatementType
+                            {
+                                STMNT_ID = reader.GetInt32(0),
+                                REF_CD = reader.GetString(1),
+                                DESCRIPTION = reader.GetString(2),
+                                SYS_CREATE_TS = reader.GetDateTime(3),
+                                CREATED_BY = reader.GetString(4)
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        // POST: /Statement_types/Delete/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+
+                    // Delete the record
+                    string deleteQuery = "DELETE FROM ORG_FIN_STATEMENT_TYPE WHERE STMNT_ID = :STMNT_ID";
+
+                    using (var deleteCommand = new OracleCommand(deleteQuery, connection))
+                    {
+                        AddParameter(deleteCommand, "STMNT_ID", OracleDbType.Int32, id);
+                        deleteCommand.ExecuteNonQuery();
+                    }
+                }
+
+               
+                return RedirectToAction("Grid");
+            }
+            catch (OracleException ex)
+            {
+                TempData["ErrorMessage"] = "Database error occurred while deleting statement data. Please try again.";
+                _logger.LogError(ex, "Database error occurred while deleting statement data.");
+                return RedirectToAction("Grid");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while processing the request. Please try again.";
+                _logger.LogError(ex, "An error occurred while processing the request.");
+                return RedirectToAction("Grid");
+            }
         }
     }
 }

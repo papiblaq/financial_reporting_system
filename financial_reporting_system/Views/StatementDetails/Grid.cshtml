@@ -5,22 +5,37 @@
 
 <div class="container">
 
-    <h1 class="grid-title">data for ststement details</h1>
+    <h1 class="grid-title">Data for Statement Details</h1>
 
     <!-- Syncfusion Grid -->
     <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
         <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
         <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
         <e-grid-columns>
-            
             <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
             <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
             <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
             <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
             <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="150"></e-grid-column>
+            <e-grid-column headerText="Actions" template="#ActionColumnTemplate" width="100"></e-grid-column>
         </e-grid-columns>
     </ejs-grid>
 </div>
+
+<script id="ActionColumnTemplate" type="text/x-template">
+    <div class="d-flex flex-row justify-content-start">
+        <a class="btn no-a-decoration btn-sm" href="/StatementDetails/Edit/${DETAIL_ID}">
+            <i class="fa-solid fa-pen fa-lg"></i>
+        </a>
+        <form action="/StatementDetails/Delete/${DETAIL_ID}" method="post" style="display:inline;">
+    @Html.AntiForgeryToken()
+             <button type="submit" class="btn btn-sm btn-link no-a-decoration"
+                     onclick="return confirm(&quot;Are you sure you want to delete this record?&quot;)">
+                 <i class="fa-solid fa-trash-can fa-lg text-danger"></i>
+             </button>
+         </form>
+     </div>
+</script>
 
 <style>
     .container {

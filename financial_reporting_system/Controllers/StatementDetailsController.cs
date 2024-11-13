@@ -292,7 +292,7 @@ namespace financial_reporting_system.Controllers
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_DETAIL";
+                    string query = "SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_DETAIL";
                     using (var command = new OracleCommand(query, connection))
                     {
                         using (var reader = command.ExecuteReader())
@@ -301,6 +301,7 @@ namespace financial_reporting_system.Controllers
                             {
                                 details.Add(new Detail
                                 {
+                                    DETAIL_ID = Convert.ToInt32(reader["DETAIL_ID"]),
                                     STMNT_ID = Convert.ToInt32(reader["STMNT_ID"]),
                                     SHEET_ID = Convert.ToInt32(reader["SHEET_ID"]),
                                     HEADER_ID = Convert.ToInt32(reader["HEADER_ID"]),
@@ -323,9 +324,162 @@ namespace financial_reporting_system.Controllers
             return details;
         }
 
+        // GET: /StatementDetails/Edit/{id}
+        public IActionResult Edit(int id)
+        {
+            var detail = GetDetailById(id);
+            if (detail == null)
+            {
+                return NotFound();
+            }
+
+            var model = new StatementDetailInputModel
+            {
+                DETAIL_ID = detail.DETAIL_ID,
+                STMNT_ID = detail.STMNT_ID,
+                SHEET_ID = detail.SHEET_ID,
+                HEADER_ID = detail.HEADER_ID,
+                GL_ACCT_CAT_CD = detail.GL_ACCT_CAT_CD,
+                REF_CD = detail.REF_CD,
+                DESCRIPTION = detail.DESCRIPTION,
+                SYS_CREATE_TS = detail.SYS_CREATE_TS,
+                CREATED_BY = detail.CREATED_BY
+            };
+
+            return View(model);
+        }
+
+        // POST: /StatementDetails/Edit/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, [Bind("DETAIL_ID,STMNT_ID,SHEET_ID,HEADER_ID,GL_ACCT_CAT_CD,REF_CD,DESCRIPTION,SYS_CREATE_TS,CREATED_BY")] StatementDetailInputModel model)
+        {
+            if (id != model.DETAIL_ID)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    using (var connection = new OracleConnection(_connectionString))
+                    {
+                        connection.Open();
+
+                        string updateQuery = @"
+                            UPDATE ORG_FINANCIAL_STMNT_DETAIL 
+                            SET REF_CD = :REF_CD, 
+                                DESCRIPTION = :DESCRIPTION 
+                            WHERE DETAIL_ID = :DETAIL_ID";
+
+                        using (var updateCommand = new OracleCommand(updateQuery, connection))
+                        {
+                            AddParameter(updateCommand, "REF_CD", OracleDbType.Varchar2, model.REF_CD);
+                            AddParameter(updateCommand, "DESCRIPTION", OracleDbType.Varchar2, model.DESCRIPTION);
+                            AddParameter(updateCommand, "DETAIL_ID", OracleDbType.Int32, model.DETAIL_ID);
+
+                            updateCommand.ExecuteNonQuery();
+                        }
+                    }
+
+                    TempData["SuccessMessage"] = "Data updated successfully.";
+                    return RedirectToAction("Grid");
+                }
+                catch (OracleException ex)
+                {
+                    TempData["ErrorMessage"] = "Database error occurred while updating statement detail data. Please try again.";
+                    _logger.LogError(ex, "Database error occurred while updating statement detail data.");
+                    return View(model);
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = "An error occurred while processing the request. Please try again.";
+                    _logger.LogError(ex, "An error occurred while processing the request.");
+                    return View(model);
+                }
+            }
+
+            // If we got this far, something failed; redisplay form
+            return View(model);
+        }
+
+
+
+        // POST: /StatementDetails/Delete/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+
+                    // Delete the record
+                    string deleteQuery = "DELETE FROM ORG_FINANCIAL_STMNT_DETAIL WHERE DETAIL_ID = :DETAIL_ID";
+
+                    using (var deleteCommand = new OracleCommand(deleteQuery, connection))
+                    {
+                        AddParameter(deleteCommand, "DETAIL_ID", OracleDbType.Int32, id);
+                        deleteCommand.ExecuteNonQuery();
+                    }
+                }
+
+                TempData["SuccessMessage"] = "Data deleted successfully.";
+                return RedirectToAction("Grid");
+            }
+            catch (OracleException ex)
+            {
+                TempData["ErrorMessage"] = "Database error occurred while deleting statement detail data. Please try again.";
+                _logger.LogError(ex, "Database error occurred while deleting statement detail data.");
+                return RedirectToAction("Grid");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while processing the request. Please try again.";
+                _logger.LogError(ex, "An error occurred while processing the request.");
+                return RedirectToAction("Grid");
+            }
+        }
+
+        private Detail GetDetailById(int id)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                string query = "SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_DETAIL WHERE DETAIL_ID = :DETAIL_ID";
+                using (var command = new OracleCommand(query, connection))
+                {
+                    AddParameter(command, "DETAIL_ID", OracleDbType.Int32, id);
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new Detail
+                            {
+                                DETAIL_ID = Convert.ToInt32(reader["DETAIL_ID"]),
+                                STMNT_ID = Convert.ToInt32(reader["STMNT_ID"]),
+                                SHEET_ID = Convert.ToInt32(reader["SHEET_ID"]),
+                                HEADER_ID = Convert.ToInt32(reader["HEADER_ID"]),
+                                GL_ACCT_CAT_CD = reader["GL_ACCT_CAT_CD"].ToString(),
+                                REF_CD = reader["REF_CD"].ToString(),
+                                DESCRIPTION = reader["DESCRIPTION"].ToString(),
+                                SYS_CREATE_TS = Convert.ToDateTime(reader["SYS_CREATE_TS"]),
+                                CREATED_BY = reader["CREATED_BY"].ToString()
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
         // Data model class for ORG_FINANCIAL_STMNT_DETAIL
         public class Detail
         {
+            public int DETAIL_ID { get; set; }
             public int STMNT_ID { get; set; }
             public int SHEET_ID { get; set; }
             public int HEADER_ID { get; set; }
@@ -378,5 +532,29 @@ namespace financial_reporting_system.Controllers
         public List<SelectListItem> SheetIds { get; set; }
         public List<SelectListItem> HeaderIds { get; set; }
         public List<SelectListItem> AccountCategories { get; set; }
+    }
+
+    // Input model class for editing
+    public class StatementDetailInputModel
+    {
+        public int DETAIL_ID { get; set; }
+        public int STMNT_ID { get; set; }
+        public int SHEET_ID { get; set; }
+        public int HEADER_ID { get; set; }
+        public string GL_ACCT_CAT_CD { get; set; }
+
+        [Required(ErrorMessage = "REF_CD is required.")]
+        [StringLength(50, ErrorMessage = "REF_CD cannot be longer than 50 characters.")]
+        public string REF_CD { get; set; }
+
+        [Required(ErrorMessage = "DESCRIPTION is required.")]
+        [StringLength(255, ErrorMessage = "DESCRIPTION cannot be longer than 255 characters.")]
+        public string DESCRIPTION { get; set; }
+
+        public DateTime SYS_CREATE_TS { get; set; }
+
+        [Required(ErrorMessage = "CREATED_BY is required.")]
+        [StringLength(50, ErrorMessage = "CREATED_BY cannot be longer than 50 characters.")]
+        public string CREATED_BY { get; set; }
     }
 }

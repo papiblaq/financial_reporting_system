@@ -189,7 +189,7 @@ namespace financial_reporting_system.Controllers
                     }
 
                     _logger.LogInformation("Data updated successfully for SHEET_ID: {SHEET_ID}", model.SHEET_ID);
-                    
+
                     return RedirectToAction("Grid");
                 }
                 catch (OracleException ex)
@@ -203,6 +203,7 @@ namespace financial_reporting_system.Controllers
             model.StatementTypes = GetStatementTypes();
             return View(model);
         }
+
         // POST: /Sheet/Delete/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -271,6 +272,53 @@ namespace financial_reporting_system.Controllers
             }
 
             return null;
+        }
+
+        // POST: /Sheet/SaveData
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SaveData(SheetInputModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                // If the model state is not valid, return the view with the current model to show validation errors
+                model.StatementTypes = GetStatementTypes();
+                return View("Index", model);
+            }
+
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+
+                    string insertQuery = @"
+                INSERT INTO ORG_FINANCIAL_STMNT_SHEET (STMNT_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY)
+                VALUES (:STMNT_ID, :REF_CD, :DESCRIPTION, SYSTIMESTAMP, :CREATED_BY)";
+
+                    using (var command = new OracleCommand(insertQuery, connection))
+                    {
+                        AddParameter(command, "STMNT_ID", OracleDbType.Int32, model.STMNT_ID);
+                        AddParameter(command, "REF_CD", OracleDbType.Varchar2, model.REF_CD);
+                        AddParameter(command, "DESCRIPTION", OracleDbType.Varchar2, model.DESCRIPTION);
+                        AddParameter(command, "CREATED_BY", OracleDbType.Varchar2, model.CREATED_BY);
+
+                        command.ExecuteNonQuery();
+                    }
+                }
+
+                _logger.LogInformation("Data saved successfully.");
+                TempData["SuccessMessage"] = "Data saved successfully!";
+
+                return RedirectToAction("Index");
+            }
+            catch (OracleException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while saving sheet data.");
+                TempData["ErrorMessage"] = "An error occurred while saving your data. Please try again.";
+                model.StatementTypes = GetStatementTypes();
+                return View("Index", model);
+            }
         }
 
         // Input model class

@@ -30,13 +30,13 @@
             <span asp-validation-for="CREATED_BY" class="text-danger"></span>
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
-       
-            <a asp-action="Grid" class="btn btn-secondary">Available Sheets</a>
-        
+
+        <a asp-action="Grid" class="btn btn-secondary">Available Sheets</a>
+
     </form>
 
     <!-- Add the "View Grid" button -->
-    
+
 </div>
 
 @if (TempData["ErrorMessage"] != null)

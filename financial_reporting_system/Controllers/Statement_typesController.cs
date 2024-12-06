@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -27,7 +27,6 @@ namespace financial_reporting_system
             return View(new StatementInputModel());
         }
 
-        // POST: /Statement_types/SaveData
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult SaveData(StatementInputModel input, IFormFile fileUpload)
@@ -45,11 +44,14 @@ namespace financial_reporting_system
                 // Handle file upload
                 if (fileUpload != null && fileUpload.Length > 0)
                 {
-                    var filePath = Path.Combine("C:\\Users\\hp\\source\\repos\\financial_reporting_system\\financial_reporting_system\\wwwroot\\Templates\\", fileUpload.FileName);
+                    var filePath = Path.Combine(input.FilePath, fileUpload.FileName);
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
                         fileUpload.CopyTo(stream);
                     }
+
+                    // Store the file path and uploaded Excel sheet in the database
+                    StoreFilePathAndSheet(input.FilePath, fileUpload.FileName);
                 }
 
                 using (var connection = new OracleConnection(_connectionString))
@@ -58,9 +60,9 @@ namespace financial_reporting_system
 
                     // Insert the record
                     string insertQuery = @"
-                        INSERT INTO ORG_FIN_STATEMENT_TYPE 
-                        (REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
-                        VALUES (:REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
+                INSERT INTO ORG_FIN_STATEMENT_TYPE 
+                (REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
+                VALUES (:REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
 
                     using (var insertCommand = new OracleCommand(insertQuery, connection))
                     {
@@ -87,6 +89,41 @@ namespace financial_reporting_system
                 TempData["ErrorMessage"] = "An error occurred while processing the file upload. Please try again.";
                 _logger.LogError(ex, "An error occurred while processing the file upload.");
                 return View("Index", input);
+            }
+        }
+
+        private void StoreFilePathAndSheet(string filePath, string fileInPath)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                string insertQuery = @"
+            INSERT INTO TEMP_FILE_PATHS (FILE_PATH, FILE_IN_PATH) 
+            VALUES (:FILE_PATH, :FILE_IN_PATH)";
+
+                using (var insertCommand = new OracleCommand(insertQuery, connection))
+                {
+                    AddParameter(insertCommand, "FILE_PATH", OracleDbType.Varchar2, filePath);
+                    AddParameter(insertCommand, "FILE_IN_PATH", OracleDbType.Varchar2, fileInPath);
+                    insertCommand.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private void StoreFilePath(string filePath)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                string insertQuery = @"
+            INSERT INTO TEMP_FILE_PATHS (FILE_PATH) 
+            VALUES (:FILE_PATH)";
+
+                using (var insertCommand = new OracleCommand(insertQuery, connection))
+                {
+                    AddParameter(insertCommand, "FILE_PATH", OracleDbType.Varchar2, filePath);
+                    insertCommand.ExecuteNonQuery();
+                }
             }
         }
 
@@ -117,6 +154,11 @@ namespace financial_reporting_system
             [Required(ErrorMessage = "CREATED_BY is required.")]
             [StringLength(100, ErrorMessage = "CREATED_BY cannot be longer than 100 characters.")]
             public string CREATED_BY { get; set; }
+
+            // New property for the file path
+            [Required(ErrorMessage = "File path is required.")]
+            public string FilePath { get; set; }
+
 
             // New properties for SHEET_ID and STMNT_ID
             public int STMNT_ID { get; set; }

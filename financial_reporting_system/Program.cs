@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
+using System.IO;
 using syncfusion_grid;
 using syncfusion_grid.Controllers;
 //using static financial_reporting_system.Statement_typesController;
@@ -18,18 +20,19 @@ builder.Services.AddControllersWithViews();
 // Register OracleService
 builder.Services.AddScoped<OracleService>();
 
+// Load the external configuration file
+var externalConfig = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("connectionStrings.json", optional: false, reloadOnChange: true)
+    .Build();
+
+// Merge the external configuration with the main configuration
+builder.Configuration.AddConfiguration(externalConfig);
 
 var app = builder.Build();
 
-
-// syncfusion liscensing 
-
-//Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Mgo+DSMBPh8sVXJyS0d+X1RPd11dXmJWd1p/THNYflR1fV9DaUwxOX1dQl9nSXlSc0ViWHhecnRVQWc=");
+// syncfusion licensing 
 Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NDaF5cWGNCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWXZcdnRURWVfUkZ3VkI=");
-
-
-
-
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

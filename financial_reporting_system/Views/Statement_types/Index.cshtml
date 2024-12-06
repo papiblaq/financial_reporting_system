@@ -6,7 +6,6 @@
 <div class="container">
     <h1 class="mt-5">Enter Statement Data</h1>
     <form method="post" asp-action="SaveData" class="mt-4" enctype="multipart/form-data">
-
         <div class="form-group">
             <label asp-for="REF_CD"></label>
             <input asp-for="REF_CD" class="form-control" required />
@@ -23,12 +22,18 @@
             <span asp-validation-for="CREATED_BY" class="text-danger"></span>
         </div>
         <div class="form-group">
+            <label asp-for="FilePath">File Path</label>
+            <input asp-for="FilePath" class="form-control" required />
+            <span asp-validation-for="FilePath" class="text-danger"></span>
+        </div>
+        <div class="form-group">
             <label for="fileUpload" class="file-upload-label">
                 <i class="fa-solid fa-download"></i>
             </label>
             <input type="file" name="fileUpload" class="form-control-file" id="fileUpload" style="display: none;">
-            <label class="custom-file-label" for="fileUpload">Upload your Excel sheet</label>
+            <label class="custom-file-label" for="fileUpload" id="fileUploadLabel">Upload your Excel sheet</label>
         </div>
+
         <button type="submit" class="btn btn-primary">Submit</button>
         <a asp-action="Grid" class="btn btn-secondary">Available Statement Types</a>
     </form>
@@ -50,6 +55,13 @@
         alert('@TempData["ErrorMessage"]');
     </script>
 }
+
+<script>
+    document.getElementById('fileUpload').addEventListener('change', function() {
+        var fileName = this.value.split('\\').pop();
+        document.getElementById('fileUploadLabel').textContent = fileName || 'Upload your Excel sheet';
+    });
+</script>
 
 <style>
     .container {

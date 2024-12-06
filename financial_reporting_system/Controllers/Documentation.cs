@@ -25,8 +25,11 @@ namespace financial_reporting_system.Controllers
         {
             var templates = GetAvailableTemplates();
             var refCodes = GetRefCodes();
+            var filePaths = GetFilePaths(); // Fetch file paths
+
             ViewBag.Templates = templates;
             ViewBag.RefCodes = refCodes;
+            ViewBag.FilePaths = filePaths; // Pass file paths to the view
 
             // Retrieve saved values from the temporary table
             var savedValues = GetSavedValues(selectedTemplate);
@@ -280,6 +283,49 @@ namespace financial_reporting_system.Controllers
             return Json(new { noSavedValues = savedValues == null || savedValues.Count == 0 });
         }
 
+        [HttpGet]
+        public IActionResult GetTemplatesByFilePath(string filePath)
+        {
+            var templates = new List<TemplateInfo>();
+
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                string selectQuery = @"
+            SELECT FILE_IN_PATH, 
+                   CASE 
+                       WHEN EXISTS (SELECT 1 FROM TEMP_EXPORT_DATA WHERE TEMPLATE_NAME = FILE_IN_PATH) 
+                       THEN 1 
+                       ELSE 0 
+                   END AS HAS_SAVED_CELLS
+            FROM TEMP_FILE_PATHS
+            WHERE FILE_PATH = :filePath";
+
+                using (var selectCommand = new OracleCommand(selectQuery, connection))
+                {
+                    selectCommand.Parameters.Add(new OracleParameter("filePath", filePath));
+                    using (var reader = selectCommand.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            templates.Add(new TemplateInfo
+                            {
+                                FileInPath = reader["FILE_IN_PATH"].ToString(),
+                                HasSavedCells = Convert.ToInt32(reader["HAS_SAVED_CELLS"]) == 1
+                            });
+                        }
+                    }
+                }
+            }
+
+            return Json(templates);
+        }
+
+        public class TemplateInfo
+        {
+            public string FileInPath { get; set; }
+            public bool HasSavedCells { get; set; }
+        }
         private double GetSpecificValueFromDatabase(string sqlQuery)
         {
             double specificValue = 0;
@@ -368,6 +414,32 @@ namespace financial_reporting_system.Controllers
                 }
             }
             return savedValues;
+        }
+
+        private List<string> GetFilePaths()
+        {
+            var filePaths = new List<string>();
+
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                string selectQuery = @"
+                    SELECT distinct FILE_PATH 
+                    FROM TEMP_FILE_PATHS";
+
+                using (var selectCommand = new OracleCommand(selectQuery, connection))
+                {
+                    using (var reader = selectCommand.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            filePaths.Add(reader["FILE_PATH"].ToString());
+                        }
+                    }
+                }
+            }
+
+            return filePaths;
         }
 
         public class RefCode

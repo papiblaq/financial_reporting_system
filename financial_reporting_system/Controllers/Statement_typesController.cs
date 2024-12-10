@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -141,6 +141,11 @@ namespace financial_reporting_system
 
         public class StatementInputModel
         {
+            public StatementInputModel()
+            {
+                FilePath = "your file path to excel sheets"; // Set default value for FilePath
+            }
+
             [Required(ErrorMessage = "REF_CD is required.")]
             [StringLength(50, ErrorMessage = "REF_CD cannot be longer than 50 characters.")]
             public string REF_CD { get; set; }
@@ -159,7 +164,6 @@ namespace financial_reporting_system
             [Required(ErrorMessage = "File path is required.")]
             public string FilePath { get; set; }
 
-
             // New properties for SHEET_ID and STMNT_ID
             public int STMNT_ID { get; set; }
         }
@@ -171,6 +175,7 @@ namespace financial_reporting_system
             public DateTime SYS_CREATE_TS { get; set; }
             public string CREATED_BY { get; set; }
             public int STMNT_ID { get; set; }
+            public string FilePath { get; set; } // Add FilePath property
         }
 
         private List<StatementType> GetStatementTypes()
@@ -227,7 +232,8 @@ namespace financial_reporting_system
                 REF_CD = statementType.REF_CD,
                 DESCRIPTION = statementType.DESCRIPTION,
                 SYS_CREATE_TS = statementType.SYS_CREATE_TS,
-                CREATED_BY = statementType.CREATED_BY
+                CREATED_BY = statementType.CREATED_BY,
+                FilePath = statementType.FilePath // Ensure FilePath is set
             };
 
             return View(model);
@@ -263,7 +269,8 @@ namespace financial_reporting_system
                             AddParameter(updateCommand, "DESCRIPTION", OracleDbType.Varchar2, model.DESCRIPTION);
                             AddParameter(updateCommand, "STMNT_ID", OracleDbType.Int32, model.STMNT_ID);
 
-                            updateCommand.ExecuteNonQuery();
+                            int rowsAffected = updateCommand.ExecuteNonQuery();
+                            _logger.LogInformation($"Rows affected: {rowsAffected}");
                         }
                     }
 
@@ -349,7 +356,6 @@ namespace financial_reporting_system
                     }
                 }
 
-               
                 return RedirectToAction("Grid");
             }
             catch (OracleException ex)

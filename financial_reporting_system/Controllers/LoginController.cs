@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
+using PHilae.Cipher;
 using System.Data;
 
 namespace syncfusion_grid.Controllers
@@ -8,10 +9,12 @@ namespace syncfusion_grid.Controllers
     public class LoginController : Controller
     {
         private readonly string _connectionString;
+        private readonly AECrypt _crypt;
 
         public LoginController(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("OracleConnection");
+            _crypt = new AECrypt(); // Initialize AECrypt instance
         }
 
         public IActionResult Index()
@@ -70,7 +73,7 @@ namespace syncfusion_grid.Controllers
 
                 if (isPasswordCorrect)
                 {
-                    return RedirectToAction("Statement_types", "Index"); // Redirect to the Statement_types
+                    return RedirectToAction( "Index", "Statement_types"); // Redirect to the Statement_types
                 }
                 else
                 {
@@ -97,7 +100,7 @@ namespace syncfusion_grid.Controllers
                 return false;
             }
 
-            string decryptedPasswordFromDb = BRCrypt.Decrypt(encryptedPasswordFromDb);
+            string decryptedPasswordFromDb = _crypt.Decrypt(encryptedPasswordFromDb);
 
             return password == decryptedPasswordFromDb;
         }

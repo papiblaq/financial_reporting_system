@@ -134,28 +134,27 @@
 <div class="container">
     <div class="formContainer">
         <form asp-action="ExportFinancialDataToExcel" method="post" class="formContent">
-            <!-- Add dropdown for file paths -->
             <div class="form-group">
-                <label for="selectedFilePath">Select File Path:</label>
-                <select name="selectedFilePath" class="form-control" required onchange="fetchTemplates(this.value)">
-                    <option value="">-- Select File Path --</option>
-                    @foreach (var filePath in ViewBag.FilePaths)
+                <label for="selectedDirectory">Select Directory:</label>
+                <select name="selectedDirectory" class="form-control" required onchange="updateSelectedDirectory(this.value)">
+                    <option value="">-- Select Directory --</option>
+                    @foreach (var directory in ViewBag.Directories)
                     {
-                        <option value="@filePath">@filePath</option>
+                        <option value="@directory" selected="@(directory == ViewBag.SelectedDirectory ? "selected" : null)">@directory</option>
                     }
                 </select>
             </div>
 
-            <!-- Add dropdown for templates -->
             <div class="form-group">
                 <label for="selectedTemplate">Select the Excel Sheet:</label>
-                <select name="selectedTemplate" class="form-control" required id="selectedTemplateDropdown">
+                <select name="selectedTemplate" class="form-control" required onchange="updateSelectedTemplate(this.value)">
                     <option value="">-- Select Excel Sheet --</option>
-                    <!-- Templates will be populated here -->
+                    @foreach (var template in ViewBag.Templates)
+                    {
+                        <option value="@template" selected="@(template == ViewBag.SelectedTemplate ? "selected" : null)">@template</option>
+                    }
                 </select>
-                <div id="noSavedCellsMessage" style="display: none; color: red;">No saved cells found for this template. Please add cells.</div>
             </div>
-
             <input type="hidden" id="selectedTemplateHidden" name="selectedTemplate" value="@ViewBag.SelectedTemplate" />
             <div id="cellValuesContainer">
                 <!-- Initial input fields -->
@@ -233,36 +232,6 @@
 
 @section Scripts {
     <script>
-        function fetchTemplates(filePath) {
-            $.ajax({
-                url: '@Url.Action("GetTemplatesByFilePath", "Documentation")',
-                type: 'GET',
-                data: { filePath: filePath },
-                success: function (response) {
-                    var dropdown = $('#selectedTemplateDropdown');
-                    dropdown.empty();
-                    dropdown.append('<option value="">-- Select Excel Sheet --</option>');
-                    response.forEach(function (template) {
-                        dropdown.append('<option value="' + template.fileInPath + '">' + template.fileInPath + '</option>');
-                    });
-
-                    // Show/hide the no saved cells message based on the selected template
-                    dropdown.change(function () {
-                        var selectedTemplate = $(this).val();
-                        var hasSavedCells = response.find(t => t.fileInPath === selectedTemplate)?.hasSavedCells;
-                        if (hasSavedCells === false) {
-                            $('#noSavedCellsMessage').show();
-                        } else {
-                            $('#noSavedCellsMessage').hide();
-                        }
-                    });
-                },
-                error: function () {
-                    alert("An error occurred while fetching templates.");
-                }
-            });
-        }
-
         function updateSelectedTemplate(value) {
             document.getElementById("selectedTemplateHidden").value = value;
             var selectedTemplate = $("select[name='selectedTemplate']").val();
@@ -283,6 +252,30 @@
                 },
                 error: function () {
                     alert("An error occurred while checking saved values.");
+                }
+            });
+        }
+
+        function updateSelectedDirectory(value) {
+            // Fetch templates for the selected directory via AJAX
+            $.ajax({
+                url: '@Url.Action("GetTemplatesByDirectory", "Documentation")',
+                type: 'GET',
+                data: { selectedDirectory: value },
+                success: function (response) {
+                    // Clear the existing options in the "Select Excel Sheet" dropdown
+                    $("select[name='selectedTemplate']").empty();
+
+                    // Add the default option
+                    $("select[name='selectedTemplate']").append('<option value="">-- Select Excel Sheet --</option>');
+
+                    // Populate the "Select Excel Sheet" dropdown with the fetched templates
+                    response.forEach(function (template) {
+                        $("select[name='selectedTemplate']").append('<option value="' + template + '">' + template + '</option>');
+                    });
+                },
+                error: function () {
+                    alert("An error occurred while fetching templates.");
                 }
             });
         }

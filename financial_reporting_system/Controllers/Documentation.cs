@@ -21,29 +21,24 @@ namespace financial_reporting_system.Controllers
             _connectionString = configuration.GetConnectionString("OracleConnection"); // Replace with your actual connection string
         }
 
-        public IActionResult Index(string selectedTemplate)
+        public IActionResult Index(string selectedDirectory, string selectedTemplate)
         {
-            var templates = GetAvailableTemplates();
-            var refCodes = GetRefCodes();
-            var filePaths = GetFilePaths(); // Fetch file paths
+            // Fetch distinct directories from the database
+            var directories = FetchingExcelDirectories();
+            ViewBag.Directories = directories;
 
+            // Set the selected directory (if any)
+            ViewBag.SelectedDirectory = selectedDirectory;
+
+            // Fetch templates based on the selected directory
+            var templates = GetAvailableTemplates(selectedDirectory);
+            var refCodes = GetRefCodes();
             ViewBag.Templates = templates;
             ViewBag.RefCodes = refCodes;
-            ViewBag.FilePaths = filePaths; // Pass file paths to the view
 
             // Retrieve saved values from the temporary table
             var savedValues = GetSavedValues(selectedTemplate);
             ViewBag.SavedValues = savedValues;
-
-            // Check if there are no saved values for the selected template
-            if (savedValues == null || savedValues.Count == 0)
-            {
-                ViewBag.NoSavedValues = true;
-            }
-            else
-            {
-                ViewBag.NoSavedValues = false;
-            }
 
             // Pass the selected template to the view
             ViewBag.SelectedTemplate = selectedTemplate;
@@ -52,9 +47,17 @@ namespace financial_reporting_system.Controllers
         }
 
         [HttpGet]
-        public IActionResult InsertValues(string selectedTemplate)
+        public IActionResult InsertValues(string selectedDirectory, string selectedTemplate)
         {
-            var templates = GetAvailableTemplates();
+            // Fetch distinct directories from the database
+            var directories = FetchingExcelDirectories();
+            ViewBag.Directories = directories;
+
+            // Set the selected directory (if any)
+            ViewBag.SelectedDirectory = selectedDirectory;
+
+            // Fetch templates based on the selected directory
+            var templates = GetAvailableTemplates(selectedDirectory);
             var refCodes = GetRefCodes();
             ViewBag.Templates = templates;
             ViewBag.RefCodes = refCodes;
@@ -64,7 +67,7 @@ namespace financial_reporting_system.Controllers
         }
 
         [HttpPost]
-        public IActionResult ExportFinancialDataToExcel(List<UserDefinedCellValues> exellCellsMappingInfo, string selectedTemplate)
+        public IActionResult ExportFinancialDataToExcel(List<UserDefinedCellValues> exellCellsMappingInfo, string selectedDirectory, string selectedTemplate)
         {
             try
             {
@@ -76,7 +79,7 @@ namespace financial_reporting_system.Controllers
                 }
 
                 // Load the predefined Excel template
-                string templatePath = Path.Combine(_hostingEnvironment.WebRootPath, "Templates", selectedTemplate);
+                string templatePath = Path.Combine(selectedDirectory, selectedTemplate);
 
                 // Debugging: Print the template path
                 Console.WriteLine($"Template Path: {templatePath}");
@@ -283,49 +286,6 @@ namespace financial_reporting_system.Controllers
             return Json(new { noSavedValues = savedValues == null || savedValues.Count == 0 });
         }
 
-        [HttpGet]
-        public IActionResult GetTemplatesByFilePath(string filePath)
-        {
-            var templates = new List<TemplateInfo>();
-
-            using (var connection = new OracleConnection(_connectionString))
-            {
-                connection.Open();
-                string selectQuery = @"
-            SELECT FILE_IN_PATH, 
-                   CASE 
-                       WHEN EXISTS (SELECT 1 FROM TEMP_EXPORT_DATA WHERE TEMPLATE_NAME = FILE_IN_PATH) 
-                       THEN 1 
-                       ELSE 0 
-                   END AS HAS_SAVED_CELLS
-            FROM TEMP_FILE_PATHS
-            WHERE FILE_PATH = :filePath";
-
-                using (var selectCommand = new OracleCommand(selectQuery, connection))
-                {
-                    selectCommand.Parameters.Add(new OracleParameter("filePath", filePath));
-                    using (var reader = selectCommand.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            templates.Add(new TemplateInfo
-                            {
-                                FileInPath = reader["FILE_IN_PATH"].ToString(),
-                                HasSavedCells = Convert.ToInt32(reader["HAS_SAVED_CELLS"]) == 1
-                            });
-                        }
-                    }
-                }
-            }
-
-            return Json(templates);
-        }
-
-        public class TemplateInfo
-        {
-            public string FileInPath { get; set; }
-            public bool HasSavedCells { get; set; }
-        }
         private double GetSpecificValueFromDatabase(string sqlQuery)
         {
             double specificValue = 0;
@@ -361,10 +321,44 @@ namespace financial_reporting_system.Controllers
             return specificValue;
         }
 
-        private List<string> GetAvailableTemplates()
+        private List<string> FetchingExcelDirectories()
         {
-            string templatesPath = Path.Combine(_hostingEnvironment.WebRootPath, "Templates");
-            return Directory.GetFiles(templatesPath, "*.xls").Select(Path.GetFileName).ToList();
+            var directories = new List<string>();
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = new OracleCommand("SELECT DISTINCT FILE_PATH FROM TEMP_FILE_PATHS", connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            directories.Add(reader["FILE_PATH"].ToString());
+                        }
+                    }
+                }
+            }
+            return directories;
+        }
+
+        private List<string> GetAvailableTemplates(string directoryPath)
+        {
+            try
+            {
+                if (!Directory.Exists(directoryPath))
+                {
+                    // Log the error and return an empty list
+                    Console.WriteLine($"Directory not found: {directoryPath}");
+                    return new List<string>();
+                }
+                return Directory.GetFiles(directoryPath, "*.xls").Select(Path.GetFileName).ToList();
+            }
+            catch (Exception ex)
+            {
+                // Log the exception and return an empty list
+                Console.WriteLine($"Error accessing directory: {ex.Message}");
+                return new List<string>();
+            }
         }
 
         private List<RefCode> GetRefCodes()
@@ -416,30 +410,33 @@ namespace financial_reporting_system.Controllers
             return savedValues;
         }
 
-        private List<string> GetFilePaths()
+        // New Action: GetTemplatesByDirectory
+        [HttpGet]
+        public IActionResult GetTemplatesByDirectory(string selectedDirectory)
         {
-            var filePaths = new List<string>();
-
-            using (var connection = new OracleConnection(_connectionString))
+            try
             {
-                connection.Open();
-                string selectQuery = @"
-                    SELECT distinct FILE_PATH 
-                    FROM TEMP_FILE_PATHS";
+                // Debugging: Log the selected directory
+                Console.WriteLine($"Fetching templates for directory: {selectedDirectory}");
 
-                using (var selectCommand = new OracleCommand(selectQuery, connection))
-                {
-                    using (var reader = selectCommand.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            filePaths.Add(reader["FILE_PATH"].ToString());
-                        }
-                    }
-                }
+                // Fetch templates for the selected directory
+                var templates = GetAvailableTemplates(selectedDirectory);
+
+                // Debugging: Log the templates
+                Console.WriteLine($"Templates found: {string.Join(", ", templates)}");
+
+                // Return the templates as JSON
+                return Json(templates);
             }
+            catch (Exception ex)
+            {
+                // Log the exception
+                Console.WriteLine($"Error in GetTemplatesByDirectory: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
 
-            return filePaths;
+                // Return an error response
+                return StatusCode(500, new { error = "An error occurred while fetching templates." });
+            }
         }
 
         public class RefCode

@@ -16,6 +16,7 @@
                 <input type="hidden" name="STMNT_ID" value="@Model.STMNT_ID" />
                 <input type="hidden" name="SYS_CREATE_TS" value="@Model.SYS_CREATE_TS.ToString("yyyy-MM-ddTHH:mm:ss")" />
                 <input type="hidden" name="CREATED_BY" value="@Model.CREATED_BY" />
+                <input type="hidden" name="FilePath" value="@Model.FilePath" /> <!-- Hidden input for FilePath -->
 
                 <div class="mb-3">
                     @Html.EJS().TextBox("REF_CD").Placeholder("REF_CD").Value(Model?.REF_CD ?? "").FloatLabelType(Syncfusion.EJ2.Inputs.FloatLabelType.Auto).Render()

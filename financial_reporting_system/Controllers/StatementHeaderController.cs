@@ -130,7 +130,7 @@ namespace financial_reporting_system.Controllers
                 }
 
                 _logger.LogInformation("Data saved successfully for STMNT_ID: {STMNT_ID}, SHEET_ID: {SHEET_ID}", input.STMNT_ID, input.SHEET_ID);
-                TempData["SuccessMessage"] = $"Created sheet for statement type {input.STMNT_ID} and sheet ID {input.SHEET_ID}";
+                TempData["SuccessMessage"] = $"Sucessfuly created header for sheet ID :{input.SHEET_ID}";
                 return RedirectToAction("Index");
             }
             catch (OracleException ex)
@@ -318,16 +318,19 @@ namespace financial_reporting_system.Controllers
                     {
                         connection.Open();
 
+                        // Include GL_ACCT_CAT_CD in the UPDATE query
                         string updateQuery = @"
-                            UPDATE ORG_FINANCIAL_STMNT_HEADER 
-                            SET REF_CD = :REF_CD, 
-                                DESCRIPTION = :DESCRIPTION 
-                            WHERE HEADER_ID = :HEADER_ID";
+                    UPDATE ORG_FINANCIAL_STMNT_HEADER 
+                    SET REF_CD = :REF_CD, 
+                        DESCRIPTION = :DESCRIPTION, 
+                        GL_ACCT_CAT_CD = :GL_ACCT_CAT_CD 
+                    WHERE HEADER_ID = :HEADER_ID";
 
                         using (var updateCommand = new OracleCommand(updateQuery, connection))
                         {
                             AddParameter(updateCommand, "REF_CD", OracleDbType.Varchar2, model.REF_CD);
                             AddParameter(updateCommand, "DESCRIPTION", OracleDbType.Varchar2, model.DESCRIPTION);
+                            AddParameter(updateCommand, "GL_ACCT_CAT_CD", OracleDbType.Varchar2, model.GL_ACCT_CAT_CD); // Add GL_ACCT_CAT_CD parameter
                             AddParameter(updateCommand, "HEADER_ID", OracleDbType.Int32, model.HEADER_ID);
 
                             updateCommand.ExecuteNonQuery();

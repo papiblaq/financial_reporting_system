@@ -120,6 +120,38 @@ namespace financial_reporting_system.Controllers
 
             return Json(headerIds);
         }
+        // for the message after sucessful saving
+        private string GetHeaderFormattedText(int headerId)
+        {
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    connection.Open();
+                    string query = "SELECT REF_CD, DESCRIPTION FROM ORG_FINANCIAL_STMNT_HEADER WHERE HEADER_ID = :HEADER_ID";
+                    using (var command = new OracleCommand(query, connection))
+                    {
+                        command.Parameters.Add(new OracleParameter("HEADER_ID", OracleDbType.Int32) { Value = headerId });
+
+                        using (var reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string ref_cd = reader["REF_CD"].ToString();
+                                string description = reader["DESCRIPTION"].ToString();
+                                return $"{ref_cd} ({description})";
+                            }
+                        }
+                    }
+                }
+            }
+            catch (OracleException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while fetching header details.");
+            }
+
+            return "Unknown Header";
+        }
 
         // POST: /StatementDetails/SaveData
         [HttpPost]
@@ -141,7 +173,6 @@ namespace financial_reporting_system.Controllers
                 // Repopulate dropdown lists after a failed validation
                 input.StatementTypes = GetStatementTypes();
                 input.AccountCategories = GetAccountCategories();
-                // Reinitialize empty lists for dropdowns
                 input.SheetIds = new List<SelectListItem>();
                 input.HeaderIds = new List<SelectListItem>();
 
@@ -158,9 +189,9 @@ namespace financial_reporting_system.Controllers
 
                     // Insert the record
                     string insertQuery = @"
-                        INSERT INTO ORG_FINANCIAL_STMNT_DETAIL 
-                        (STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
-                        VALUES (:STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
+                INSERT INTO ORG_FINANCIAL_STMNT_DETAIL 
+                (STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
+                VALUES (:STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
 
                     using (var insertCommand = new OracleCommand(insertQuery, connection))
                     {
@@ -175,10 +206,14 @@ namespace financial_reporting_system.Controllers
 
                         insertCommand.ExecuteNonQuery();
                     }
+
+                    // Fetch the formattedText for the selected HEADER_ID
+                    string formattedText = GetHeaderFormattedText(input.HEADER_ID);
+
+                    _logger.LogInformation("Data saved successfully for STMNT_ID: {STMNT_ID}, SHEET_ID: {SHEET_ID}", input.STMNT_ID, input.SHEET_ID);
+                    TempData["SuccessMessage"] = $"Successfully created details for statement header: {formattedText}";
                 }
 
-                _logger.LogInformation("Data saved successfully for STMNT_ID: {STMNT_ID}, SHEET_ID: {SHEET_ID}", input.STMNT_ID, input.SHEET_ID);
-                TempData["SuccessMessage"] = $"Created entry for statement ID {input.STMNT_ID} and sheet ID {input.SHEET_ID}";
                 return RedirectToAction("Index");
             }
             catch (OracleException ex)
@@ -189,7 +224,6 @@ namespace financial_reporting_system.Controllers
                 // Repopulate dropdown lists after a failed insertion
                 input.StatementTypes = GetStatementTypes();
                 input.AccountCategories = GetAccountCategories();
-                // Reinitialize empty lists for dropdowns
                 input.SheetIds = new List<SelectListItem>();
                 input.HeaderIds = new List<SelectListItem>();
 

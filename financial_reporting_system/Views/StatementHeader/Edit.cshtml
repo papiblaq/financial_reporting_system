@@ -16,16 +16,26 @@
                 <input type="hidden" name="HEADER_ID" value="@Model.HEADER_ID" />
                 <input type="hidden" name="STMNT_ID" value="@Model.STMNT_ID" />
                 <input type="hidden" name="SHEET_ID" value="@Model.SHEET_ID" />
-                <input type="hidden" name="GL_ACCT_CAT_CD" value="@Model.GL_ACCT_CAT_CD" />
                 <input type="hidden" name="SYS_CREATE_TS" value="@Model.SYS_CREATE_TS.ToString("yyyy-MM-ddTHH:mm:ss")" />
                 <input type="hidden" name="CREATED_BY" value="@Model.CREATED_BY" />
 
+                <!-- Syncfusion DropDownList for GL_ACCT_CAT_CD -->
+                <div class="mb-3">
+                    @Html.EJS().DropDownList("GL_ACCT_CAT_CD").Placeholder("Select Account Category").DataSource(Model.AccountCategories).Fields(new Syncfusion.EJ2.DropDowns.DropDownListFieldSettings { Text = "Text", Value = "Value" }).Value(Model.GL_ACCT_CAT_CD).FloatLabelType(Syncfusion.EJ2.Inputs.FloatLabelType.Auto).Render()
+                      
+                </div>
+
+                <!-- Syncfusion TextBox for REF_CD -->
                 <div class="mb-3">
                     @Html.EJS().TextBox("REF_CD").Placeholder("REF_CD").Value(Model?.REF_CD ?? "").FloatLabelType(Syncfusion.EJ2.Inputs.FloatLabelType.Auto).Render()
                 </div>
+
+                <!-- Syncfusion TextBox for DESCRIPTION -->
                 <div class="mb-3">
                     @Html.EJS().TextBox("DESCRIPTION").Placeholder("DESCRIPTION").Value(Model?.DESCRIPTION ?? "").FloatLabelType(Syncfusion.EJ2.Inputs.FloatLabelType.Auto).Render()
                 </div>
+
+                <!-- Submit Button -->
                 <div class="mb-3">
                     <input type="submit" value="Save" class="btn btn-success" />
                 </div>

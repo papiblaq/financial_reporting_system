@@ -1,9 +1,4 @@
-﻿@model List<financial_reporting_system.Controllers.Documentation.UserDefinedCellValues>
-
-@{
-    ViewData["Title"] = "Export Financial Data to Excel";
-}
-
+﻿
 <style>
     .container {
         margin: 20px;
@@ -128,6 +123,13 @@
             cursor: pointer;
         }
 </style>
+
+
+@model List<financial_reporting_system.Controllers.Documentation.UserDefinedCellValues>
+
+@{
+    ViewData["Title"] = "Export Financial Data to Excel";
+}
 
 <h2>@ViewData["Title"]</h2>
 
@@ -254,6 +256,17 @@
                     alert("An error occurred while checking saved values.");
                 }
             });
+        }
+
+        function updateSelectedDirectory(value) {
+            // Update the URL with the selected directory
+            window.location.href = '@Url.Action("Index", "Documentation")' + '?selectedDirectory=' + value;
+        }
+
+        function updateSelectedTemplate(value) {
+            // Update the URL with the selected template
+            var selectedDirectory = $("select[name='selectedDirectory']").val();
+            window.location.href = '@Url.Action("Index", "Documentation")' + '?selectedDirectory=' + selectedDirectory + '&selectedTemplate=' + value;
         }
 
         function updateSelectedDirectory(value) {
@@ -515,3 +528,4 @@
         }
     </script>
 }
+

@@ -28,7 +28,6 @@ namespace financial_reporting_system
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult SaveData(StatementInputModel input, IFormFile fileUpload)
         {
             if (!ModelState.IsValid)
@@ -54,6 +53,13 @@ namespace financial_reporting_system
                     StoreFilePathAndSheet(input.FilePath, fileUpload.FileName);
                 }
 
+                // Validate required fields
+                if (string.IsNullOrEmpty(input.REF_CD) || string.IsNullOrEmpty(input.DESCRIPTION) || string.IsNullOrEmpty(input.CREATED_BY))
+                {
+                    TempData["ErrorMessage"] = "One or more required fields are missing or invalid.";
+                    return View("Index", input);
+                }
+
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
@@ -61,8 +67,8 @@ namespace financial_reporting_system
                     // Insert the record
                     string insertQuery = @"
                 INSERT INTO ORG_FIN_STATEMENT_TYPE 
-                (REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
-                VALUES (:REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
+                (REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, EXCEL_SHEET) 
+                VALUES (:REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :EXCEL_SHEET)";
 
                     using (var insertCommand = new OracleCommand(insertQuery, connection))
                     {
@@ -70,6 +76,7 @@ namespace financial_reporting_system
                         AddParameter(insertCommand, "DESCRIPTION", OracleDbType.Varchar2, input.DESCRIPTION);
                         AddParameter(insertCommand, "SYS_CREATE_TS", OracleDbType.TimeStamp, input.SYS_CREATE_TS);
                         AddParameter(insertCommand, "CREATED_BY", OracleDbType.Varchar2, input.CREATED_BY);
+                        AddParameter(insertCommand, "EXCEL_SHEET", OracleDbType.Varchar2, input.EXCEL_SHEET);
 
                         insertCommand.ExecuteNonQuery();
                     }
@@ -81,7 +88,7 @@ namespace financial_reporting_system
             catch (OracleException ex)
             {
                 TempData["ErrorMessage"] = "Database error occurred while saving statement data. Please try again.";
-                _logger.LogError(ex, "Database error occurred while saving statement data.");
+                _logger.LogError(ex, "Database error occurred while saving statement data. Oracle Error Code: {ErrorCode}, Message: {Message}", ex.Number, ex.Message);
                 return View("Index", input);
             }
             catch (Exception ex)
@@ -166,6 +173,18 @@ namespace financial_reporting_system
 
             // New properties for SHEET_ID and STMNT_ID
             public int STMNT_ID { get; set; }
+
+            // New property for Excel sheet name
+            public string EXCEL_SHEET { get; set; }
+
+            // Method to set the Excel sheet name
+            public void SetExcelSheetName(IFormFile fileUpload)
+            {
+                if (fileUpload != null && fileUpload.Length > 0)
+                {
+                    EXCEL_SHEET = fileUpload.FileName;
+                }
+            }
         }
 
         public class StatementType

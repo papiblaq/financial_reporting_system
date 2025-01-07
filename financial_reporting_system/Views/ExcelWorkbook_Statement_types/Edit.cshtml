@@ -1,0 +1,178 @@
+﻿@using Syncfusion.EJ2
+@model financial_reporting_system.Controllers.ExcelWorkbook_Statement_typesController.StatementInputModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Edit Statement Type";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <!-- Custom CSS for the form -->
+    <style>
+        /* Center the <h1> heading */
+        .header-container {
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            height: 100px; /* Adjust height as needed */
+            margin-bottom: 20px; /* Space below the header */
+        }
+
+        /* Custom styles for the form */
+        form {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+            form .mb-3 {
+                margin-bottom: 1.5rem;
+            }
+
+            form label {
+                font-weight: bold;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+            form input.form-control {
+                padding: 10px;
+                font-size: 1rem;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                width: 100%;
+                transition: border-color 0.3s, box-shadow 0.3s;
+            }
+
+                form input.form-control:focus {
+                    border-color: #258cfb;
+                    box-shadow: 0 0 5px rgba(37, 140, 251, 0.5);
+                    outline: none;
+                }
+
+            form input[type="submit"] {
+                width: 100%;
+                padding: 10px;
+                font-size: 1.2rem;
+                font-weight: bold;
+                border: none;
+                border-radius: 5px;
+                background-color: #28a745;
+                color: white;
+                cursor: pointer;
+                transition: background-color 0.3s, transform 0.2s;
+            }
+
+                form input[type="submit"]:hover {
+                    background-color: #218838;
+                    transform: scale(1.05);
+                }
+
+        /* Error message styling */
+        .error {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none; /* Initially hidden */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Centered <h1> heading -->
+        <div class="header-container">
+            <h1>Editing the Statement Types for @Model.EXCEL_SHEET</h1>
+        </div>
+        <hr />
+
+        <form asp-action="Edit" asp-route-id="@Model.STMNT_ID" method="post" onsubmit="logFormData(event)">
+            <!-- Hidden input fields -->
+            <input type="hidden" name="STMNT_ID" value="@Model.STMNT_ID" />
+            <input type="hidden" name="SYS_CREATE_TS" value="@Model.SYS_CREATE_TS.ToString("yyyy-MM-ddTHH:mm:ss")" />
+            <input type="hidden" name="CREATED_BY" value="@Model.CREATED_BY" />
+            <input type="hidden" name="EXCEL_WORKBOOK" value="@Model.EXCEL_WORKBOOK" />
+            <input type="hidden" name="EXCEL_SHEET" value="@Model.EXCEL_SHEET" />
+            <input type="hidden" name="FilePath" value="@Model.FilePath" />
+
+            <div class="mb-3">
+                <label for="REF_CD">REF CD</label>
+                <input type="text" id="REF_CD" name="REF_CD" class="form-control" placeholder="REF CD" value="@Model.REF_CD" required>
+                <div class="error" id="REF_CD_error">Please enter a valid REF CD.</div>
+            </div>
+            <div class="mb-3">
+                <label for="DESCRIPTION">DESCRIPTION</label>
+                <input type="text" id="DESCRIPTION" name="DESCRIPTION" class="form-control" placeholder="DESCRIPTION" value="@Model.DESCRIPTION" required>
+                <div class="error" id="DESCRIPTION_error">Please enter a valid DESCRIPTION.</div>
+            </div>
+            <div class="mb-3">
+                <input type="submit" value="Save" class="btn btn-success">
+            </div>
+        </form>
+    </div>
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+        <script>
+            function logFormData(event) {
+                event.preventDefault(); // Prevent the form from submitting immediately
+
+                // Log the STMNT_ID
+                console.log("STMNT_ID: @Model.STMNT_ID");
+
+                // Log the form data
+                var formData = new FormData(event.target);
+                for (var pair of formData.entries()) {
+                    console.log(pair[0] + ": " + pair[1]);
+                }
+
+                // Validate form fields
+                var isValid = true;
+                if (!formData.get('REF_CD')) {
+                    document.getElementById('REF_CD_error').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('REF_CD_error').style.display = 'none';
+                }
+
+                if (!formData.get('DESCRIPTION')) {
+                    document.getElementById('DESCRIPTION_error').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('DESCRIPTION_error').style.display = 'none';
+                }
+
+                if (!isValid) {
+                    toastr.error('Please fill all required fields.', 'Validation Error', { timeOut: 2000 });
+                    return;
+                }
+
+                // Display Toastr notification
+                toastr.success('Data saved successfully!', 'Success', { timeOut: 2000 });
+
+                // Simulate a delay before submission
+                setTimeout(function () {
+                    event.target.submit();
+                }, 2000);
+            }
+        </script>
+    }
+</body>
+</html>

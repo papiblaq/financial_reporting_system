@@ -1,0 +1,173 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "View Workbook Sheets";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+        }
+
+        .sheet-details {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>@ViewData["Title"]</h2>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">@ViewBag.Error</div>
+        }
+
+        <form method="get" asp-action="GetSheetDetails" onsubmit="console.log('Form submitted');">
+            <div class="form-group">
+                <label for="selectedWorkbook">Select Workbook:</label>
+                <select name="selectedWorkbook" class="form-control" onchange="updateSheets()">
+                    <option value="">-- Select Workbook --</option>
+                    @if (ViewBag.Workbooks != null)
+                    {
+                        @foreach (var workbook in ViewBag.Workbooks)
+                        {
+                            <option value="@workbook" selected="@(workbook == ViewBag.SelectedWorkbook ? "selected" : null)">@workbook</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="selectedSheet">Select Sheet:</label>
+                <select name="selectedSheet" class="form-control">
+                    <option value="">-- Select Sheet --</option>
+                    @if (ViewBag.Sheets != null)
+                    {
+                        @foreach (var sheet in ViewBag.Sheets)
+                        {
+                            <option value="@sheet" selected="@(sheet == ViewBag.SelectedSheet ? "selected" : null)">@sheet</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <button type="submit" class="btn">View Sheet Details</button>
+        </form>
+
+        <!-- Add the "Excel Analysis" Button -->
+        <div class="mt-4">
+            <a href="@Url.Action("Index","ExcelWorkbook_Statement_types")" class="btn btn-success">Excel Analysis</a>
+        </div>
+
+        @if (ViewBag.SheetDetails != null)
+        {
+            <div class="sheet-details">
+                <h3>Sheet: @ViewBag.SelectedSheet</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cell Address</th>
+                            <th>Value</th>
+                            <th>Formula</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cell in ViewBag.SheetDetails)
+                        {
+                            <tr>
+                                <td>@cell.CellAddress</td>
+                                <td>@cell.Value</td>
+                                <td>@cell.Formula</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <script>
+        function updateSheets() {
+            const selectedWorkbook = document.querySelector('select[name="selectedWorkbook"]').value;
+            if (selectedWorkbook) {
+                window.location.href = `@Url.Action("ViewSheets", "Excel")?selectedWorkbook=${selectedWorkbook}`;
+            }
+        }
+    </script>
+</body>
+</html>

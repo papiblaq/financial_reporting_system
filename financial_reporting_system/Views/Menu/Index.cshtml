@@ -1,0 +1,186 @@
+﻿@{
+    ViewData["Title"] = "menu";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+
+        h2 {
+            color: #343a40;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            }
+
+        .card-header {
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-text {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            border-radius: 5px;
+            font-weight: bold;
+            padding: 10px 20px;
+            transition: background-color 0.3s ease;
+        }
+
+            .btn:hover {
+                opacity: 0.9;
+            }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .row {
+            margin: 0 -15px;
+        }
+
+        .col-md-3 {
+            padding: 15px;
+        }
+
+        #loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">Menu</h2>
+        <div class="row">
+            <!-- Card 1: Create Excel Data -->
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-header bg-primary text-white">
+                        Create Excel Data
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Generate Excel data for report purposes.</p>
+                        <button class="btn btn-primary action-button" data-url="@Url.Action("Index", "Statement_types")">Create</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Card 2: Extract Predefined Excel Sheets -->
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-header bg-success text-white">
+                        Extract Excel Sheets
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Extract data from predefined Excel sheets.</p>
+                        <button class="btn btn-success action-button" data-url="@Url.Action("ExtractExcelSheets", "Menu")">Extract</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Card 3: Create Excel Workbook Data -->
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-header bg-warning text-white">
+                        Create Workbook Data
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Generate Excel workbooks for reporting data.</p>
+                        <button class="btn btn-warning action-button" data-url="@Url.Action("CreateWorkbookData", "Menu")">Create</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Card 4: Extract Predefined Excel Workbooks -->
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-header bg-danger text-white">
+                        Extract Workbooks
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Extract data from predefined workbooks.</p>
+                        <button class="btn btn-danger action-button" data-url="@Url.Action("ExtractWorkbooks", "Menu")">Extract</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('.action-button').on('click', function () {
+                var url = $(this).data('url');
+
+                // Show the loading spinner
+                $('#loading-spinner').fadeIn();
+
+                // Redirect to the URL after a short delay (optional)
+                setTimeout(function () {
+                    window.location.href = url;
+                }, 500); // 500ms delay to show the spinner
+            });
+        });
+    </script>
+</body>
+</html>

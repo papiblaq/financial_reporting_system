@@ -1,0 +1,220 @@
+﻿@model List<financial_reporting_system.Controllers.ExcelWorkbookMappingController.Mapping>
+@{
+    Layout = null;
+    ViewData["Title"] = "Mapped GL Accounts";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.syncfusion.com/ej2/20.4.38/material.css" />
+    <link href="https://cdn.syncfusion.com/ej2/26.1.35/bootstrap5-dark.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+    <style>
+        /* Custom CSS for the grid */
+        .container {
+            margin-top: 50px;
+        }
+
+        .grid-title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            color: #343a40;
+        }
+
+        .white-grid {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .e-grid .e-rowcell {
+            padding: 10px;
+        }
+
+        .e-grid .e-headercell {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .e-grid .e-pager {
+            border-top: 1px solid #dee2e6;
+            padding: 10px;
+        }
+
+        .no-a-decoration {
+            text-decoration: none;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .fa-lg {
+            font-size: 1.25rem;
+        }
+
+        .text-danger {
+            color: #dc3545;
+        }
+
+        .text-success {
+            color: #28a745;
+        }
+
+        .d-flex {
+            display: flex;
+        }
+
+        .flex-row {
+            flex-direction: row;
+        }
+
+        .justify-content-start {
+            justify-content: flex-start;
+        }
+
+        /* Button Container Styles */
+        .button-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .custom-delete-button {
+            background-color: #d9534f; /* Red background color */
+            color: white; /* White text color */
+            border: none; /* No border */
+            padding: 10px 20px; /* Padding for spacing */
+            font-size: 16px; /* Font size */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Pointer cursor on hover */
+            transition: background-color 0.3s ease; /* Smooth transition effect */
+        }
+
+            .custom-delete-button:hover {
+                background-color: #c9302c; /* Darker red on hover */
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Back Button and Grid Title Container -->
+        <div class="d-flex align-items-center mb-3">
+            <!-- Back Button -->
+            <a href="/ExcelWorkbookMapping/Index" class="btn btn-secondary">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </a>
+            <!-- Grid Title (Centered) -->
+            <h1 class="grid-title mb-0 mx-auto">Mapped GL Accounts</h1>
+        </div>
+
+        <!-- Button Container -->
+        <div class="button-container">
+            <button id="deleteButton" class="custom-delete-button" onclick="deleteSelectedRows()">
+                <i class="fa-solid fa-trash"></i> Delete Selected Rows
+            </button>
+        </div>
+
+        <!-- Syncfusion Grid -->
+        <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+            <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+            <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+            <e-grid-columns>
+                <e-grid-column type="checkbox" width="50"></e-grid-column>
+                <e-grid-column field="MAPPING_ID" headerText="Mapping ID" textAlign="Right" width="120"></e-grid-column>
+                <e-grid-column field="DETAIL_ID" headerText="Detail ID" textAlign="Right" width="120"></e-grid-column>
+                <e-grid-column field="STMNT_ID" headerText="Statement ID" textAlign="Right" width="120"></e-grid-column>
+                <e-grid-column field="SHEET_ID" headerText="Sheet ID" textAlign="Right" width="120"></e-grid-column>
+                <e-grid-column field="HEADER_ID" headerText="Header ID" textAlign="Right" width="120"></e-grid-column>
+                <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
+                <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
+                <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="150" format="yMd"></e-grid-column>
+                <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="120"></e-grid-column>
+                <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="120"></e-grid-column>
+                <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="300"></e-grid-column>
+                <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="120"></e-grid-column>
+            </e-grid-columns>
+        </ejs-grid>
+    </div>
+
+    <!-- Include jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Include Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <!-- Syncfusion Scripts -->
+    <script src="https://cdn.syncfusion.com/ej2/20.4.38/dist/ej2.min.js"></script>
+
+    <script>
+        // Function to delete selected rows
+        function deleteSelectedRows() {
+            var grid = document.getElementById('grid').ej2_instances[0];
+            var selectedRows = grid.getSelectedRecords();
+
+            if (selectedRows.length === 0) {
+                toastr.warning('Please select at least one row to delete.');
+                return;
+            }
+
+            var mappingIds = selectedRows.map(row => row.MAPPING_ID);
+
+            fetch('/ExcelWorkbookMapping/DeleteMappings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mappingIds)
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            }).then(data => {
+                if (data.error) {
+                    toastr.error(data.error);
+                } else {
+                    toastr.success(data.message);
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 1000);
+                }
+            }).catch(error => {
+                toastr.error('An error occurred while deleting the rows.');
+            });
+        }
+
+        // Initialize Toastr
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+    </script>
+
+    <!-- Syncfusion ASP.NET Core Script Manager -->
+    <ejs-scripts></ejs-scripts>
+</body>
+</html>

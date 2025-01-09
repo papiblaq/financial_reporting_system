@@ -1,7 +1,7 @@
-﻿@model financial_reporting_system.Controllers.ExcelWorkbook_Statement_SheetController.SaveSheetInputModel
+﻿@model financial_reporting_system.Controllers.ExcelWorkbook_Statement_HeaderController.SheetInputModel
 @{
     Layout = null;
-    ViewData["Title"] = "Sheet Data Form";
+    ViewData["Title"] = "Header Data Form";
 }
 
 <!DOCTYPE html>
@@ -12,9 +12,6 @@
     <title>@ViewData["Title"]</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Custom CSS for the profile card */
-
-
 
 
         body {
@@ -25,8 +22,6 @@
         .container {
             margin-top: 50px;
         }
-
-
 
         .breadcrumb {
             display: flex; /* Arrange breadcrumb items in a horizontal row */
@@ -57,8 +52,6 @@
 
 
 
-
-
         .profile-card {
             max-width: 600px;
             margin: 50px auto;
@@ -66,19 +59,7 @@
             background-color: #ffffff;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease;
         }
-
-            .profile-card:hover {
-                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            }
-
-            .profile-card h1 {
-                font-size: 24px;
-                color: #333;
-                text-align: center;
-                margin-bottom: 20px;
-            }
 
         .form-group label {
             font-weight: 500;
@@ -90,13 +71,7 @@
             border: 1px solid #ddd;
             padding: 10px;
             font-size: 14px;
-            transition: border-color 0.3s ease;
         }
-
-            .form-control:focus {
-                border-color: #007bff;
-                box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-            }
 
         .btn-primary {
             background-color: #007bff;
@@ -104,25 +79,7 @@
             padding: 10px 20px;
             font-size: 14px;
             border-radius: 5px;
-            transition: background-color 0.3s ease;
         }
-
-            .btn-primary:hover {
-                background-color: #0056b3;
-            }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-            .btn-secondary:hover {
-                background-color: #5a6268;
-            }
 
         .text-danger {
             font-size: 12px;
@@ -144,8 +101,8 @@
         </nav>
 
         <div class="profile-card">
-            <h1>Enter Sheet Data</h1>
-            <form method="post" asp-action="SaveData" class="mt-4" id="sheetForm">
+            <h1>Enter Header Data</h1>
+            <form method="post" asp-action="SaveData" class="mt-4">
                 <!-- Workbook Dropdown -->
                 <div class="form-group">
                     <label for="SelectedWorkbook">Workbook</label>
@@ -158,58 +115,69 @@
                     </select>
                 </div>
 
-                <!-- Sheet Dropdown -->
+                <!-- Excel Sheet Dropdown -->
                 <div class="form-group">
-                    <label asp-for="EXCEL_SHEET"></label>
-                    <select asp-for="EXCEL_SHEET" id="ExcelSheetDropdown" class="form-control" required>
+                    <label for="EXCEL_SHEET">Excel Sheet</label>
+                    <select id="ExcelSheetDropdown" name="EXCEL_SHEET" class="form-control" required>
                         <option value="">-- Select Sheet --</option>
                     </select>
-                    <span asp-validation-for="EXCEL_SHEET" class="text-danger"></span>
+                    <span class="text-danger" data-valmsg-for="EXCEL_SHEET" data-valmsg-replace="true"></span>
                 </div>
 
-                <!-- Hidden field for STMNT_ID -->
-                <input type="hidden" asp-for="STMNT_ID" id="StmntId" />
+                <!-- Available Sheets Dropdown -->
+                <div class="form-group">
+                    <label for="SHEET_ID">Available Sheets</label>
+                    <select id="AvailableSheets" name="SHEET_ID" class="form-control">
+                        <option value="">-- Select Sheet --</option>
+                    </select>
+                    <span class="text-danger" data-valmsg-for="SHEET_ID" data-valmsg-replace="true"></span>
+                </div>
+
+                <!-- GL Account Category Dropdown -->
+                <div class="form-group">
+                    <label for="GL_ACCT_CAT_CD">GL Account Category</label>
+                    <select id="GL_ACCT_CAT_CD" name="GL_ACCT_CAT_CD" class="form-control" required>
+                        <option value="">-- Select GL Account Category --</option>
+                        @foreach (var category in ViewBag.AccountCategories)
+                        {
+                            <option value="@category.Value">@category.Text</option>
+                        }
+                    </select>
+                    <span class="text-danger" data-valmsg-for="GL_ACCT_CAT_CD" data-valmsg-replace="true"></span>
+                </div>
 
                 <!-- Other form fields -->
                 <div class="form-group">
-                    <label asp-for="REF_CD"></label>
-                    <input asp-for="REF_CD" class="form-control" required />
-                    <span asp-validation-for="REF_CD" class="text-danger"></span>
+                    <label for="REF_CD">Reference Code</label>
+                    <input id="REF_CD" name="REF_CD" class="form-control" required />
+                    <span class="text-danger" data-valmsg-for="REF_CD" data-valmsg-replace="true"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="DESCRIPTION"></label>
-                    <input asp-for="DESCRIPTION" class="form-control" required />
-                    <span asp-validation-for="DESCRIPTION" class="text-danger"></span>
+                    <label for="DESCRIPTION">Description</label>
+                    <input id="DESCRIPTION" name="DESCRIPTION" class="form-control" required />
+                    <span class="text-danger" data-valmsg-for="DESCRIPTION" data-valmsg-replace="true"></span>
                 </div>
 
                 <div class="form-group">
-                    <label asp-for="CREATED_BY"></label>
-                    <input asp-for="CREATED_BY" class="form-control" required />
-                    <span asp-validation-for="CREATED_BY" class="text-danger"></span>
+                    <label for="CREATED_BY">Created By</label>
+                    <input id="CREATED_BY" name="CREATED_BY" class="form-control" required />
+                    <span class="text-danger" data-valmsg-for="CREATED_BY" data-valmsg-replace="true"></span>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Submit</button>
-                <a asp-action="WorkbookGridView" class="btn btn-secondary">Available Sheets</a>
+                <!-- Hidden field for STMNT_ID -->
+                <input type="hidden" id="StmntId" name="STMNT_ID" />
+
+                <!-- Submit and Available Headers Buttons -->
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <a href="/ExcelWorkbook_Statement_Header/HeaderGridView" class="btn btn-secondary">Available Headers</a>
+                </div>
             </form>
         </div>
     </div>
 
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <script type="text/javascript">
-            alert('@TempData["ErrorMessage"]');
-        </script>
-    }
-
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <script type="text/javascript">
-            alert('@TempData["SuccessMessage"]');
-        </script>
-    }
-
-    <!-- JavaScript to populate sheets dropdown dynamically -->
+    <!-- JavaScript to populate dropdowns dynamically -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function () {
@@ -218,18 +186,17 @@
                 var selectedWorkbook = $(this).val();
                 if (selectedWorkbook) {
                     // Fetch sheets for the selected workbook
-                    $.getJSON('/ExcelWorkbook_Statement_Sheet/GetSheetsForWorkbook', { workbook: selectedWorkbook }, function (data) {
+                    $.getJSON('/ExcelWorkbook_Statement_Header/GetSheetsForWorkbook', { workbook: selectedWorkbook }, function (data) {
                         var sheetsDropdown = $('#ExcelSheetDropdown');
                         sheetsDropdown.empty();
                         sheetsDropdown.append('<option value="">-- Select Sheet --</option>');
                         $.each(data.sheets, function (index, item) {
                             sheetsDropdown.append($('<option></option>').val(item.value).text(item.text));
                         });
-                    }).fail(function (jqXHR, textStatus, errorThrown) {
-                        console.error("Error fetching sheets:", textStatus, errorThrown);
                     });
                 } else {
                     $('#ExcelSheetDropdown').empty().append('<option value="">-- Select Sheet --</option>');
+                    $('#AvailableSheets').empty().append('<option value="">-- Select Sheet --</option>');
                 }
             });
 
@@ -238,27 +205,55 @@
                 var selectedSheet = $(this).val();
                 if (selectedSheet) {
                     // Fetch STMNT_ID for the selected sheet
-                    $.getJSON('/ExcelWorkbook_Statement_Sheet/GetStmntIdByExcelSheet', { excelSheet: selectedSheet }, function (data) {
-                        console.log("Fetched STMNT_ID:", data.stmntId); // Debugging
-                        $('#StmntId').val(data.stmntId); // Set the STMNT_ID in the hidden field
-                    }).fail(function (jqXHR, textStatus, errorThrown) {
-                        console.error("Error fetching STMNT_ID:", textStatus, errorThrown);
+                    $.getJSON('/ExcelWorkbook_Statement_Header/GetStmntIdByExcelSheet', { excelSheet: selectedSheet }, function (data) {
+                        var excelStmntId = data.excelStmntId; // Use the returned excelStmntId
+                        if (excelStmntId) {
+                            // Set the STMNT_ID in the hidden field
+                            $('#StmntId').val(excelStmntId);
+
+                            // Fetch Sheet IDs based on STMNT_ID
+                            $.post('/ExcelWorkbook_Statement_Header/GetSheetIdsByStatementId', { stmntId: excelStmntId }, function (data) {
+                                var availableSheetsDropdown = $('#AvailableSheets');
+                                availableSheetsDropdown.empty();
+                                availableSheetsDropdown.append('<option value="">-- Select Sheet --</option>');
+                                $.each(data, function (index, item) {
+                                    availableSheetsDropdown.append($('<option></option>').val(item.value).text(item.text));
+                                });
+                            });
+                        } else {
+                            console.error("No STMNT_ID found for the selected sheet.");
+                        }
                     });
                 } else {
                     $('#StmntId').val(''); // Clear the STMNT_ID if no sheet is selected
+                    $('#AvailableSheets').empty().append('<option value="">-- Select Sheet --</option>');
                 }
             });
 
-            // Validate STMNT_ID before form submission
-            $('#sheetForm').submit(function (event) {
-                var stmntId = $('#StmntId').val();
-                console.log("STMNT_ID before submission:", stmntId); // Debugging
-
-                if (!stmntId || stmntId <= 0) {
-                    alert("Invalid STMNT_ID. Please select a valid sheet.");
-                    event.preventDefault(); // Prevent form submission
+            // When the Available Sheets dropdown changes
+            $('#AvailableSheets').change(function () {
+                var selectedSheetId = $(this).val();
+                if (selectedSheetId) {
+                    // Perform any additional logic when a sheet is selected from the Available Sheets dropdown
+                    console.log("Selected Sheet ID:", selectedSheetId);
                 }
             });
+
+            // Display success message
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>
+                        alert('@TempData["SuccessMessage"]');
+            </text>
+        }
+
+            // Display error message
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>
+                        alert('@TempData["ErrorMessage"]');
+            </text>
+        }
         });
     </script>
 </body>

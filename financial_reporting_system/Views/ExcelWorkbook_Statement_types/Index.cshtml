@@ -23,15 +23,34 @@
         }
 
         .breadcrumb {
-            background-color: #e9ecef;
-            padding: 10px 15px;
+            display: flex; /* Arrange breadcrumb items in a horizontal row */
+            flex-wrap: nowrap; /* Prevent wrapping to the next line */
+            background-color: #f8f9fa; /* Optional: Background color for breadcrumb */
+            padding: 8px 16px;
             border-radius: 5px;
             margin-bottom: 20px;
+            list-style: none; /* Remove default list styling */
         }
 
-        .breadcrumb-item.active {
-            color: #6c757d;
+        .breadcrumb-item {
+            margin-right: 8px; /* Space between breadcrumb items */
+            font-size: 1rem;
+            color: #007bff; /* Default link color */
         }
+
+            .breadcrumb-item a {
+                text-decoration: none; /* Remove underline from links */
+                color: #007bff; /* Link color */
+                transition: color 0.3s ease; /* Smooth hover transition */
+            }
+
+                .breadcrumb-item a:hover {
+                    color: #0056b3; /* Darker shade on hover */
+                }
+
+
+
+
 
         .profile-card {
             border: none;
@@ -109,12 +128,14 @@
         <!-- Breadcrumb Navigation -->
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement types</a></li>
+                <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Statement types</a></li>
                 <li class="breadcrumb-item" id="step2"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement Sheet</a></li>
-                <li class="breadcrumb-item" id="step3"><a href="#" onclick="goToStep('step3')">Statement header</a></li>
-                <li class="breadcrumb-item" id="step4"><a href="#" onclick="goToStep('step4')">Statement details</a></li>
+                <li class="breadcrumb-item" id="step3"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Statement header</a></li>
+                <li class="breadcrumb-item" id="step4"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Statement details</a></li>
+                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Excel mappings</a></li>
             </ol>
         </nav>
+
 
         <!-- Initial Form -->
         <div id="initialForm" class="profile-card">

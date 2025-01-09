@@ -1,0 +1,319 @@
+﻿@model financial_reporting_system.Controllers.ExcelWorkbook_Statement_DetailsController.SheetInputModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Detail Data Form";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+
+
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+
+        .breadcrumb {
+            display: flex; /* Arrange breadcrumb items in a horizontal row */
+            flex-wrap: nowrap; /* Prevent wrapping to the next line */
+            background-color: #f8f9fa; /* Optional: Background color for breadcrumb */
+            padding: 8px 16px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            list-style: none; /* Remove default list styling */
+        }
+
+        .breadcrumb-item {
+            margin-right: 8px; /* Space between breadcrumb items */
+            font-size: 1rem;
+            color: #007bff; /* Default link color */
+        }
+
+            .breadcrumb-item a {
+                text-decoration: none; /* Remove underline from links */
+                color: #007bff; /* Link color */
+                transition: color 0.3s ease; /* Smooth hover transition */
+            }
+
+                .breadcrumb-item a:hover {
+                    color: #0056b3; /* Darker shade on hover */
+                }
+
+
+
+
+
+        .container {
+            margin-top: 50px;
+        }
+
+        .profile-card {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-control {
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+
+        .text-danger {
+            font-size: 12px;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Statement types</a></li>
+                <li class="breadcrumb-item" id="step2"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement Sheet</a></li>
+                <li class="breadcrumb-item" id="step3"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Statement header</a></li>
+                <li class="breadcrumb-item" id="step4"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Statement details</a></li>
+                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Excel mappings</a></li>
+            </ol>
+        </nav>
+
+        <div class="profile-card">
+            <h1>Enter Detail Data</h1>
+
+            <form method="post" asp-action="SaveData" class="mt-4">
+                <!-- Workbook Dropdown -->
+                <div class="form-group">
+                    <label for="SelectedWorkbook">Workbook</label>
+                    <select id="SelectedWorkbook" class="form-control">
+                        <option value="">-- Select Workbook --</option>
+                        @foreach (var workbook in ViewBag.Workbooks)
+                        {
+                            <option value="@workbook.Value">@workbook.Text</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Excel Sheet Dropdown -->
+                <div class="form-group">
+                    <label for="EXCEL_SHEET">Excel Sheet</label>
+                    <select id="ExcelSheetDropdown" name="EXCEL_SHEET" class="form-control" required>
+                        <option value="">-- Select Sheet --</option>
+                    </select>
+                    <span class="text-danger" data-valmsg-for="EXCEL_SHEET" data-valmsg-replace="true"></span>
+                </div>
+
+                <!-- Available Sheets Dropdown -->
+                <div class="form-group">
+                    <label for="SHEET_ID">Available Sheets</label>
+                    <select id="AvailableSheets" name="SHEET_ID" class="form-control">
+                        <option value="">-- Select Sheet --</option>
+                    </select>
+                    <span class="text-danger" data-valmsg-for="SHEET_ID" data-valmsg-replace="true"></span>
+                </div>
+
+                <!-- Headers Dropdown -->
+                <div class="form-group">
+                    <label for="HEADER_ID">Headers</label>
+                    <select id="HeadersDropdown" class="form-control" required>
+                        <option value="">-- Select Header --</option>
+                    </select>
+                    <span class="text-danger" data-valmsg-for="HEADER_ID" data-valmsg-replace="true"></span>
+                </div>
+
+                <!-- Hidden field for HEADER_ID -->
+                <input type="hidden" id="SelectedHeaderId" name="HEADER_ID" />
+
+                <!-- GL Account Category Dropdown -->
+                <div class="form-group">
+                    <label for="GL_ACCT_CAT_CD">GL Account Category</label>
+                    <select id="GL_ACCT_CAT_CD" name="GL_ACCT_CAT_CD" class="form-control" required>
+                        <option value="">-- Select GL Account Category --</option>
+                        @foreach (var category in ViewBag.AccountCategories)
+                        {
+                            <option value="@category.Value">@category.Text</option>
+                        }
+                    </select>
+                    <span class="text-danger" data-valmsg-for="GL_ACCT_CAT_CD" data-valmsg-replace="true"></span>
+                </div>
+
+                <!-- Other form fields -->
+                <div class="form-group">
+                    <label for="REF_CD">Reference Code</label>
+                    <input id="REF_CD" name="REF_CD" class="form-control" required />
+                    <span class="text-danger" data-valmsg-for="REF_CD" data-valmsg-replace="true"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="DESCRIPTION">Description</label>
+                    <input id="DESCRIPTION" name="DESCRIPTION" class="form-control" required />
+                    <span class="text-danger" data-valmsg-for="DESCRIPTION" data-valmsg-replace="true"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="CREATED_BY">Created By</label>
+                    <input id="CREATED_BY" name="CREATED_BY" class="form-control" required />
+                    <span class="text-danger" data-valmsg-for="CREATED_BY" data-valmsg-replace="true"></span>
+                </div>
+
+                <!-- Hidden field for STMNT_ID -->
+                <input type="hidden" id="StmntId" name="STMNT_ID" />
+
+                <!-- Submit Button -->
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <a href="/ExcelWorkbook_Statement_Details/DetailGridView" class="btn btn-secondary">Available details</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript to populate dropdowns dynamically -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            console.log("Document is ready."); // Debugging statement
+
+            // When the workbook dropdown changes
+            $('#SelectedWorkbook').change(function () {
+                console.log("Workbook dropdown changed."); // Debugging statement
+                var selectedWorkbook = $(this).val();
+                if (selectedWorkbook) {
+                    console.log("Fetching sheets for workbook:", selectedWorkbook); // Debugging statement
+                    // Fetch sheets for the selected workbook
+                    $.getJSON('/ExcelWorkbook_Statement_Details/GetSheetsForWorkbook', { workbook: selectedWorkbook }, function (data) {
+                        console.log("Sheets fetched:", data); // Debugging statement
+                        var sheetsDropdown = $('#ExcelSheetDropdown');
+                        sheetsDropdown.empty();
+                        sheetsDropdown.append('<option value="">-- Select Sheet --</option>');
+                        $.each(data.sheets, function (index, item) {
+                            sheetsDropdown.append($('<option></option>').val(item.value).text(item.text));
+                        });
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        console.error("Error fetching sheets:", textStatus, errorThrown); // Debugging statement
+                    });
+                } else {
+                    $('#ExcelSheetDropdown').empty().append('<option value="">-- Select Sheet --</option>');
+                    $('#AvailableSheets').empty().append('<option value="">-- Select Sheet --</option>');
+                    $('#HeadersDropdown').empty().append('<option value="">-- Select Header --</option>');
+                }
+            });
+
+            // When the Excel sheet dropdown changes
+            $('#ExcelSheetDropdown').change(function () {
+                console.log("Excel sheet dropdown changed."); // Debugging statement
+                var selectedSheet = $(this).val();
+                if (selectedSheet) {
+                    console.log("Fetching STMNT_ID for sheet:", selectedSheet); // Debugging statement
+                    // Fetch STMNT_ID for the selected sheet
+                    $.getJSON('/ExcelWorkbook_Statement_Details/GetStmntIdByExcelSheet', { excelSheet: selectedSheet }, function (data) {
+                        console.log("STMNT_ID fetched:", data); // Debugging statement
+                        var excelStmntId = data.excelStmntId; // Use the returned excelStmntId
+                        if (excelStmntId) {
+                            // Set the STMNT_ID in the hidden field
+                            $('#StmntId').val(excelStmntId);
+
+                            // Fetch Sheet IDs based on STMNT_ID
+                            $.post('/ExcelWorkbook_Statement_Details/GetSheetIdsByStatementId', { stmntId: excelStmntId }, function (data) {
+                                console.log("Sheet IDs fetched:", data); // Debugging statement
+                                var availableSheetsDropdown = $('#AvailableSheets');
+                                availableSheetsDropdown.empty();
+                                availableSheetsDropdown.append('<option value="">-- Select Sheet --</option>');
+                                $.each(data, function (index, item) {
+                                    availableSheetsDropdown.append($('<option></option>').val(item.value).text(item.text));
+                                });
+                            }).fail(function (jqXHR, textStatus, errorThrown) {
+                                console.error("Error fetching sheet IDs:", textStatus, errorThrown); // Debugging statement
+                            });
+                        } else {
+                            console.error("No STMNT_ID found for the selected sheet.");
+                        }
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        console.error("Error fetching STMNT_ID:", textStatus, errorThrown); // Debugging statement
+                    });
+                } else {
+                    $('#StmntId').val(''); // Clear the STMNT_ID if no sheet is selected
+                    $('#AvailableSheets').empty().append('<option value="">-- Select Sheet --</option>');
+                    $('#HeadersDropdown').empty().append('<option value="">-- Select Header --</option>');
+                }
+            });
+
+            // When the Available Sheets dropdown changes
+            $('#AvailableSheets').change(function () {
+                console.log("Available Sheets dropdown changed."); // Debugging statement
+                var selectedSheetId = $(this).val();
+                if (selectedSheetId) {
+                    console.log("Fetching headers for sheet ID:", selectedSheetId); // Debugging statement
+                    // Fetch Headers based on Sheet ID
+                    $.post('/ExcelWorkbook_Statement_Details/GetHeadersBySheetId', { sheetId: selectedSheetId }, function (data) {
+                        console.log("Headers fetched:", data); // Debugging statement
+                        var headersDropdown = $('#HeadersDropdown');
+                        headersDropdown.empty();
+                        headersDropdown.append('<option value="">-- Select Header --</option>');
+                        $.each(data, function (index, item) {
+                            headersDropdown.append($('<option></option>').val(item.value).text(item.text));
+                        });
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        console.error("Error fetching headers:", textStatus, errorThrown); // Debugging statement
+                    });
+                } else {
+                    $('#HeadersDropdown').empty().append('<option value="">-- Select Header --</option>');
+                }
+            });
+
+            // When the Headers dropdown changes
+            $('#HeadersDropdown').change(function () {
+                console.log("Headers dropdown changed."); // Debugging statement
+                var selectedHeaderId = $(this).val();
+                if (selectedHeaderId) {
+                    console.log("Selected Header ID:", selectedHeaderId); // Debugging statement
+                    // Set the selected HEADER_ID in the hidden input
+                    $('#SelectedHeaderId').val(selectedHeaderId);
+                } else {
+                    $('#SelectedHeaderId').val(''); // Clear the hidden input if no header is selected
+                }
+            });
+
+            // Display success or error message from TempData
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>
+                            alert('@TempData["SuccessMessage"]');
+            </text>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>
+                            alert('@TempData["ErrorMessage"]');
+            </text>
+        }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+﻿@model financial_reporting_system.Controllers.ExcelWorkbook_Statement_DetailsController.EditDetailInputModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Edit Statement Detail";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+    <!-- Custom CSS for the form -->
+    <style>
+        /* Center the <h1> heading */
+        .header-container {
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            height: 100px; /* Adjust height as needed */
+            margin-bottom: 20px; /* Space below the header */
+        }
+
+        /* Custom styles for the form */
+        form {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+            form .mb-3 {
+                margin-bottom: 1.5rem;
+            }
+
+            form label {
+                font-weight: bold;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+            form input.form-control {
+                padding: 10px;
+                font-size: 1rem;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                width: 100%;
+                transition: border-color 0.3s, box-shadow 0.3s;
+            }
+
+                form input.form-control:focus {
+                    border-color: #258cfb;
+                    box-shadow: 0 0 5px rgba(37, 140, 251, 0.5);
+                    outline: none;
+                }
+
+            form input[type="submit"] {
+                width: 100%;
+                padding: 10px;
+                font-size: 1.2rem;
+                font-weight: bold;
+                border: none;
+                border-radius: 5px;
+                background-color: #28a745;
+                color: white;
+                cursor: pointer;
+                transition: background-color 0.3s, transform 0.2s;
+            }
+
+                form input[type="submit"]:hover {
+                    background-color: #218838;
+                    transform: scale(1.05);
+                }
+
+        /* Error message styling */
+        .error {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none; /* Initially hidden */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Centered <h1> heading -->
+        <div class="header-container">
+            <h1>Editing the Statement Detail for @Model.REF_CD</h1>
+        </div>
+        <hr />
+
+        <form asp-action="Edit" asp-route-id="@Model.DETAIL_ID" method="post" onsubmit="validateForm(event)">
+            <!-- Hidden input fields -->
+            <input type="hidden" name="DETAIL_ID" value="@Model.DETAIL_ID" />
+            <input type="hidden" name="STMNT_ID" value="@Model.STMNT_ID" />
+            <input type="hidden" name="SHEET_ID" value="@Model.SHEET_ID" />
+            <input type="hidden" name="HEADER_ID" value="@Model.HEADER_ID" />
+            <input type="hidden" name="SYS_CREATE_TS" value="@Model.SYS_CREATE_TS.ToString("yyyy-MM-ddTHH:mm:ss")" />
+            <input type="hidden" name="CREATED_BY" value="@Model.CREATED_BY" />
+
+            <!-- Editable fields -->
+            <div class="mb-3">
+                <label for="GL_ACCT_CAT_CD">GL Account Category Code</label>
+                <input type="text" id="GL_ACCT_CAT_CD" name="GL_ACCT_CAT_CD" class="form-control" placeholder="GL Account Category Code" value="@Model.GL_ACCT_CAT_CD" required>
+                <div class="error" id="GL_ACCT_CAT_CD_error">Please enter a valid GL Account Category Code.</div>
+            </div>
+            <div class="mb-3">
+                <label for="REF_CD">Reference Code</label>
+                <input type="text" id="REF_CD" name="REF_CD" class="form-control" placeholder="Reference Code" value="@Model.REF_CD" required>
+                <div class="error" id="REF_CD_error">Please enter a valid Reference Code.</div>
+            </div>
+            <div class="mb-3">
+                <label for="DESCRIPTION">Description</label>
+                <input type="text" id="DESCRIPTION" name="DESCRIPTION" class="form-control" placeholder="Description" value="@Model.DESCRIPTION" required>
+                <div class="error" id="DESCRIPTION_error">Please enter a valid Description.</div>
+            </div>
+            <div class="mb-3">
+                <input type="submit" value="Save" class="btn btn-success">
+            </div>
+        </form>
+    </div>
+
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+        <script>
+            function validateForm(event) {
+                event.preventDefault(); // Prevent the form from submitting immediately
+
+                // Validate form fields
+                var isValid = true;
+
+                // Check GL_ACCT_CAT_CD
+                var glAcctCatCd = document.getElementById('GL_ACCT_CAT_CD').value;
+                if (!glAcctCatCd) {
+                    document.getElementById('GL_ACCT_CAT_CD_error').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('GL_ACCT_CAT_CD_error').style.display = 'none';
+                }
+
+                // Check REF_CD
+                var refCd = document.getElementById('REF_CD').value;
+                if (!refCd) {
+                    document.getElementById('REF_CD_error').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('REF_CD_error').style.display = 'none';
+                }
+
+                // Check DESCRIPTION
+                var description = document.getElementById('DESCRIPTION').value;
+                if (!description) {
+                    document.getElementById('DESCRIPTION_error').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('DESCRIPTION_error').style.display = 'none';
+                }
+
+                if (!isValid) {
+                    alert('Please fill all required fields.'); // Show alert for validation errors
+                    return; // Stop form submission
+                }
+
+                // If validation passes, submit the form
+                event.target.submit();
+            }
+
+            // Display success or error messages using alert
+            $(document).ready(function () {
+                var successMessage = '@TempData["SuccessMessage"]';
+                var errorMessage = '@TempData["ErrorMessage"]';
+
+                if (successMessage) {
+                    alert(successMessage); // Use alert for success message
+                }
+
+                if (errorMessage) {
+                    alert(errorMessage); // Use alert for error message
+                }
+            });
+        </script>
+    }
+</body>
+</html>

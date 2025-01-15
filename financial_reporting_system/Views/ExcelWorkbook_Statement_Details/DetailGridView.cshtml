@@ -1,7 +1,8 @@
 ﻿@model List<financial_reporting_system.Controllers.ExcelWorkbook_Statement_DetailsController.Detail>
+
 @{
     Layout = null;
-    ViewData["Title"] = "Mapped GL Accounts";
+    ViewData["Title"] = "Detail Grid View";
 }
 
 <!DOCTYPE html>
@@ -14,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.syncfusion.com/ej2/20.4.38/material.css" />
     <link href="https://cdn.syncfusion.com/ej2/26.1.35/bootstrap5-dark.css" rel="stylesheet" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+    <script src="https://cdn.syncfusion.com/ej2/26.1.35/dist/ej2.min.js"></script>
     <style>
         /* Custom CSS for the grid */
         .container {
@@ -81,43 +82,6 @@
         .justify-content-start {
             justify-content: flex-start;
         }
-
-        .button-container {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 20px;
-        }
-
-        .custom-delete-button {
-            background-color: #d9534f;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-            .custom-delete-button:hover {
-                background-color: #c9302c;
-            }
-
-        .custom-export-button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-left: 10px;
-        }
-
-            .custom-export-button:hover {
-                background-color: #218838;
-            }
     </style>
 </head>
 <body>
@@ -125,21 +89,11 @@
         <!-- Back Button and Grid Title Container -->
         <div class="d-flex align-items-center mb-3">
             <!-- Back Button -->
-            <a href="/ExcelWorkbookMapping/Index" class="btn btn-secondary">
+            <a href="/ExcelWorkbook_Statement_Details/Index" class="btn btn-secondary">
                 <i class="fa-solid fa-arrow-left"></i> Back
             </a>
             <!-- Grid Title (Centered) -->
-            <h1 class="grid-title mb-0 mx-auto">Mapped GL Accounts</h1>
-        </div>
-
-        <!-- Button Container -->
-        <div class="button-container">
-            <button id="deleteButton" class="custom-delete-button" onclick="deleteSelectedRows()">
-                <i class="fa-solid fa-trash-can"></i> Delete Selected Rows
-            </button>
-            <button id="exportButton" class="custom-export-button" onclick="exportToExcel()">
-                <i class="fa-solid fa-file-export"></i> Export to Excel
-            </button>
+            <h1 class="grid-title mb-0 mx-auto">Excel Workbook Statement Details</h1>
         </div>
 
         <!-- Syncfusion Grid -->
@@ -147,8 +101,6 @@
             <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
             <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
             <e-grid-columns>
-                <e-grid-column type="checkbox" width="50"></e-grid-column>
-                <e-grid-column field="MAPPING_ID" headerText="Mapping ID" textAlign="Right" width="120"></e-grid-column>
                 <e-grid-column field="DETAIL_ID" headerText="Detail ID" textAlign="Right" width="120"></e-grid-column>
                 <e-grid-column field="STMNT_ID" headerText="Statement ID" textAlign="Right" width="120"></e-grid-column>
                 <e-grid-column field="SHEET_ID" headerText="Sheet ID" textAlign="Right" width="120"></e-grid-column>
@@ -158,64 +110,41 @@
                 <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
                 <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="150" format="yMd"></e-grid-column>
                 <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="150"></e-grid-column>
-                <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="120"></e-grid-column>
-                <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="150"></e-grid-column>
-                <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="120"></e-grid-column>
-                <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="300"></e-grid-column>
-                <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="120"></e-grid-column>
+                <e-grid-column headerText="Actions" template="#ActionColumnTemplate" width="100"></e-grid-column>
             </e-grid-columns>
         </ejs-grid>
     </div>
 
-    <!-- Include jQuery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <!-- Include Toastr JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <!-- Action Column Template -->
+    <script id="ActionColumnTemplate" type="text/x-template">
+        <div class="d-flex flex-row justify-content-start">
+            <a class="btn no-a-decoration btn-sm" href="/ExcelWorkbook_Statement_Details/Edit/${DETAIL_ID}">
+                <i class="fa-solid fa-pen fa-lg"></i>
+            </a>
+            <form action="/ExcelWorkbook_Statement_Details/Delete/${DETAIL_ID}" method="post" onsubmit="return confirmDelete(event)">
+        @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-link no-a-decoration">
+                    <i class="fa-solid fa-trash-can fa-lg text-danger"></i>
+                </button>
+            </form>
+        </div>
+    </script>
+
     <!-- Syncfusion Scripts -->
     <script src="https://cdn.syncfusion.com/ej2/20.4.38/dist/ej2.min.js"></script>
-
     <script>
-        // Function to delete selected rows
-        function deleteSelectedRows() {
-            var grid = document.getElementById('grid').ej2_instances[0];
-            var selectedRows = grid.getSelectedRecords();
-
-            if (selectedRows.length === 0) {
-                toastr.warning('Please select at least one row to delete.');
-                return;
+        // Confirm delete function
+        function confirmDelete(event) {
+            if (!confirm("Are you sure you want to delete this record?")) {
+                event.preventDefault();
             }
-
-            var mappingIds = selectedRows.map(row => row.MAPPING_ID);
-
-            fetch('/ExcelWorkbookMapping/DeleteMappings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(mappingIds)
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            }).then(data => {
-                if (data.error) {
-                    toastr.error(data.error);
-                } else {
-                    toastr.success(data.message);
-                    setTimeout(function () {
-                        window.location.reload();
-                    }, 1000);
-                }
-            }).catch(error => {
-                toastr.error('An error occurred while deleting the rows.');
-            });
         }
 
-        // Function to export to Excel
-        function exportToExcel() {
-            window.location.href = '@Url.Action("ExportToExcel", "ExcelWorkbookMapping")';
-        }
+        // Initialize Syncfusion Grid
+        document.addEventListener('DOMContentLoaded', function () {
+            const grid = document.getElementById('grid').ej2_instances[0];
+            grid.refresh();
+        });
     </script>
 
     <!-- Syncfusion ASP.NET Core Script Manager -->

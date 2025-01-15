@@ -1,0 +1,589 @@
+﻿@model List<financial_reporting_system.Controllers.ExcelMapping_Documentation.UserDefinedCellValues>
+
+@{
+    ViewData["Title"] = "Export Financial Data to Excel";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="container">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Statement types</a></li>
+            <li class="breadcrumb-item" id="step2"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement Sheet</a></li>
+            <li class="breadcrumb-item" id="step3"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Statement header</a></li>
+            <li class="breadcrumb-item" id="step4"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Statement details</a></li>
+            <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Workbook mappings</a></li>
+            <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Workbook Reports</a></li>
+        </ol>
+    </nav>
+    <div class="formContainer">
+        <div class="formContent">
+            <!-- Directory Dropdown -->
+            <div class="form-group">
+                <label for="selectedDirectory">Select Directory:</label>
+                <select id="selectedDirectory" name="selectedDirectory" class="form-control" required onchange="updateSelectedDirectory(this.value)">
+                    <option value="">-- Select Directory --</option>
+                    @foreach (var directory in ViewBag.Directories)
+                    {
+                        <option value="@directory" selected="@(directory == ViewBag.SelectedDirectory ? "selected" : null)">@directory</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Workbook Dropdown -->
+            <div class="form-group">
+                <label for="selectedWorkbook">Select Workbook:</label>
+                <select id="selectedWorkbook" name="selectedWorkbook" class="form-control" required onchange="updateSelectedWorkbook(this.value)">
+                    <option value="">-- Select Workbook --</option>
+                    @if (ViewBag.Workbooks != null)
+                    {
+                        @foreach (var workbook in ViewBag.Workbooks)
+                        {
+                            <option value="@workbook" selected="@(workbook == ViewBag.SelectedWorkbook ? "selected" : null)">@workbook</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Excel Sheet Dropdown -->
+            <div class="form-group">
+                <label for="selectedTemplate">Select the Excel Sheet:</label>
+                <select id="selectedTemplate" name="selectedTemplate" class="form-control" required onchange="updateSelectedTemplate(this.value)">
+                    <option value="">-- Select Excel Sheet --</option>
+                    @foreach (var template in ViewBag.Templates)
+                    {
+                        <option value="@template" selected="@(template == ViewBag.SelectedTemplate ? "selected" : null)">@template</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Hidden Input for Selected Template -->
+            <input type="hidden" id="selectedTemplateHidden" name="selectedTemplate" value="@ViewBag.SelectedTemplate" />
+
+            <!-- Cell Values Container -->
+            <div id="cellValuesContainer" style="display: @(ViewBag.SavedValues != null ? "block" : "none");">
+                @if (ViewBag.SavedValues != null)
+                {
+                    var savedValues = ViewBag.SavedValues as Dictionary<string, List<financial_reporting_system.Controllers.ExcelMapping_Documentation.UserDefinedCellValues>>;
+                    var rowIndex = 0;
+                    foreach (var worksheetName in savedValues.Keys)
+                    {
+                        foreach (var item in savedValues[worksheetName])
+                        {
+                            <div class="cellValueRow">
+                                <label for="RefCd">Reference Code:</label>
+                                <select name="savedValues[@worksheetName][@rowIndex].RefCd" class="form-control" required>
+                                    <option value="">-- Select Reference Code --</option>
+                                    @foreach (var refCode in ViewBag.RefCodes)
+                                    {
+                                        <option value="@refCode.RefCd" selected="@(refCode.RefCd == item.RefCd ? "selected" : null)">
+                                            @refCode.RefCd (@refCode.Description)
+                                        </option>
+                                    }
+                                </select>
+                                <label for="ValueForCells">Value for Cells:</label>
+                                <input type="text" name="savedValues[@worksheetName][@rowIndex].ValueForCells" class="form-control" value="@item.ValueForCells" required />
+                                <button type="button" class="btn btn-warning removeRow">Remove</button>
+                                <button type="button" class="btn btn-primary editRow">Edit</button>
+                                <button type="button" class="btn btn-danger deleteRow">Delete</button>
+                            </div>
+                            rowIndex++;
+                        }
+                    }
+                }
+                else
+                {
+                    <div class="cellValueRow">
+                        <label for="RefCd">Reference Code:</label>
+                        <select name="savedValues[@ViewBag.SelectedWorkbook][0].RefCd" class="form-control" required>
+                            <option value="">-- Select Reference Code --</option>
+                            @foreach (var refCode in ViewBag.RefCodes)
+                            {
+                                <option value="@refCode.RefCd">@refCode.RefCd (@refCode.Description)</option>
+                            }
+                        </select>
+                        <label for="ValueForCells">Value for Cells:</label>
+                        <input type="text" name="savedValues[@ViewBag.SelectedWorkbook][0].ValueForCells" class="form-control" required />
+                        <button type="button" class="btn btn-danger removeRow">Remove</button>
+                        <button type="button" class="btn btn-primary editRow">Edit</button>
+                        <button type="button" class="btn btn-warning deleteRow">Delete</button>
+                    </div>
+                }
+            </div>
+
+            <!-- Buttons -->
+            <div class="buttonContainer">
+                <button type="button" id="addRow" class="btn btn-primary">Add new cell</button>
+                <button type="button" id="exportToExcelButton" class="btn btn-success" style="display: none;">Export to Excel</button>
+                <button type="button" id="saveExportingData" class="btn btn-info">Save Exporting Data</button>
+            </div>
+        </div>
+        <div class="helpIcon" onclick="showHelpPopup()">?</div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeHelpPopup()">&times;</span>
+        <p>
+            Hello! Are you stuck? 😊 I'm here to help!
+            Here's a quick breakdown of what each part means:
+            - Select Directory: Choose the directory containing your Excel files.
+            - Select Workbook: Choose the specific workbook (Excel file) you want to work with.
+            - Select Excel Sheet: Choose the sheet within the selected workbook.
+            - Reference Code: Select the reference code to fetch data from the database.
+            - Cell Value: Input the cell reference (e.g., C11) where the data should be placed.
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Update Directory Dropdown
+        function updateSelectedDirectory(value) {
+            $.ajax({
+                url: '@Url.Action("GetWorkbooksByDirectory", "ExcelMapping_Documentation")',
+                type: 'GET',
+                data: { selectedDirectory: value },
+                success: function (response) {
+                    $("select[name='selectedWorkbook']").empty().append('<option value="">-- Select Workbook --</option>');
+                    response.forEach(function (workbook) {
+                        $("select[name='selectedWorkbook']").append('<option value="' + workbook + '">' + workbook + '</option>');
+                    });
+                    $("select[name='selectedTemplate']").empty().append('<option value="">-- Select Excel Sheet --</option>');
+                },
+                error: function () {
+                    alert("An error occurred while fetching workbooks.");
+                }
+            });
+        }
+
+        // Update Workbook Dropdown
+        function updateSelectedWorkbook(value) {
+            $.ajax({
+                url: '@Url.Action("GetSheetsByWorkbook", "ExcelMapping_Documentation")',
+                type: 'GET',
+                data: { selectedWorkbook: value },
+                success: function (response) {
+                    $("select[name='selectedTemplate']").empty().append('<option value="">-- Select Excel Sheet --</option>');
+                    response.forEach(function (sheet) {
+                        $("select[name='selectedTemplate']").append('<option value="' + sheet + '">' + sheet + '</option>');
+                    });
+                },
+                error: function () {
+                    alert("An error occurred while fetching sheets.");
+                }
+            });
+        }
+
+        // Update Template Dropdown
+        function updateSelectedTemplate(value) {
+            document.getElementById("selectedTemplateHidden").value = value;
+            var selectedTemplate = $("select[name='selectedTemplate']").val();
+
+            // Check if there are no saved values for the selected template
+            $.ajax({
+                url: '@Url.Action("CheckSavedValues", "ExcelMapping_Documentation")',
+                type: 'GET',
+                data: { selectedTemplate: selectedTemplate },
+                success: function (response) {
+                    if (response.noSavedValues) {
+                        // Prompt the user to add new mappings
+                        if (confirm("No saved cells found for the selected template. Would you like to add new cells?")) {
+                            // Show the cell values container
+                            $("#cellValuesContainer").show();
+                        }
+                    } else {
+                        // Reload the page with the selected template
+                        var selectedDirectory = $("select[name='selectedDirectory']").val();
+                        var selectedWorkbook = $("select[name='selectedWorkbook']").val();
+                        window.location.href = '@Url.Action("Index", "ExcelMapping_Documentation")' +
+                            '?selectedDirectory=' + selectedDirectory +
+                            '&selectedWorkbook=' + selectedWorkbook +
+                            '&selectedTemplate=' + selectedTemplate;
+                    }
+                },
+                error: function () {
+                    alert("An error occurred while checking saved values.");
+                }
+            });
+        }
+
+        // Add Row
+        $("#addRow").click(function () {
+            var rowIndex = $("#cellValuesContainer .cellValueRow").length;
+            var selectedWorkbook = $("select[name='selectedWorkbook']").val(); // Get the selected workbook
+
+            // Validate selected workbook
+            if (!selectedWorkbook) {
+                alert("Please select a workbook before adding a new cell.");
+                return;
+            }
+
+            var newRow = `
+                <div class="cellValueRow">
+                    <label for="RefCd">Reference Code:</label>
+                    <select name="savedValues[${selectedWorkbook}][${rowIndex}].RefCd" class="form-control" required>
+                        <option value="">-- Select Reference Code --</option>
+        @foreach (var refCode in ViewBag.RefCodes)
+        {
+                                    <option value="@refCode.RefCd">@refCode.RefCd (@refCode.Description)</option>
+        }
+                    </select>
+                    <label for="ValueForCells">Value for Cells:</label>
+                    <input type="text" name="savedValues[${selectedWorkbook}][${rowIndex}].ValueForCells" class="form-control" required />
+                    <button type="button" class="btn btn-danger removeRow">Remove</button>
+                    <button type="button" class="btn btn-primary editRow">Edit</button>
+                    <button type="button" class="btn btn-warning deleteRow">Delete</button>
+                </div>
+            `;
+            $("#cellValuesContainer").append(newRow);
+        });
+
+        // Remove Row
+        $("#cellValuesContainer").on("click", ".removeRow", function () {
+            $(this).closest(".cellValueRow").remove();
+        });
+
+        // Edit Row
+        $("#cellValuesContainer").on("click", ".editRow", function () {
+            var row = $(this).closest(".cellValueRow");
+            var refCd = row.find("select").val();
+            var valueForCells = row.find("input").val();
+            var selectedTemplate = $("select[name='selectedTemplate']").val();
+            var selectedWorkbook = $("select[name='selectedWorkbook']").val();
+
+            // Display the first confirmation dialog
+            if (confirm("Are you sure you want to edit this row?")) {
+                // Show the "Save Edits" button
+                var saveEditsButton = $('<button type="button" class="btn btn-success saveEdits">Save Edits</button>');
+                row.append(saveEditsButton);
+
+                // Event handler for the "Save Edits" button
+                saveEditsButton.click(function () {
+                    // Display the second confirmation dialog
+                    if (confirm("Are you sure you want to save the edits?")) {
+                        // Perform the AJAX request to save the edits
+                        $.ajax({
+                            url: '@Url.Action("EditExportingData", "ExcelMapping_Documentation")',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                SelectedTemplate: selectedTemplate,
+                                SelectedWorkbook: selectedWorkbook,
+                                RefCd: refCd,
+                                ValueForCells: valueForCells
+                            }),
+                            success: function (response) {
+                                if (response.success) {
+                                    alert(response.message);
+                                    // Hide the "Save Edits" button after saving
+                                    saveEditsButton.remove();
+                                } else {
+                                    alert("Error: " + response.message);
+                                }
+                            },
+                            error: function () {
+                                alert("An error occurred while editing exporting data.");
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        // Delete Row
+        $("#cellValuesContainer").on("click", ".deleteRow", function () {
+            var row = $(this).closest(".cellValueRow");
+            var refCd = row.find("select").val();
+            var valueForCells = row.find("input").val();
+            var selectedTemplate = $("select[name='selectedTemplate']").val();
+            var selectedWorkbook = $("select[name='selectedWorkbook']").val();
+
+            // Display the confirmation dialog
+            if (confirm("Are you sure you want to delete this row?")) {
+                // Perform the AJAX request to delete the row
+                $.ajax({
+                    url: '@Url.Action("DeleteExportingData", "ExcelMapping_Documentation")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        SelectedTemplate: selectedTemplate,
+                        SelectedWorkbook: selectedWorkbook,
+                        RefCd: refCd,
+                        ValueForCells: valueForCells
+                    }),
+                    success: function (response) {
+                        if (response.success) {
+                            alert(response.message);
+                            // Remove the row from the UI
+                            row.remove();
+                        } else {
+                            alert("Error: " + response.message);
+                        }
+                    },
+                    error: function () {
+                        alert("An error occurred while deleting exporting data.");
+                    }
+                });
+            }
+        });
+
+        // Export to Excel Button
+        $("#exportToExcelButton").click(function () {
+            // Collect the form data
+            var selectedDirectory = $("#selectedDirectory").val();
+            var selectedWorkbook = $("#selectedWorkbook").val();
+
+            // Validate selected workbook
+            if (!selectedWorkbook) {
+                alert("Please select a workbook before exporting.");
+                return;
+            }
+
+            // Create a hidden form and submit it
+            var form = document.createElement("form");
+            form.method = "POST";
+            form.action = "@Url.Action("ExportFinancialDataToExcel", "ExcelMapping_Documentation")";
+
+            // Add selectedDirectory
+            var directoryInput = document.createElement("input");
+            directoryInput.type = "hidden";
+            directoryInput.name = "selectedDirectory";
+            directoryInput.value = selectedDirectory;
+            form.appendChild(directoryInput);
+
+            // Add selectedWorkbook
+            var workbookInput = document.createElement("input");
+            workbookInput.type = "hidden";
+            workbookInput.name = "selectedWorkbook";
+            workbookInput.value = selectedWorkbook;
+            form.appendChild(workbookInput);
+
+            // Append the form to the body and submit it
+            document.body.appendChild(form);
+            form.submit();
+        });
+
+        // Save Exporting Data
+        $("#saveExportingData").click(function () {
+            var savedValues = {};
+            var selectedTemplate = $("select[name='selectedTemplate']").val();
+            var selectedWorkbook = $("select[name='selectedWorkbook']").val(); // Get the selected workbook
+
+            // Validate selected workbook
+            if (!selectedWorkbook) {
+                alert("Please select a workbook before saving.");
+                return;
+            }
+
+            // Iterate through each row of mappings
+            $(".cellValueRow").each(function () {
+                // Use the selected workbook as the worksheet name
+                var worksheetName = selectedWorkbook; // Use the selected workbook value
+                var refCd = $(this).find("select[name^='savedValues']").val();
+                var valueForCells = $(this).find("input[name^='savedValues']").val();
+
+                // Ensure the worksheetName exists in the savedValues dictionary
+                if (!savedValues[worksheetName]) {
+                    savedValues[worksheetName] = [];
+                }
+
+                // Add the mapping to the worksheet's list
+                savedValues[worksheetName].push({
+                    RefCd: refCd,
+                    ValueForCells: valueForCells
+                });
+            });
+
+            // Prepare the data to send
+            var data = {
+                savedValues: savedValues,
+                selectedTemplate: selectedTemplate
+            };
+
+            // Log the payload for debugging
+            console.log("Sending payload:", JSON.stringify(data));
+
+            // Send the data to the server via AJAX
+            $.ajax({
+                url: '@Url.Action("SaveExportingData", "ExcelMapping_Documentation")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function (response) {
+                    if (response.success) {
+                        alert(response.message);
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                },
+                error: function () {
+                    alert("An error occurred while saving exporting data.");
+                }
+            });
+        });
+
+        // Help Modal
+        function showHelpPopup() {
+            document.getElementById("helpModal").style.display = "block";
+        }
+
+        function closeHelpPopup() {
+            document.getElementById("helpModal").style.display = "none";
+        }
+    </script>
+}
+<style>
+    .container {
+        margin: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+
+    .breadcrumb {
+        display: flex; /* Arrange breadcrumb items in a horizontal row */
+        flex-wrap: nowrap; /* Prevent wrapping to the next line */
+        background-color: #f8f9fa; /* Optional: Background color for breadcrumb */
+        padding: 8px 16px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        list-style: none; /* Remove default list styling */
+    }
+
+    .breadcrumb-item {
+        margin-right: 8px; /* Space between breadcrumb items */
+        font-size: 1rem;
+        color: #007bff; /* Default link color */
+    }
+
+        .breadcrumb-item a {
+            text-decoration: none; /* Remove underline from links */
+            color: #007bff; /* Link color */
+            transition: color 0.3s ease; /* Smooth hover transition */
+        }
+
+            .breadcrumb-item a:hover {
+                color: #0056b3; /* Darker shade on hover */
+            }
+
+    .cellValueRow {
+        margin-bottom: 15px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #ffffff;
+    }
+
+        .cellValueRow label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .cellValueRow input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .cellValueRow button {
+            margin-top: 5px;
+            margin-right: 5px; /* Add margin between buttons */
+        }
+
+    .buttonContainer {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+        .buttonContainer button {
+            margin: 5px;
+            padding: 10px 20px;
+        }
+
+    .formContainer {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        position: relative;
+    }
+
+    .formContent {
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #ffffff;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+    .helpIcon {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        cursor: pointer;
+        font-size: 20px;
+        color: #007bff;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 30%;
+        text-align: center;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+</style>

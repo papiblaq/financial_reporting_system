@@ -53,11 +53,17 @@ namespace financial_reporting_system.Controllers
 
         // POST: Excel/Upload
         [HttpPost]
-        public async Task<IActionResult> Upload(IFormFile file)
+        public async Task<IActionResult> Upload(IFormFile file, string filePath)
         {
             if (file == null || file.Length == 0)
             {
                 ViewBag.Error = "Please select a valid Excel file.";
+                return View();
+            }
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                ViewBag.Error = "Please provide a valid file path.";
                 return View();
             }
 
@@ -72,6 +78,9 @@ namespace financial_reporting_system.Controllers
                 application.DefaultVersion = ExcelVersion.Excel2016;
 
                 IWorkbook workbook = application.Workbooks.Open(memoryStream);
+
+                // Save the file path and workbook name to the database
+                await SaveFilePathAsync(file.FileName, filePath);
 
                 foreach (IWorksheet sheet in workbook.Worksheets)
                 {
@@ -110,6 +119,31 @@ namespace financial_reporting_system.Controllers
             }
 
             return View();
+        }
+
+        // Helper method to save file path and workbook name to EXCEL_WORKBOOK_TEMP_FILE_PATHS table
+        private async Task SaveFilePathAsync(string workbookName, string filePath)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new OracleCommand())
+                {
+                    command.Connection = connection;
+
+                    // Insert into EXCEL_WORKBOOK_TEMP_FILE_PATHS table
+                    command.CommandText = @"
+                        INSERT INTO EXCEL_WORKBOOK_TEMP_FILE_PATHS 
+                            (FILE_PATH, FILE_IN_PATH, CREATED_AT)
+                        VALUES 
+                            (:FILE_PATH, :FILE_IN_PATH, SYSTIMESTAMP)";
+
+                    command.Parameters.Add(new OracleParameter("FILE_PATH", filePath));
+                    command.Parameters.Add(new OracleParameter("FILE_IN_PATH", workbookName));
+
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
         }
 
         // Helper method to check if a cell contains meaningful data
@@ -400,23 +434,5 @@ namespace financial_reporting_system.Controllers
         public string CellAddress { get; set; }
         public string Value { get; set; }
         public string Formula { get; set; }
-    }
-    // Define the StatementInputModel inside the controller
-    public class StatementInputModel
-    {
-        [Required(ErrorMessage = "REF_CD is required.")]
-        public string REF_CD { get; set; }
-
-        [Required(ErrorMessage = "DESCRIPTION is required.")]
-        public string DESCRIPTION { get; set; }
-
-        [Required(ErrorMessage = "CREATED_BY is required.")]
-        public string CREATED_BY { get; set; }
-
-        public string EXCEL_SHEET { get; set; }
-
-        public string FilePath { get; set; }
-
-        public DateTime SYS_CREATE_TS { get; set; } = DateTime.Now;
     }
 }

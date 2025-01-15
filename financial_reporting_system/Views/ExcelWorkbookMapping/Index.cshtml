@@ -6,324 +6,358 @@
     ViewData["Title"] = "Index";
 }
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <!-- Syncfusion ASP.NET Core controls styles -->
+    <link href="https://cdn.syncfusion.com/ej2/26.1.35/bootstrap5-dark.css" rel="stylesheet" />
+    <!-- Syncfusion ASP.NET Core controls scripts -->
+    <script src="https://cdn.syncfusion.com/ej2/26.1.35/dist/ej2.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Statement types</a></li>
+                <li class="breadcrumb-item" id="step2"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement Sheet</a></li>
+                <li class="breadcrumb-item" id="step3"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Statement header</a></li>
+                <li class="breadcrumb-item" id="step4"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Statement details</a></li>
+                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Workbook mappings</a></li>
+                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Workbook reports</a></li>
+            </ol>
+        </nav>
 
-<!-- Syncfusion ASP.NET Core controls styles -->
-<link href="https://cdn.syncfusion.com/ej2/26.1.35/bootstrap5-dark.css" rel="stylesheet" />
-<!-- Syncfusion ASP.NET Core controls scripts -->
-<script src="https://cdn.syncfusion.com/ej2/26.1.35/dist/ej2.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+        <!-- Workbook Dropdown -->
+        <div class="form-group">
+            <label for="SelectedWorkbook">Workbook</label>
+            <select id="SelectedWorkbook" class="form-control">
+                <option value="">-- Select Workbook --</option>
+                @foreach (var workbook in ViewBag.Workbooks)
+                {
+                    <option value="@workbook.Value">@workbook.Text</option>
+                }
+            </select>
+        </div>
 
-<div class="container">
-    <!-- Breadcrumb Navigation -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Statement types</a></li>
-            <li class="breadcrumb-item" id="step2"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement Sheet</a></li>
-            <li class="breadcrumb-item" id="step3"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Statement header</a></li>
-            <li class="breadcrumb-item" id="step4"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Statement details</a></li>
-            <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Excel mappings</a></li>
-        </ol>
-    </nav>
+        <!-- Statement Type Dropdown -->
+        <div class="form-group">
+            <label for="statementTypeDropdown">Statement Type</label>
+            <select id="statementTypeDropdown" class="form-control">
+                <option value="">-- Select a Statement Type --</option>
+                @foreach (var item in ViewBag.StatementTypes)
+                {
+                    <option value="@item.STMNT_ID">@item.DESCRIPTION</option>
+                }
+            </select>
+        </div>
 
-    <h1 class="mt-5">Select a Financial Statement Type</h1>
-    <select id="statementTypeDropdown">
-        <option value="">-- Select a Statement Type --</option>
-        @foreach (var item in ViewBag.StatementTypes)
-        {
-            <option value="@item.STMNT_ID">@item.DESCRIPTION</option>
+        <h1 class="mt-5">Available Statement Details for @ViewBag.SelectedDescription</h1>
+        <!-- First Grid -->
+        <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+            <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+            <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+            <e-grid-columns>
+                <e-grid-column type="checkbox" width="50"></e-grid-column>
+                <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
+                <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
+                <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
+                <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
+                <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
+            </e-grid-columns>
+        </ejs-grid>
+
+        <!-- Spacer between grids -->
+        <div class="grid-spacer"></div>
+
+        <h1 class="mt-5">Unmapped GL</h1>
+        <!-- Dropdown for Page Size Selection -->
+        <div class="mb-3">
+            <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
+            <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
+                <option value="20" selected>20</option>
+                <option value="60">60</option>
+                <option value="100">100</option>
+                <option value="150">150</option>
+                <option value="400">400</option>
+                <option value="600">600</option>
+            </select>
+        </div>
+
+        <!-- Second Grid -->
+        <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+            <e-grid-pagesettings pageSize="15"></e-grid-pagesettings>
+            <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+            <e-grid-columns>
+                <e-grid-column type="checkbox" width="50"></e-grid-column>
+                <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="250"></e-grid-column>
+                <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
+                <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="150"></e-grid-column>
+            </e-grid-columns>
+        </ejs-grid>
+
+        <!-- Buttons -->
+        <div class="button-container">
+            <button id="saveCombinedRows" class="custom-delete-button">Save MappedGL</button>
+        </div>
+        <div class="button-container">
+            <a href="@Url.Action("Grid", "ExcelWorkbookMapping")" class="btn btn-secondary">View Mapped GL</a>
+        </div>
+    </div>
+
+    <style>
+        .breadcrumb {
+            display: flex;
+            flex-wrap: nowrap;
+            background-color: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            list-style: none;
         }
-    </select>
 
-    <h1 class="mt-5">Available Statement Details for @ViewBag.SelectedDescription</h1>
-    <!-- First Grid -->
-    <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-        <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
-        <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
-        <e-grid-columns>
-            <e-grid-column type="checkbox" width="50"></e-grid-column>
-            <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
-            <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
-            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
-            <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
-            <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
-        </e-grid-columns>
-    </ejs-grid>
-
-    <!-- Spacer between grids -->
-    <div class="grid-spacer"></div>
-
-    <h1 class="mt-5">Unmapped GL</h1>
-    <!-- Dropdown for Page Size Selection -->
-    <div class="mb-3">
-        <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
-        <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
-            <option value="20" selected>20</option>
-            <option value="60">60</option>
-            <option value="100">100</option>
-            <option value="150">150</option>
-            <option value="400">400</option>
-            <option value="600">600</option>
-        </select>
-    </div>
-
-    <!-- Second Grid -->
-    <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-        <e-grid-pagesettings pageSize="15"></e-grid-pagesettings>
-        <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
-        <e-grid-columns>
-            <e-grid-column type="checkbox" width="50"></e-grid-column>
-            <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="250"></e-grid-column>
-            <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
-            <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="150"></e-grid-column>
-        </e-grid-columns>
-    </ejs-grid>
-
-    <!-- Buttons -->
-    <div class="button-container">
-        <button id="saveCombinedRows" class="custom-delete-button">Save MappedGL</button>
-    </div>
-    <div class="button-container">
-        <a href="@Url.Action("Grid", "ExcelWorkbookMapping")" class="btn btn-secondary">View Mapped GL</a>
-    </div>
-</div>
-
-<style>
-
-    /* General Styling for the Container */
-
-    .breadcrumb {
-        display: flex; /* Arrange breadcrumb items in a horizontal row */
-        flex-wrap: nowrap; /* Prevent wrapping to the next line */
-        background-color: #f8f9fa; /* Optional: Background color for breadcrumb */
-        padding: 8px 16px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-        list-style: none; /* Remove default list styling */
-    }
-
-    .breadcrumb-item {
-        margin-right: 8px; /* Space between breadcrumb items */
-        font-size: 1rem;
-        color: #007bff; /* Default link color */
-    }
-
-        .breadcrumb-item a {
-            text-decoration: none; /* Remove underline from links */
-            color: #007bff; /* Link color */
-            transition: color 0.3s ease; /* Smooth hover transition */
+        .breadcrumb-item {
+            margin-right: 8px;
+            font-size: 1rem;
+            color: #007bff;
         }
 
-            .breadcrumb-item a:hover {
-                color: #0056b3; /* Darker shade on hover */
+            .breadcrumb-item a {
+                text-decoration: none;
+                color: #007bff;
+                transition: color 0.3s ease;
             }
 
+                .breadcrumb-item a:hover {
+                    color: #0056b3;
+                }
 
-
-
-    .container {
-        margin: 20px auto;
-        padding: 20px;
-        max-width: 1200px;
-        max-height: 80vh; /* Set a maximum height relative to the viewport */
-        overflow-y: auto; /* Enable vertical scrolling */
-        background-color: #f9f9f9;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        font-family: 'Arial', sans-serif;
-    }
-
-
-        /* Headings */
-        .container h1 {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 10px;
+        .container {
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 1200px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Arial', sans-serif;
         }
 
-        /* Dropdowns */
-        .container select {
-            display: block;
-            padding: 8px;
-            margin-top: 10px;
+            .container h1 {
+                font-size: 1.5rem;
+                color: #333;
+                margin-bottom: 10px;
+            }
+
+            .container select {
+                display: block;
+                padding: 8px;
+                margin-top: 10px;
+                font-size: 1rem;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                width: 100%;
+                max-width: 300px;
+            }
+
+        .custom-label {
+            font-weight: bold;
             font-size: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 100%;
-            max-width: 300px;
+            margin-bottom: 5px;
         }
 
-    /* Dropdown Label */
-    .custom-label {
-        font-weight: bold;
-        font-size: 1rem;
-        margin-bottom: 5px;
-    }
-
-    /* Grids */
-    .white-grid {
-        background-color: #fff;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-    }
-
-    /* Grid Columns */
-    .e-grid-columns {
-        font-size: 0.9rem;
-    }
-
-    /* Grid Headers */
-    .e-grid-column headerText {
-        font-weight: bold;
-        color: #444;
-    }
-
-    /* Spacers */
-    .grid-spacer {
-        height: 30px;
-    }
-
-    /* Page Size Dropdown */
-    #pageSizeDropdown {
-        margin-top: 5px;
-    }
-
-    /* Buttons */
-    .button-container {
-        display: flex;
-        justify-content: center;
-        margin-top: 20px;
-    }
-
-    .custom-delete-button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        font-size: 1rem;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-        .custom-delete-button:hover {
-            background-color: #0056b3;
+        .white-grid {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
         }
 
-    .btn-secondary {
-        text-decoration: none;
-        background-color: #6c757d;
-        color: white;
-        padding: 10px 20px;
-        font-size: 1rem;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-        .btn-secondary:hover {
-            background-color: #5a6268;
+        .e-grid-columns {
+            font-size: 0.9rem;
         }
 
-    
-
-   
-</style>
-
-<script>
-    // Event listener for dropdown change
-    document.getElementById('statementTypeDropdown').addEventListener('change', function () {
-        var selectedValue = this.value; // Get the STMNT_ID
-
-        if (selectedValue) {
-            // Reload the entire page with the selected STMNT_ID as a query parameter
-            window.location.href = `/ExcelWorkbookMapping/Index?stmntId=${encodeURIComponent(selectedValue)}`;
-        } else {
-            alert('Please select a valid statement type.');
-        }
-    });
-
-    // Event listener for page size dropdown change
-    document.getElementById('pageSizeDropdown').addEventListener('change', function () {
-        var selectedPageSize = parseInt(this.value); // Get the selected value as an integer
-
-        // Get the grid instance
-        var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
-
-        // Update the pageSize of the grid
-        accountGrid.pageSettings.pageSize = selectedPageSize;
-    });
-
-    // Event listener for saving combined rows
-    document.getElementById('saveCombinedRows').addEventListener('click', function () {
-        var orderGrid = document.getElementById('grid').ej2_instances[0];
-        var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
-
-        var selectedOrderRow = orderGrid.getSelectedRecords();
-        var selectedAccountRows = accountGrid.getSelectedRecords();
-
-        // Check if exactly one row is selected in the first grid
-        if (selectedOrderRow.length !== 1) {
-            alert('Please select exactly one row in the first grid.');
-            return;
+        .e-grid-column headerText {
+            font-weight: bold;
+            color: #444;
         }
 
-        // Proceed with combining rows if exactly one row is selected in the first grid
-        if (selectedAccountRows.length > 0) {
-            var combinedRows = selectedAccountRows.map(accountRow => ({
-                DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
-                STMNT_ID: selectedOrderRow[0].STMNT_ID,
-                SHEET_ID: selectedOrderRow[0].SHEET_ID,
-                HEADER_ID: selectedOrderRow[0].HEADER_ID,
-                GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
-                REF_CD: selectedOrderRow[0].REF_CD,
-                DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
-                SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
-                CREATED_BY: selectedOrderRow[0].CREATED_BY,
-                GL_ACCT_ID: accountRow.GL_ACCT_ID,
-                GL_ACCT_NO: accountRow.GL_ACCT_NO,
-                LEDGER_NO: accountRow.LEDGER_NO,
-                ACCT_DESC: accountRow.ACCT_DESC,
-                BAL_CD: accountRow.BAL_CD
-            }));
+        .grid-spacer {
+            height: 30px;
+        }
 
-            // Fetch request to save combined rows
-            fetch('/ExcelWorkbookMapping/SaveCombinedRows', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(combinedRows)
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok: ' + response.statusText);
-                    }
-                    return response.json();
+        #pageSizeDropdown {
+            margin-top: 5px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .custom-delete-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .custom-delete-button:hover {
+                background-color: #0056b3;
+            }
+
+        .btn-secondary {
+            text-decoration: none;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .btn-secondary:hover {
+                background-color: #5a6268;
+            }
+    </style>
+
+    <script>
+        // Event listener for Workbook Dropdown change
+        document.getElementById('SelectedWorkbook').addEventListener('change', function () {
+            var selectedWorkbook = this.value; // Get the selected workbook value
+
+            if (selectedWorkbook) {
+                // Fetch statement types for the selected workbook
+                fetch(`/ExcelWorkbookMapping/GetStatementTypesByWorkbook?workbook=${encodeURIComponent(selectedWorkbook)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        var statementTypeDropdown = document.getElementById('statementTypeDropdown');
+                        statementTypeDropdown.innerHTML = '<option value="">-- Select a Statement Type --</option>'; // Reset dropdown
+
+                        // Populate the dropdown with fetched statement types
+                        data.forEach(item => {
+                            var option = document.createElement('option');
+                            option.value = item.stmntId;
+                            option.text = item.description;
+                            statementTypeDropdown.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching statement types:', error);
+                    });
+            } else {
+                // Clear the Statement Type Dropdown if no workbook is selected
+                document.getElementById('statementTypeDropdown').innerHTML = '<option value="">-- Select a Statement Type --</option>';
+            }
+        });
+
+        // Event listener for Statement Type Dropdown change
+        document.getElementById('statementTypeDropdown').addEventListener('change', function () {
+            var selectedValue = this.value; // Get the STMNT_ID
+
+            if (selectedValue) {
+                // Reload the entire page with the selected STMNT_ID as a query parameter
+                window.location.href = `/ExcelWorkbookMapping/Index?stmntId=${encodeURIComponent(selectedValue)}`;
+            } else {
+                alert('Please select a valid statement type.');
+            }
+        });
+
+        // Event listener for page size dropdown change
+        document.getElementById('pageSizeDropdown').addEventListener('change', function () {
+            var selectedPageSize = parseInt(this.value); // Get the selected value as an integer
+
+            // Get the grid instance
+            var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
+
+            // Update the pageSize of the grid
+            accountGrid.pageSettings.pageSize = selectedPageSize;
+        });
+
+        // Event listener for saving combined rows
+        document.getElementById('saveCombinedRows').addEventListener('click', function () {
+            var orderGrid = document.getElementById('grid').ej2_instances[0];
+            var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
+
+            var selectedOrderRow = orderGrid.getSelectedRecords();
+            var selectedAccountRows = accountGrid.getSelectedRecords();
+
+            // Check if exactly one row is selected in the first grid
+            if (selectedOrderRow.length !== 1) {
+                alert('Please select exactly one row in the first grid.');
+                return;
+            }
+
+            // Proceed with combining rows if exactly one row is selected in the first grid
+            if (selectedAccountRows.length > 0) {
+                var combinedRows = selectedAccountRows.map(accountRow => ({
+                    DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
+                    STMNT_ID: selectedOrderRow[0].STMNT_ID,
+                    SHEET_ID: selectedOrderRow[0].SHEET_ID,
+                    HEADER_ID: selectedOrderRow[0].HEADER_ID,
+                    GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
+                    REF_CD: selectedOrderRow[0].REF_CD,
+                    DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
+                    SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
+                    CREATED_BY: selectedOrderRow[0].CREATED_BY,
+                    GL_ACCT_ID: accountRow.GL_ACCT_ID,
+                    GL_ACCT_NO: accountRow.GL_ACCT_NO,
+                    LEDGER_NO: accountRow.LEDGER_NO,
+                    ACCT_DESC: accountRow.ACCT_DESC,
+                    BAL_CD: accountRow.BAL_CD
+                }));
+
+                // Fetch request to save combined rows
+                fetch('/ExcelWorkbookMapping/SaveCombinedRows', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(combinedRows)
                 })
-                .then(data => {
-                    if (data.error) {
-                        alert('Error: ' + data.error);
-                    } else {
-                        alert(data.message);
-                        // Reload the page after a successful save
-                        location.reload();
-                    }
-                })
-                .catch(error => {
-                    alert('Error: ' + error.message);
-                });
-        } else {
-            alert('No rows selected in the account grid.');
-        }
-    });
-</script>
-<script src="~/lib/jquery/dist/jquery.min.js"></script>
-<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="~/js/site.js" asp-append-version="true"></script>
-<ejs-scripts></ejs-scripts>
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            alert('Error: ' + data.error);
+                        } else {
+                            alert(data.message);
+                            // Reload the page after a successful save
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error.message);
+                    });
+            } else {
+                alert('No rows selected in the account grid.');
+            }
+        });
+    </script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <ejs-scripts></ejs-scripts>
+</body>
+</html>

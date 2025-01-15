@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
 using Syncfusion.XlsIO;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace financial_reporting_system.Controllers
 {
@@ -19,6 +22,10 @@ namespace financial_reporting_system.Controllers
 
         public IActionResult Index(int stmntId = 0)
         {
+            // Fetch workbooks for the dropdown
+            var workbooks = GetWorkbooks();
+            ViewBag.Workbooks = workbooks;
+
             // Fetch filtered financial statement details based on the STMNT_ID
             var financialStatementDetails = GetFinancialStatementDetails(stmntId);
             var accountDetails = GetAccountDetails(stmntId); // Pass stmntId to GetAccountDetails
@@ -32,6 +39,68 @@ namespace financial_reporting_system.Controllers
             ViewBag.SelectedDescription = selectedDescription; // Pass the selected description to the view
 
             return View(financialStatementDetails); // Pass the filtered data to the view
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetStatementTypesByWorkbook(string workbook)
+        {
+            var statementTypes = await GetStatementTypesForWorkbookAsync(workbook);
+            return Json(statementTypes);
+        }
+
+        private async Task<List<ExcelWorkbookStatementType>> GetStatementTypesForWorkbookAsync(string workbook)
+        {
+            var statementTypes = new List<ExcelWorkbookStatementType>();
+
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new OracleCommand(
+                    "SELECT STMNT_ID, DESCRIPTION FROM EXCEL_WORKBOOK_STATEMENT_TYPE WHERE EXCEL_WORKBOOK = :EXCEL_WORKBOOK", connection))
+                {
+                    command.Parameters.Add(new OracleParameter("EXCEL_WORKBOOK", workbook));
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            statementTypes.Add(new ExcelWorkbookStatementType
+                            {
+                                STMNT_ID = reader.GetInt32(0),
+                                DESCRIPTION = reader.GetString(1)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return statementTypes;
+        }
+
+        private List<SelectListItem> GetWorkbooks()
+        {
+            var workbooks = new List<SelectListItem>();
+
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = new OracleCommand("SELECT DISTINCT EXCEL_WORKBOOK FROM EXCEL_WORKBOOK_STATEMENT_TYPE", connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            workbooks.Add(new SelectListItem
+                            {
+                                Text = reader["EXCEL_WORKBOOK"].ToString(),
+                                Value = reader["EXCEL_WORKBOOK"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+
+            return workbooks;
         }
 
         public IActionResult Grid()

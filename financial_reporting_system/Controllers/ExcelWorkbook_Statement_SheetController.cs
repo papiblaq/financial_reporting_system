@@ -422,7 +422,7 @@ namespace financial_reporting_system.Controllers
             using (var connection = new OracleConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                using (var command = new OracleCommand("SELECT STMNT_ID FROM EXCEL_WORKBOOK_STMNT_SHEET WHERE EXCEL_SHEET = :EXCEL_SHEET", connection))
+                using (var command = new OracleCommand("SELECT STMNT_ID FROM EXCEL_WORKBOOK_STATEMENT_TYPE WHERE EXCEL_SHEET = :EXCEL_SHEET", connection))
                 {
                     command.Parameters.Add(new OracleParameter("EXCEL_SHEET", excelSheet));
 

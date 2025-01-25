@@ -126,25 +126,24 @@
 
         <!-- Syncfusion Grid -->
         <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-            <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+            <e-grid-pagesettings pageSize="100"></e-grid-pagesettings>
             <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
             <e-grid-columns>
                 <e-grid-column type="checkbox" width="50"></e-grid-column>
-                <e-grid-column field="MAPPING_ID" headerText="Mapping ID" textAlign="Right" width="120"></e-grid-column>
+                <!--<e-grid-column field="MAPPING_ID" headerText="Mapping ID" textAlign="Right" width="120"></e-grid-column>
                 <e-grid-column field="DETAIL_ID" headerText="Detail ID" textAlign="Right" width="120"></e-grid-column>
                 <e-grid-column field="STMNT_ID" headerText="Statement ID" textAlign="Right" width="120"></e-grid-column>
                 <e-grid-column field="SHEET_ID" headerText="Sheet ID" textAlign="Right" width="120"></e-grid-column>
-                <e-grid-column field="HEADER_ID" headerText="Header ID" textAlign="Right" width="120"></e-grid-column>
+                <e-grid-column field="HEADER_ID" headerText="Header ID" textAlign="Right" width="120"></e-grid-column>-->
                 <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
                 <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="150"></e-grid-column>
                 <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
                 <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="150" format="yMd"></e-grid-column>
                 <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="150"></e-grid-column>
-                <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="120"></e-grid-column>
-                <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="150"></e-grid-column>
+       
                 <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="120"></e-grid-column>
                 <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="300"></e-grid-column>
-                <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="120"></e-grid-column>
+               
             </e-grid-columns>
         </ejs-grid>
     </div>

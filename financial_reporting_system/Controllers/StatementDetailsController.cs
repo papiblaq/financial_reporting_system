@@ -326,7 +326,7 @@ namespace financial_reporting_system.Controllers
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
-                    string query = "SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_DETAIL";
+                    string query = "SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY FROM ORG_FINANCIAL_STMNT_DETAIL WHERE REC_ST = 'A'";
                     using (var command = new OracleCommand(query, connection))
                     {
                         using (var reader = command.ExecuteReader())
@@ -452,7 +452,7 @@ namespace financial_reporting_system.Controllers
                     connection.Open();
 
                     // Delete the record
-                    string deleteQuery = "DELETE FROM ORG_FINANCIAL_STMNT_DETAIL WHERE DETAIL_ID = :DETAIL_ID";
+                    string deleteQuery = "UPDATE  ORG_FINANCIAL_STMNT_DETAIL SET REC_ST = 'I', VERSION_NUMBER = VERSION_NUMBER + 1 WHERE DETAIL_ID = :DETAIL_ID";
 
                     using (var deleteCommand = new OracleCommand(deleteQuery, connection))
                     {

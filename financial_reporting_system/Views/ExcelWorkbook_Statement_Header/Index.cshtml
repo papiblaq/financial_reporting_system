@@ -127,7 +127,7 @@
 
                 <!-- Available Sheets Dropdown -->
                 <div class="form-group">
-                    <label for="SHEET_ID">Available Sheets</label>
+                    <label for="SHEET_ID">Contents In the Sheets</label>
                     <select id="AvailableSheets" name="SHEET_ID" class="form-control">
                         <option value="">-- Select Sheet --</option>
                     </select>
@@ -216,7 +216,7 @@
                             $.post('/ExcelWorkbook_Statement_Header/GetSheetIdsByStatementId', { stmntId: excelStmntId }, function (data) {
                                 var availableSheetsDropdown = $('#AvailableSheets');
                                 availableSheetsDropdown.empty();
-                                availableSheetsDropdown.append('<option value="">-- Select Sheet --</option>');
+                                availableSheetsDropdown.append('<option value="">-- Select Sheet Contents --</option>');
                                 $.each(data, function (index, item) {
                                     availableSheetsDropdown.append($('<option></option>').val(item.value).text(item.text));
                                 });
@@ -227,7 +227,7 @@
                     });
                 } else {
                     $('#StmntId').val(''); // Clear the STMNT_ID if no sheet is selected
-                    $('#AvailableSheets').empty().append('<option value="">-- Select Sheet --</option>');
+                    $('#AvailableSheets').empty().append('<option value="">-- Select Sheet contents --</option>');
                 }
             });
 

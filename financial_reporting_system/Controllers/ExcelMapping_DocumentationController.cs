@@ -398,6 +398,7 @@ namespace financial_reporting_system.Controllers
         {
             var savedValues = new Dictionary<string, List<UserDefinedCellValues>>();
 
+            // Validate the selected template
             if (string.IsNullOrEmpty(selectedTemplate))
             {
                 Console.WriteLine("Selected template is null or empty.");
@@ -409,23 +410,38 @@ namespace financial_reporting_system.Controllers
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
-                    using (var command = new OracleCommand("SELECT WORKSHEET_NAME, REF_CD, VALUE_FOR_CELLS FROM EXCEL_WORKBOOK_TEMP_EXPORT_DATA WHERE TEMPLATE_NAME = :templateName", connection))
+
+                    // Query to fetch saved values for the selected template
+                    using (var command = new OracleCommand(
+                        "SELECT WORKSHEET_NAME, REF_CD, VALUE_FOR_CELLS " +
+                        "FROM EXCEL_WORKBOOK_TEMP_EXPORT_DATA " +
+                        "WHERE TEMPLATE_NAME = :templateName", connection))
                     {
                         command.Parameters.Add(new OracleParameter("templateName", selectedTemplate));
+
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
+                                // Read values from the database
                                 string worksheetName = reader["WORKSHEET_NAME"].ToString();
+                                string refCd = reader["REF_CD"].ToString();
+                                string valueForCells = reader["VALUE_FOR_CELLS"].ToString();
+
+                                // Log the fetched data for debugging
+                                Console.WriteLine($"Worksheet: {worksheetName}, RefCd: {refCd}, ValueForCells: {valueForCells}");
+
+                                // Ensure the worksheet name exists in the dictionary
                                 if (!savedValues.ContainsKey(worksheetName))
                                 {
                                     savedValues[worksheetName] = new List<UserDefinedCellValues>();
                                 }
 
+                                // Add the cell value to the worksheet's list
                                 savedValues[worksheetName].Add(new UserDefinedCellValues
                                 {
-                                    RefCd = reader["REF_CD"].ToString(),
-                                    ValueForCells = reader["VALUE_FOR_CELLS"].ToString()
+                                    RefCd = refCd,
+                                    ValueForCells = valueForCells
                                 });
                             }
                         }
@@ -434,6 +450,7 @@ namespace financial_reporting_system.Controllers
             }
             catch (Exception ex)
             {
+                // Log the exception for debugging
                 Console.WriteLine($"Error in GetSavedValues: {ex.Message}");
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
             }
@@ -589,7 +606,7 @@ namespace financial_reporting_system.Controllers
             try
             {
                 // Validate the model
-                if (model == null || string.IsNullOrEmpty(model.SelectedTemplate) || string.IsNullOrEmpty(model.RefCd) || string.IsNullOrEmpty(model.ValueForCells))
+                if (model == null || string.IsNullOrEmpty(model.SelectedTemplate) ||  string.IsNullOrEmpty(model.ValueForCells))
                 {
                     return Json(new { success = false, message = "Invalid data received." });
                 }
@@ -599,12 +616,11 @@ namespace financial_reporting_system.Controllers
                 {
                     connection.Open();
                     using (var deleteCommand = new OracleCommand(
-                        "DELETE FROM EXCEL_WORKBOOK_TEMP_EXPORT_DATA WHERE TEMPLATE_NAME = :templateName AND WORKSHEET_NAME = :worksheetName AND REF_CD = :refCd AND VALUE_FOR_CELLS = :valueForCells",
+                        "DELETE FROM EXCEL_WORKBOOK_TEMP_EXPORT_DATA WHERE TEMPLATE_NAME = :templateName AND WORKSHEET_NAME = :worksheetName  AND VALUE_FOR_CELLS = :valueForCells",
                         connection))
                     {
                         deleteCommand.Parameters.Add(new OracleParameter("templateName", model.SelectedTemplate));
                         deleteCommand.Parameters.Add(new OracleParameter("worksheetName", model.SelectedWorkbook));
-                        deleteCommand.Parameters.Add(new OracleParameter("refCd", model.RefCd));
                         deleteCommand.Parameters.Add(new OracleParameter("valueForCells", model.ValueForCells));
                         deleteCommand.ExecuteNonQuery();
                     }

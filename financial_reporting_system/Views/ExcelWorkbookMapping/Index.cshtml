@@ -48,15 +48,31 @@
 
         <!-- Statement Type Dropdown -->
         <div class="form-group">
-            <label for="statementTypeDropdown">Statement Type</label>
+            <label for="statementTypeDropdown">Worksheet</label>
             <select id="statementTypeDropdown" class="form-control">
-                <option value="">-- Select a Statement Type --</option>
+                <option value="">-- Select a Worksheet --</option>
                 @foreach (var item in ViewBag.StatementTypes)
                 {
-                    <option value="@item.STMNT_ID">@item.DESCRIPTION</option>
+                    <option value="@item.STMNT_ID">@item.EXCEL_SHEET</option>
                 }
             </select>
         </div>
+
+        <!-- Date-Time Picker for Start Date and End Date -->
+        <div class="mt-3">
+            <label for="startDatePicker">Start Date:</label>
+            <input type="text" id="startDatePicker" class="datePicker" placeholder="Select Start Date">
+
+            <label for="endDatePicker" class="ml-3">End Date:</label>
+            <input type="text" id="endDatePicker" class="datePicker" placeholder="Select End Date">
+
+            <!-- Search Button -->
+            <button type="button" class="btn btn-primary search-btn">Apply</button>
+        </div>
+
+        <!-- Hidden Text Boxes for Start Date and End Date -->
+        <input type="hidden" id="hiddenStartDate" name="hiddenStartDate">
+        <input type="hidden" id="hiddenEndDate" name="hiddenEndDate">
 
         <h1 class="mt-5">Available Statement Details for @ViewBag.SelectedDescription</h1>
         <!-- First Grid -->
@@ -81,27 +97,22 @@
         <div class="mb-3">
             <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
             <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
-                <option value="20" selected>20</option>
-                <option value="60">60</option>
-                <option value="100">100</option>
-                <option value="150">150</option>
-                <option value="400">400</option>
+                <option value="200" selected>200</option>
                 <option value="600">600</option>
+                <option value="1000">1000</option>
+                <option value="1500">1500</option>
+                <option value="4000">4000</option>
             </select>
         </div>
 
         <!-- Second Grid -->
         <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-            <e-grid-pagesettings pageSize="15"></e-grid-pagesettings>
+            <e-grid-pagesettings pageSize="200"></e-grid-pagesettings>
             <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
             <e-grid-columns>
                 <e-grid-column type="checkbox" width="50"></e-grid-column>
-                <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="150"></e-grid-column>
-                <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="150"></e-grid-column>
-                <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="250"></e-grid-column>
                 <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
                 <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
-                <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="150"></e-grid-column>
             </e-grid-columns>
         </ejs-grid>
 
@@ -114,157 +125,76 @@
         </div>
     </div>
 
-    <style>
-        .breadcrumb {
-            display: flex;
-            flex-wrap: nowrap;
-            background-color: #f8f9fa;
-            padding: 8px 16px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            list-style: none;
-        }
-
-        .breadcrumb-item {
-            margin-right: 8px;
-            font-size: 1rem;
-            color: #007bff;
-        }
-
-            .breadcrumb-item a {
-                text-decoration: none;
-                color: #007bff;
-                transition: color 0.3s ease;
-            }
-
-                .breadcrumb-item a:hover {
-                    color: #0056b3;
-                }
-
-        .container {
-            margin: 20px auto;
-            padding: 20px;
-            max-width: 1200px;
-            max-height: 80vh;
-            overflow-y: auto;
-            background-color: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-family: 'Arial', sans-serif;
-        }
-
-            .container h1 {
-                font-size: 1.5rem;
-                color: #333;
-                margin-bottom: 10px;
-            }
-
-            .container select {
-                display: block;
-                padding: 8px;
-                margin-top: 10px;
-                font-size: 1rem;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                width: 100%;
-                max-width: 300px;
-            }
-
-        .custom-label {
-            font-weight: bold;
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-
-        .white-grid {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .e-grid-columns {
-            font-size: 0.9rem;
-        }
-
-        .e-grid-column headerText {
-            font-weight: bold;
-            color: #444;
-        }
-
-        .grid-spacer {
-            height: 30px;
-        }
-
-        #pageSizeDropdown {
-            margin-top: 5px;
-        }
-
-        .button-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .custom-delete-button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-            .custom-delete-button:hover {
-                background-color: #0056b3;
-            }
-
-        .btn-secondary {
-            text-decoration: none;
-            background-color: #6c757d;
-            color: white;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-            .btn-secondary:hover {
-                background-color: #5a6268;
-            }
-    </style>
+    <!-- Include Flatpickr CSS and JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script>
+        // Initialize Flatpickr for date-time pickers with DD-MMM-YY format
+        flatpickr("#startDatePicker", {
+            dateFormat: "d-M-y", // Format: DD-MMM-YY
+            defaultDate: "today", // Set default date to today
+            onChange: function (selectedDates, dateStr, instance) {
+                // Convert the month to uppercase
+                const formattedDate = dateStr.toUpperCase();
+                document.getElementById('startDatePicker').value = formattedDate;
+
+                // Update the hidden text box
+                document.getElementById('hiddenStartDate').value = formattedDate;
+            }
+        });
+
+        flatpickr("#endDatePicker", {
+            dateFormat: "d-M-y", // Format: DD-MMM-YY
+            defaultDate: "today", // Set default date to today
+            onChange: function (selectedDates, dateStr, instance) {
+                // Convert the month to uppercase
+                const formattedDate = dateStr.toUpperCase();
+                document.getElementById('endDatePicker').value = formattedDate;
+
+                // Update the hidden text box
+                document.getElementById('hiddenEndDate').value = formattedDate;
+            }
+        });
+
         // Event listener for Workbook Dropdown change
         document.getElementById('SelectedWorkbook').addEventListener('change', function () {
             var selectedWorkbook = this.value; // Get the selected workbook value
+            console.log('Selected Workbook:', selectedWorkbook); // Debugging
 
             if (selectedWorkbook) {
+                console.log('Fetching statement types for workbook:', selectedWorkbook); // Debugging
+
                 // Fetch statement types for the selected workbook
                 fetch(`/ExcelWorkbookMapping/GetStatementTypesByWorkbook?workbook=${encodeURIComponent(selectedWorkbook)}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        console.log('Response received:', response); // Debugging
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.statusText);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
+                        console.log('Data received:', data); // Debugging
                         var statementTypeDropdown = document.getElementById('statementTypeDropdown');
-                        statementTypeDropdown.innerHTML = '<option value="">-- Select a Statement Type --</option>'; // Reset dropdown
+                        statementTypeDropdown.innerHTML = '<option value="">-- Select a Worksheet --</option>'; // Reset dropdown
 
                         // Populate the dropdown with fetched statement types
                         data.forEach(item => {
+                            console.log('Processing item:', item); // Debugging
                             var option = document.createElement('option');
-                            option.value = item.stmntId;
-                            option.text = item.description;
+                            option.value = item.stmnT_ID; // Use the correct property name
+                            option.text = item.exceL_SHEET; // Use the correct property name
                             statementTypeDropdown.appendChild(option);
                         });
                     })
                     .catch(error => {
-                        console.error('Error fetching statement types:', error);
+                        console.error('Error fetching statement types:', error); // Debugging
                     });
             } else {
+                console.log('No workbook selected. Clearing dropdown.'); // Debugging
                 // Clear the Statement Type Dropdown if no workbook is selected
-                document.getElementById('statementTypeDropdown').innerHTML = '<option value="">-- Select a Statement Type --</option>';
+                document.getElementById('statementTypeDropdown').innerHTML = '<option value="">-- Select a Worksheet --</option>';
             }
         });
 
@@ -317,11 +247,8 @@
                     DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
                     SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
                     CREATED_BY: selectedOrderRow[0].CREATED_BY,
-                    GL_ACCT_ID: accountRow.GL_ACCT_ID,
-                    GL_ACCT_NO: accountRow.GL_ACCT_NO,
-                    LEDGER_NO: accountRow.LEDGER_NO,
-                    ACCT_DESC: accountRow.ACCT_DESC,
-                    BAL_CD: accountRow.BAL_CD
+                    LEDGER_NO: accountRow.LEDGER_NO, // Only LEDGER_NO and ACCT_DESC are available
+                    ACCT_DESC: accountRow.ACCT_DESC
                 }));
 
                 // Fetch request to save combined rows
@@ -355,6 +282,265 @@
             }
         });
     </script>
+
+
+    <style>
+        .breadcrumb {
+            display: flex;
+            flex-wrap: nowrap;
+            background-color: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            list-style: none;
+        }
+
+        .breadcrumb-item {
+            margin-right: 8px;
+            font-size: 1rem;
+            color: #007bff;
+        }
+
+            .breadcrumb-item a {
+                text-decoration: none;
+                color: #007bff;
+                transition: color 0.3s ease;
+            }
+
+                .breadcrumb-item a:hover {
+                    color: #0056b3;
+                }
+
+        .container {
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 1200px;
+            max-height: calc(100vh - 40px); /* Adjusted to fit above the bottom */
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Arial', sans-serif;
+        }
+
+
+            .container h1 {
+                font-size: 1.5rem;
+                color: #333;
+                margin-bottom: 10px;
+            }
+
+            .container select {
+                display: block;
+                padding: 8px;
+                margin-top: 10px;
+                font-size: 1rem;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                width: 100%;
+                max-width: 300px;
+            }
+
+        .custom-label {
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        /* Define the white-grid class */
+        .white-grid {
+            background-color: white !important; /* Set the background color to white */
+            color: black; /* Set the text color to black */
+        }
+
+            /* Style the header */
+            .white-grid .e-gridheader {
+                background-color: white !important; /* Set the header background color to white */
+                color: aquamarine; /* Set the header text color to black */
+                border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of the header */
+            }
+
+            /* Style the rows */
+            .white-grid .e-gridcontent .e-rowcell {
+                background-color: white; /* Set the row cell background color to white */
+                color: #6c757d !important; /* Set the row cell text color to #6c757d */
+                border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of each row */
+                border: none;
+            }
+            /* Style the rows on hover */
+            .white-grid .e-gridcontent .e-row:hover .e-rowcell {
+                background-color: lightgray !important;
+                color: aquamarine !important; /* Set the row cell text color to aquamarine on hover */
+            }
+
+            /* Style the pager */
+            .white-grid .e-gridpager {
+                background-color: white; /* Set the pager background color to white */
+                color: black; /* Set the pager text color to black */
+                border-top: 1px solid #dee2e6; /* Add a border at the top of the pager */
+            }
+
+            /* Style the filter row */
+            .white-grid .e-filterbarcell {
+                background-color: white !important; /* Set the filter row background color to white */
+                color: InactiveCaptionText !important; /* Set the filter row text color to black */
+                border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of the filter row */
+            }
+
+                /* Style the filter input */
+                .white-grid .e-filterbarcell input {
+                    background-color: white; /* Set the filter input background color to white */
+                    color: #6c757d !important; /* Set the filter input text color to #6c757d */
+                    border: 1px solid #ced4da; /* Add a border to the filter input */
+                }
+
+                /* Style the filter dropdown */
+                .white-grid .e-filterbarcell .e-dropdownlist {
+                    background-color: white !important; /* Set the filter dropdown background color to white */
+                    color: #6c757d; /* Set the filter dropdown text color to #6c757d */
+                    border: 1px solid #ced4da; /* Add a border to the filter dropdown */
+                }
+
+                    /* Style the filter dropdown options */
+                    .white-grid .e-filterbarcell .e-dropdownlist .e-list-item {
+                        background-color: white; /* Set the filter dropdown option background color to white */
+                        color: #6c757d; /* Set the filter dropdown option text color to #6c757d */
+                    }
+
+                        /* Style the filter dropdown options on hover */
+                        .white-grid .e-filterbarcell .e-dropdownlist .e-list-item:hover {
+                            background-color: hotpink !important; /* Set the filter dropdown option background color on hover */
+                            color: aquamarine !important; /* Set the filter dropdown option text color on hover */
+                        }
+
+                        /* Style the filter dropdown options on focus */
+                        .white-grid .e-filterbarcell .e-dropdownlist .e-list-item.e-active {
+                            background-color: #e9ecef; /* Set the filter dropdown option background color on focus */
+                            color: #6c757d; /* Set the filter dropdown option text color on focus */
+                        }
+
+        .button-container {
+            display: flex; /* Use Flexbox */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            margin-top: 20px; /* Add space above the button */
+        }
+
+        .custom-delete-button {
+            background-color: #d9534f; /* Red background color */
+            color: white; /* White text color */
+            border: none; /* No border */
+            padding: 10px 20px; /* Padding for spacing */
+            font-size: 16px; /* Font size */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Pointer cursor on hover */
+            transition: background-color 0.3s ease; /* Smooth transition effect */
+        }
+
+            .custom-delete-button:hover {
+                background-color: #c9302c; /* Darker red on hover */
+            }
+
+        .grid-spacer {
+            height: 20px; /* Spacer height between the grids */
+        }
+
+        h1 {
+            font-size: 18px; /* Smaller font size */
+            color: #6c757d; /* Greyish color */
+            font-weight: normal; /* Normal font weight */
+            margin-bottom: 10px; /* Margin below the heading */
+        }
+
+        .custom-label {
+            font-size: 18px; /* Smaller font size */
+            color: #6c757d; /* Greyish color */
+            font-weight: normal; /* Normal font weight */
+            margin-bottom: 10px; /* Margin below the heading */
+        }
+
+        #pageSizeDropdown {
+            margin-top: 5px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .custom-delete-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .custom-delete-button:hover {
+                background-color: #0056b3;
+            }
+
+        .btn-secondary {
+            text-decoration: none;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .btn-secondary:hover {
+                background-color: #5a6268;
+            }
+
+
+        /*styles for date picker*/
+        .date-picker-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .date-label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #495057;
+        }
+
+        .datePicker {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            transition: border-color 0.3s ease;
+        }
+
+            .datePicker:focus {
+                outline: none;
+                border-color: #007bff;
+            }
+
+        .form-group .datePicker::placeholder {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+
+
+    </style>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

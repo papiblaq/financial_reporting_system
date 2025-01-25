@@ -28,11 +28,11 @@ namespace financial_reporting_system.Controllers
 
             // Fetch filtered financial statement details based on the STMNT_ID
             var financialStatementDetails = GetFinancialStatementDetails(stmntId);
-            var accountDetails = GetAccountDetails(stmntId); // Pass stmntId to GetAccountDetails
+            var accountDetails = GetAccountDetails(); // Fetch account details using the new query
             var statementTypes = GetExcelWorkbookStatementTypes();
 
-            // Find the selected statement type description
-            var selectedDescription = statementTypes.FirstOrDefault(st => st.STMNT_ID == stmntId)?.DESCRIPTION ?? "All statement types";
+            // Find the selected statement type excel sheets
+            var selectedDescription = statementTypes.FirstOrDefault(st => st.STMNT_ID == stmntId)?.EXCEL_SHEET ?? "All statement types";
 
             ViewBag.AccountDetails = accountDetails;
             ViewBag.StatementTypes = statementTypes;
@@ -56,7 +56,7 @@ namespace financial_reporting_system.Controllers
             {
                 await connection.OpenAsync();
                 using (var command = new OracleCommand(
-                    "SELECT STMNT_ID, DESCRIPTION FROM EXCEL_WORKBOOK_STATEMENT_TYPE WHERE EXCEL_WORKBOOK = :EXCEL_WORKBOOK", connection))
+                    "SELECT STMNT_ID, EXCEL_SHEET FROM EXCEL_WORKBOOK_STATEMENT_TYPE WHERE EXCEL_WORKBOOK = :EXCEL_WORKBOOK", connection))
                 {
                     command.Parameters.Add(new OracleParameter("EXCEL_WORKBOOK", workbook));
 
@@ -67,7 +67,7 @@ namespace financial_reporting_system.Controllers
                             statementTypes.Add(new ExcelWorkbookStatementType
                             {
                                 STMNT_ID = reader.GetInt32(0),
-                                DESCRIPTION = reader.GetString(1)
+                                EXCEL_SHEET = reader.GetString(1)
                             });
                         }
                     }
@@ -77,6 +77,7 @@ namespace financial_reporting_system.Controllers
             return statementTypes;
         }
 
+        // Method for fetching workbooks
         private List<SelectListItem> GetWorkbooks()
         {
             var workbooks = new List<SelectListItem>();
@@ -164,11 +165,10 @@ namespace financial_reporting_system.Controllers
                     worksheet.Range["C1"].Text = "Description";
                     worksheet.Range["D1"].Text = "System Create Timestamp";
                     worksheet.Range["E1"].Text = "Created By";
-                    worksheet.Range["F1"].Text = "GL Account ID";
-                    worksheet.Range["G1"].Text = "GL Account No";
-                    worksheet.Range["H1"].Text = "Ledger No";
-                    worksheet.Range["I1"].Text = "Account Description";
-                    worksheet.Range["J1"].Text = "Balance Code";
+                 
+                    worksheet.Range["F1"].Text = "Ledger No";
+                    worksheet.Range["G1"].Text = "Account Description";
+                    
 
                     // Set data
                     for (int i = 0; i < mappings.Count; i++)
@@ -178,11 +178,10 @@ namespace financial_reporting_system.Controllers
                         worksheet.Range["C" + (i + 2)].Text = mappings[i].DESCRIPTION;
                         worksheet.Range["D" + (i + 2)].Text = mappings[i].SYS_CREATE_TS.ToString("yyyy-MM-dd");
                         worksheet.Range["E" + (i + 2)].Text = mappings[i].CREATED_BY;
-                        worksheet.Range["F" + (i + 2)].Text = mappings[i].GL_ACCT_ID.ToString();
-                        worksheet.Range["G" + (i + 2)].Text = mappings[i].GL_ACCT_NO;
-                        worksheet.Range["H" + (i + 2)].Text = mappings[i].LEDGER_NO;
-                        worksheet.Range["I" + (i + 2)].Text = mappings[i].ACCT_DESC;
-                        worksheet.Range["J" + (i + 2)].Text = mappings[i].BAL_CD;
+                   
+                        worksheet.Range["F" + (i + 2)].Text = mappings[i].LEDGER_NO;
+                        worksheet.Range["G" + (i + 2)].Text = mappings[i].ACCT_DESC;
+                    
                     }
 
                     // Save the workbook to a memory stream
@@ -241,7 +240,8 @@ namespace financial_reporting_system.Controllers
             return financialStatementDetails;
         }
 
-        private List<AccountDetail> GetAccountDetails(int stmntId)
+        // Updated method to fetch account details using the new query
+        private List<AccountDetail> GetAccountDetails()
         {
             var accountDetails = new List<AccountDetail>();
 
@@ -251,14 +251,8 @@ namespace financial_reporting_system.Controllers
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                        SELECT GL_ACCT_CAT_CD, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD 
-                        FROM V_ORG_CHART_OF_ACCOUNT_DETAILS A
-                        WHERE A.GL_ACCT_ID NOT IN (
-                            SELECT GL_ACCT_ID 
-                            FROM EXCEL_WORKBOOK_FINANCIAL_MAPPING 
-                            WHERE STMNT_ID = :stmntId
-                        )";
-                    command.Parameters.Add(new OracleParameter("stmntId", stmntId));
+                        SELECT DISTINCT LEDGER_NO, ACCT_DESC 
+                        FROM V_ORG_CHART_OF_ACCOUNT_DETAILS_WITHVALUE_DATE";
 
                     using (var reader = command.ExecuteReader())
                     {
@@ -266,12 +260,8 @@ namespace financial_reporting_system.Controllers
                         {
                             accountDetails.Add(new AccountDetail
                             {
-                                GL_ACCT_CAT_CD = reader.IsDBNull(0) ? null : reader.GetString(0),
-                                GL_ACCT_ID = reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
-                                GL_ACCT_NO = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                LEDGER_NO = reader.IsDBNull(3) ? null : reader.GetString(3),
-                                ACCT_DESC = reader.IsDBNull(4) ? null : reader.GetString(4),
-                                BAL_CD = reader.IsDBNull(5) ? null : reader.GetString(5)
+                                LEDGER_NO = reader.IsDBNull(0) ? null : reader.GetString(0),
+                                ACCT_DESC = reader.IsDBNull(1) ? null : reader.GetString(1)
                             });
                         }
                     }
@@ -281,40 +271,53 @@ namespace financial_reporting_system.Controllers
             return accountDetails;
         }
 
-        private void InsertCombinedRows(List<CombinedRow> combinedRows)
+private void InsertCombinedRows(List<CombinedRow> combinedRows)
+{
+    using (var connection = new OracleConnection(_connectionString))
+    {
+        connection.Open();
+        using (var command = connection.CreateCommand())
         {
-            using (var connection = new OracleConnection(_connectionString))
-            {
-                connection.Open();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = @"
-                        INSERT INTO EXCEL_WORKBOOK_FINANCIAL_MAPPING 
-                        (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD) 
-                        VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :GL_ACCT_ID, :GL_ACCT_NO, :LEDGER_NO, :ACCT_DESC, :BAL_CD)";
+            // Insert into ORG_MAPPED_DESCRIPTION
+            command.CommandText = @"
+                INSERT INTO ORG_MAPPED_DESCRIPTION 
+                (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC) 
+                VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :LEDGER_NO, :ACCT_DESC)";
 
-                    foreach (var row in combinedRows)
-                    {
-                        command.Parameters.Clear();
-                        command.Parameters.Add(new OracleParameter("DETAIL_ID", row.DETAIL_ID));
-                        command.Parameters.Add(new OracleParameter("STMNT_ID", row.STMNT_ID));
-                        command.Parameters.Add(new OracleParameter("SHEET_ID", row.SHEET_ID));
-                        command.Parameters.Add(new OracleParameter("HEADER_ID", row.HEADER_ID));
-                        command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", row.GL_ACCT_CAT_CD ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("REF_CD", row.REF_CD ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("DESCRIPTION", row.DESCRIPTION ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", row.SYS_CREATE_TS));
-                        command.Parameters.Add(new OracleParameter("CREATED_BY", row.CREATED_BY ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("GL_ACCT_ID", row.GL_ACCT_ID));
-                        command.Parameters.Add(new OracleParameter("GL_ACCT_NO", row.GL_ACCT_NO ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("ACCT_DESC", row.ACCT_DESC ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("BAL_CD", row.BAL_CD ?? (object)DBNull.Value));
-                        command.ExecuteNonQuery();
-                    }
+            foreach (var row in combinedRows)
+            {
+                // Clear parameters for each iteration
+                command.Parameters.Clear();
+
+                // Add parameters for the INSERT statement
+                command.Parameters.Add(new OracleParameter("DETAIL_ID", row.DETAIL_ID));
+                command.Parameters.Add(new OracleParameter("STMNT_ID", row.STMNT_ID));
+                command.Parameters.Add(new OracleParameter("SHEET_ID", row.SHEET_ID));
+                command.Parameters.Add(new OracleParameter("HEADER_ID", row.HEADER_ID));
+                command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", row.GL_ACCT_CAT_CD ?? (object)DBNull.Value));
+                command.Parameters.Add(new OracleParameter("REF_CD", row.REF_CD ?? (object)DBNull.Value));
+                command.Parameters.Add(new OracleParameter("DESCRIPTION", row.DESCRIPTION ?? (object)DBNull.Value));
+                command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", row.SYS_CREATE_TS));
+                command.Parameters.Add(new OracleParameter("CREATED_BY", row.CREATED_BY ?? (object)DBNull.Value));
+                command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO ?? (object)DBNull.Value));
+                command.Parameters.Add(new OracleParameter("ACCT_DESC", row.ACCT_DESC ?? (object)DBNull.Value));
+
+                // Execute the INSERT statement
+                command.ExecuteNonQuery();
+
+                // Call the CALL_TRIGGER_LOGIC procedure if LEDGER_NO is not null or empty
+                if (!string.IsNullOrEmpty(row.LEDGER_NO))
+                {
+                    // Reuse the same command object for the procedure call
+                    command.CommandText = "CALL CALL_TRIGGER_LOGIC(:LEDGER_NO)";
+                    command.Parameters.Clear(); // Clear previous parameters
+                    command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO));
+                    command.ExecuteNonQuery();
                 }
             }
         }
+    }
+}
 
         private void DeleteMappingRows(List<int> mappingIds)
         {
@@ -323,7 +326,7 @@ namespace financial_reporting_system.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "DELETE FROM EXCEL_WORKBOOK_FINANCIAL_MAPPING WHERE MAPPING_ID IN (" + string.Join(",", mappingIds) + ")";
+                    command.CommandText = "DELETE FROM ORG_MAPPED_DESCRIPTION WHERE MAPPED_DESC_ID IN (" + string.Join(",", mappingIds) + ")";
                     command.ExecuteNonQuery();
                 }
             }
@@ -338,14 +341,14 @@ namespace financial_reporting_system.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT MAPPING_ID, DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, GL_ACCT_ID, GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BAL_CD FROM EXCEL_WORKBOOK_FINANCIAL_MAPPING";
+                    command.CommandText = "SELECT MAPPED_DESC_ID, DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC FROM ORG_MAPPED_DESCRIPTION";
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
                             mappings.Add(new Mapping
                             {
-                                MAPPING_ID = reader.GetInt32(0),
+                                MAPPED_DESC_ID = reader.GetInt32(0),
                                 DETAIL_ID = reader.GetInt32(1),
                                 STMNT_ID = reader.GetInt32(2),
                                 SHEET_ID = reader.GetInt32(3),
@@ -355,11 +358,10 @@ namespace financial_reporting_system.Controllers
                                 DESCRIPTION = reader.IsDBNull(7) ? null : reader.GetString(7),
                                 SYS_CREATE_TS = reader.GetDateTime(8),
                                 CREATED_BY = reader.IsDBNull(9) ? null : reader.GetString(9),
-                                GL_ACCT_ID = reader.GetInt32(10),
-                                GL_ACCT_NO = reader.IsDBNull(11) ? null : reader.GetString(11),
-                                LEDGER_NO = reader.IsDBNull(12) ? null : reader.GetString(12),
-                                ACCT_DESC = reader.IsDBNull(13) ? null : reader.GetString(13),
-                                BAL_CD = reader.IsDBNull(14) ? null : reader.GetString(14)
+                               
+                                LEDGER_NO = reader.IsDBNull(10) ? null : reader.GetString(10),
+                                ACCT_DESC = reader.IsDBNull(11) ? null : reader.GetString(11),
+                               
                             });
                         }
                     }
@@ -378,7 +380,7 @@ namespace financial_reporting_system.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT STMNT_ID, DESCRIPTION FROM EXCEL_WORKBOOK_STATEMENT_TYPE";
+                    command.CommandText = "SELECT STMNT_ID, EXCEL_SHEET FROM EXCEL_WORKBOOK_STATEMENT_TYPE";
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
@@ -386,7 +388,7 @@ namespace financial_reporting_system.Controllers
                             statementTypes.Add(new ExcelWorkbookStatementType
                             {
                                 STMNT_ID = reader.GetInt32(0),
-                                DESCRIPTION = reader.GetString(1)
+                                EXCEL_SHEET = reader.GetString(1)
                             });
                         }
                     }
@@ -396,6 +398,7 @@ namespace financial_reporting_system.Controllers
             return statementTypes;
         }
 
+        // Model Classes
         public class FinancialStatementDetail
         {
             public int DETAIL_ID { get; set; }
@@ -411,12 +414,8 @@ namespace financial_reporting_system.Controllers
 
         public class AccountDetail
         {
-            public string GL_ACCT_CAT_CD { get; set; }
-            public int GL_ACCT_ID { get; set; }
-            public string GL_ACCT_NO { get; set; }
             public string LEDGER_NO { get; set; }
             public string ACCT_DESC { get; set; }
-            public string BAL_CD { get; set; }
         }
 
         public class CombinedRow
@@ -430,16 +429,13 @@ namespace financial_reporting_system.Controllers
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }
             public string CREATED_BY { get; set; }
-            public int GL_ACCT_ID { get; set; }
-            public string GL_ACCT_NO { get; set; }
             public string LEDGER_NO { get; set; }
             public string ACCT_DESC { get; set; }
-            public string BAL_CD { get; set; }
         }
 
         public class Mapping
         {
-            public int MAPPING_ID { get; set; }
+            public int MAPPED_DESC_ID { get; set; }
             public int DETAIL_ID { get; set; }
             public int STMNT_ID { get; set; }
             public int SHEET_ID { get; set; }
@@ -449,17 +445,16 @@ namespace financial_reporting_system.Controllers
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }
             public string CREATED_BY { get; set; }
-            public int GL_ACCT_ID { get; set; }
-            public string GL_ACCT_NO { get; set; }
+            
             public string LEDGER_NO { get; set; }
             public string ACCT_DESC { get; set; }
-            public string BAL_CD { get; set; }
+           
         }
 
         public class ExcelWorkbookStatementType
         {
             public int STMNT_ID { get; set; }
-            public string DESCRIPTION { get; set; }
+            public string EXCEL_SHEET { get; set; }
         }
     }
 }

@@ -10,41 +10,40 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 
 <div class="container">
-    <div class="button-container">
-        <button id="deleteButton" class="custom-delete-button button-spacing" onclick="deleteSelectedRows()">Delete Selected Rows</button>
-        <button id="exportButton" class="custom-export-button button-spacing" onclick="exportToExcel()">Export to Excel</button>
-       
-    </div>
-    
+    <div class="content">
 
-    <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-        <e-grid-pagesettings pageSize="15"></e-grid-pagesettings>
-        <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
-        <e-grid-columns>
-            <e-grid-column type="checkbox" width="50"></e-grid-column>
-            
-            <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
-            <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
-            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
-            <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
-            <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="350"></e-grid-column>
-            <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
-            <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="150"></e-grid-column>
-        </e-grid-columns>
-    </ejs-grid>
+        <div class="button-container">
+            <button id="deleteButton" class="custom-delete-button button-spacing" onclick="deleteSelectedRows()">Delete Selected Rows</button>
+            <button id="exportButton" class="custom-export-button button-spacing" onclick="exportToExcel()">Export to Excel</button>
+
+        </div>
+
+
+        <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+            <e-grid-pagesettings pageSize="200"></e-grid-pagesettings>
+            <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+            <e-grid-columns>
+                <e-grid-column type="checkbox" width="50"></e-grid-column>
+
+                <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
+                <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
+                <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
+                <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
+                <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="350"></e-grid-column>
+                <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
+                <e-grid-column field="BU_NM" headerText="Balance Code" textAlign="Right" width="150"></e-grid-column>
+            </e-grid-columns>
+        </ejs-grid>
+
+    </div>
+   
 </div>
 
 <style>
-    .container {
-        margin: 20px; /* Margin around the container */
-        padding: 20px; /* Padding inside the container */
-        border: 1px solid #ddd; /* Optional: border for the container */
-        border-radius: 8px; /* Rounded corners for the container */
-        background-color: #f8f9fa; /* Light grey background for the container */
-    }
+
 
     /* Define the white-grid class */
     .white-grid {

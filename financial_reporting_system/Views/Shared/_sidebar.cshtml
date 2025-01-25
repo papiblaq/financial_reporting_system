@@ -1,61 +1,33 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@* Define the menu items list *@
 @{
-
     List<object> menuItems = new List<object>
-{
-    new { text = "financial statements", separator = "true" },
-    new { text = "Statement Types", url = "/Statement_types", iconCss = "fa-solid fa-file-invoice" },
-    new { text = "Statement Sheets", url = "/Sheet", iconCss = "fa-solid fa-receipt"},
-    new { text = "Statement Header", url = "/StatementHeader", iconCss = "fa-solid fa-diamond" },
-     new { text = "Statement Details", url = "/StatementDetails", iconCss = "fa-solid fa-circle-info" },
+    {
+        new { id = "menuItem1", text = "Financial Statements", separator = true },
+        new { id = "menuItem2", text = "Files upload", url = "/Statement_types", iconCss = "fa-solid fa-file-invoice" },
+        new { id = "menuItem3", text = "Statement Sheets", url = "/Sheet", iconCss = "fa-solid fa-receipt" },
+        new { id = "menuItem4", text = "Statement Header", url = "/StatementHeader", iconCss = "fa-solid fa-diamond" },
+        new { id = "menuItem5", text = "Statement Details", url = "/StatementDetails", iconCss = "fa-solid fa-circle-info" },
 
-    // This one separates the groups
-    new { text = "Financial Mapping", separator = "true" },
-    new { text = "Statement Mapping", url = "/Mapping", iconCss = "fa-solid fa-magnifying-glass-dollar" },
-      new { text = "Financial Reporting", url = "/Documentation", iconCss = "fa-solid fa-file-excel" },
-        // This one separates the groups
-    new { text = "Extraction of Workbook Data", separator = "true" },
-    new { text = "Insertion of Workbook Data", url = "/Excel/Upload", iconCss = "fa-solid fa-object-ungroup" },
-    new { text = "Workbook Mapping", url = "/ExcelWorkbookMapping", iconCss = "fa-solid fa-envelopes-bulk" },
-     new { text = "Workbook Reports", url = "/ExcelMapping_Documentation", iconCss = "fa-solid fa-folder-tree" },
-     new { text = "Workbook Extraction", url = "/ExcelMapping_Documentation/ExcelWorkbookUpload", iconCss = "fa-solid fa-download" },
+        new { id = "menuItem6", text = "Financial Mapping", separator = true },
+        new { id = "menuItem7", text = "Statement Mapping", url = "/Mapping", iconCss = "fa-solid fa-magnifying-glass-dollar" },
+        new { id = "menuItem8", text = "Financial Reporting", url = "/Documentation", iconCss = "fa-solid fa-file-excel" },
 
-   
-
-    // Example of a dropdown menu
-    // new {
-    //     text = "Dropdown",
-    //     items = new List<object>
-    //     {
-    //         new { text = "Open" },
-    //         new { text = "Close" },
-    //         new { text = "Other" }
-    //     }
-    // }
-};
-
-
-
-
+        new { id = "menuItem9", text = "Extraction of Workbook Data", separator = true },
+        new { id = "menuItem10", text = "Insertion of Workbook Data", url = "/Excel/Upload", iconCss = "fa-solid fa-object-ungroup" },
+        new { id = "menuItem11", text = "Workbook Mapping", url = "/ExcelWorkbookMapping", iconCss = "fa-solid fa-envelopes-bulk" },
+        new { id = "menuItem12", text = "Workbook Reports", url = "/ExcelMapping_Documentation", iconCss = "fa-solid fa-folder-tree" },
+        new { id = "menuItem13", text = "Workbook Extraction", url = "/ExcelMapping_Documentation/ExcelWorkbookUpload", iconCss = "fa-solid fa-download" },
+    };
 }
-@*in the css assighm margin left with the same width as the sidebar*@
+
 <ejs-sidebar id="sidebar" width="290px" enableDock="true" dockSize="100px" target=".dock-target" enableGestures="false">
-
     <e-content-template>
-
-
         <div class="logo-wrapper">
             <i class="fa-solid" id="sidebar-toggler"></i>
             <div class="app-logo">
                 <img src="~/neptune_logo2.jpg" />
             </div>
-            <div class="w-1000"></div>
         </div>
-
-
-        @*the place for profile picture*@
 
         <div class="profile-wrapper">
             <img class="profilePic" src="~/neptunePic.jpg" />
@@ -65,19 +37,147 @@
             </div>
         </div>
 
-
-        <ejs-menu id="menu" items="menuItems" orientation="Vertical" hamburgerMode>
-
-        </ejs-menu>
+        @* Pass the menu items directly to the ejs-menu *@
+        <ejs-menu id="menu" items="menuItems" orientation="Vertical" hamburgerMode="true"></ejs-menu>
     </e-content-template>
-
 </ejs-sidebar>
-<!-- Onclick function in JavaScript for the sidebar -->
+
+<!-- Styling -->
+<style>
+    /* Sidebar container styling */
+    #sidebar {
+        background-color: #ffffff; /* Set background to white */
+        color: #2c3e50; /* Adjust text color for contrast */
+        font-family: Arial, sans-serif;
+        border-right: 1px solid #ddd; /* Optional: Add a light border for separation */
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Center the content vertically */
+        align-items: center; /* Align content horizontally */
+    }
+
+    /* Logo */
+    .logo-wrapper {
+        height: 70px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .app-logo {
+        padding: 10px 10px;
+    }
+
+        .app-logo img {
+            max-height: 100%;
+            max-width: 100%;
+            height: auto;
+            width: auto;
+        }
+
+    #sidebar-toggler {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #2c3e50; /* Dark color for toggler */
+    }
+
+    /* Profile section styling */
+    .profile-wrapper {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #ddd; /* Separator line */
+    }
+
+    .profilePic {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+
+    .titles h6 {
+        margin: 0;
+        color: #2c3e50; /* Adjust text color */
+    }
+
+    .titles span {
+        font-size: 0.85rem;
+        color: #7f8c8d; /* Muted text color */
+    }
+
+    /* Menu styling */
+    #menu {
+        display: flex;
+        flex-direction: column; /* Stack menu items vertically */
+        justify-content: center; /* Center items vertically */
+        align-items: center; /* Center items horizontally */
+        width: 100%; /* Make menu take full width */
+    }
+
+        /* Menu item styling */
+        #menu .e-menu-item {
+            color: #2c3e50; /* Dark text color for menu items */
+            padding: 10px 15px;
+            cursor: pointer;
+            background-color: #ffffff; /* Match sidebar background */
+            display: flex; /* Use flexbox */
+            align-items: center; /* Center vertically */
+            justify-content: start; /* Align text to the left */
+            height: 50px; /* Set a consistent height for the menu item */
+            width: 100%; /* Ensure each menu item takes the full width of the container */
+        }
+
+            #menu .e-menu-item:hover {
+                background-color: #f0f0f0; /* Light gray on hover */
+            }
+
+            /* Active menu item styling */
+            #menu .e-menu-item.active {
+                background-color: #e0e0e0; /* Light gray for active state */
+                color: #2c3e50; /* Keep text dark */
+            }
+
+
+</style>
+
+
+
+<!-- JavaScript -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const dockBar = document.getElementById('sidebar').ej2_instances[0];
+        const menu = document.getElementById('menu');
+
+        // Sidebar toggler
         document.getElementById('sidebar-toggler').onclick = function () {
             dockBar.toggle();
         };
+
+        // Highlight active menu item
+        const setActiveMenuItem = (menuItemId) => {
+            const items = menu.ej2_instances[0].items;
+            items.forEach(item => document.getElementById(item.id)?.classList.remove('active'));
+            const activeItem = document.getElementById(menuItemId);
+            if (activeItem) {
+                activeItem.classList.add('active');
+            }
+        };
+
+        // Save active menu item to localStorage
+        menu.addEventListener('click', function (e) {
+            if (e.target.closest('.e-menu-item')) {
+                const menuItemId = e.target.closest('.e-menu-item').id;
+                localStorage.setItem('activeMenuItem', menuItemId);
+                setActiveMenuItem(menuItemId);
+            }
+        });
+
+        // Restore active menu item on page load
+        const savedMenuItemId = localStorage.getItem('activeMenuItem');
+        if (savedMenuItemId) {
+            setActiveMenuItem(savedMenuItemId);
+        }
     });
 </script>

@@ -1,87 +1,276 @@
 ﻿@using syncfusion_grid.Controllers
 @model List<MappingController.FinancialStatementDetail>
 
-
 @{
     ViewData["Title"] = "Index";
 }
 
+
+
 <div class="container">
-    <h1 class="mt-5">Select a Financial Statement Type</h1>
-    <select id="statementTypeDropdown">
-    <option value="">-- Select a Statement Type --</option>
-    @foreach (var item in ViewBag.StatementTypes)
-    {
-        <option value="@item.STMNT_ID">@item.DESCRIPTION</option>
-    }
-</select>
+    <div class="content">
+        <!-- Form for Date Range and Statement Type Submission -->
+        <form id="dateRangeForm" method="get" action="/Mapping/Index" onsubmit="return validateForm()">
+            <!-- Statement Type Dropdown -->
+            <h1 class="mt-5">Select a Financial Statement Type</h1>
+            <select id="statementTypeDropdown" name="stmntId" class="form-control">
+                <option value="">-- Select a Statement Type --</option>
+                @foreach (var item in ViewBag.StatementTypes)
+                {
+                    <option value="@item.STMNT_ID" selected="@(item.STMNT_ID == ViewBag.SelectedStmntId ? "selected" : null)">
+                        @item.DESCRIPTION
+                    </option>
+                }
+            </select>
 
-    <h1 class="mt-5">Available Statement details for @ViewBag.SelectedDescription</h1>
-    <!-- First Grid -->
-    <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-        <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
-        <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
-        <e-grid-columns>
-            <e-grid-column type="checkbox" width="50"></e-grid-column>
-            
-            <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
-            <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
-            <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
-            <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
-            <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
-        </e-grid-columns>
-    </ejs-grid>
+            <h1 class="mt-5">Select the Time Period for @ViewBag.SelectedDescription</h1>
 
-    <!-- Spacer between grids -->
-    <div class="grid-spacer"></div>
+            <!-- Date-Time Picker for Start Date and End Date -->
+            <div class="mt-3">
+                <label for="startDatePicker">Start Date:</label>
+                <input type="text" id="startDatePicker" name="startDate" class="datePicker form-control" placeholder="Select Start Date" value="@ViewBag.StartDate">
 
-    <h1 class="mt-5">Unmapped GL</h1>
-    <!-- Dropdown for Page Size Selection -->
-    <div class="mb-3">
-        <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
+                <label for="endDatePicker" class="ml-3">End Date:</label>
+                <input type="text" id="endDatePicker" name="endDate" class="datePicker form-control" placeholder="Select End Date" value="@ViewBag.EndDate">
 
-        <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
-            <option value="20" selected>20</option>
-            <option value="60">60</option>
-            <option value="100">100</option>
-            <option value="150">150</option>
-            <option value="400">400</option>
-            <option value="600">600</option>
-        </select>
-    </div>
+                <!-- Search Button -->
+                <button type="submit" class="btn btn-primary search-btn">Apply</button>
+            </div>
+        </form>
 
-    <!-- Second Grid -->
-    <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-        <e-grid-pagesettings pageSize="15"></e-grid-pagesettings> <!-- Default page size is 15 -->
-        <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
-        <e-grid-columns>
-            <e-grid-column type="checkbox" width="50"></e-grid-column>
-            <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="250"></e-grid-column>
-            <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
-            <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
-            <e-grid-column field="BAL_CD" headerText="Balance Code" textAlign="Right" width="150"></e-grid-column>
-        </e-grid-columns>
-    </ejs-grid>
+        <!-- Available Statement Details -->
+        <h1 class="mt-5">Available Statement Details for @ViewBag.SelectedDescription</h1>
+        <!-- First Grid -->
+        <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+            <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+            <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+            <e-grid-columns>
+                <e-grid-column type="checkbox" width="50"></e-grid-column>
+                <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
+                <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
+                <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
+                <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
+                <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
+            </e-grid-columns>
+        </ejs-grid>
 
-    <!-- Centered Button -->
-    <div class="button-container">
-        <button id="saveCombinedRows" class="custom-delete-button">Save MappedGL</button>
-    </div>
+        <!-- Spacer between grids -->
+        <div class="grid-spacer"></div>
 
-    <!-- Add the "View Grid" button -->
-    <div class="button-container">
-        <a asp-action="Grid" class="btn btn-secondary">View Mapped GL</a>
+        <!-- Unmapped GL Section -->
+        <h1 class="mt-5">Unmapped GL for date ranging from @ViewBag.StartDate to @ViewBag.EndDate</h1>
+
+        <!-- Dropdown for Page Size Selection -->
+        <div class="mb-3">
+            <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
+            <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="150">150</option>
+            </select>
+        </div>
+        
+            <!-- Second Grid -->
+            <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+                <e-grid-pagesettings pageSize="10"></e-grid-pagesettings>
+                <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+                <e-grid-columns>
+                    <e-grid-column type="checkbox" width="50"></e-grid-column>
+                    <e-grid-column field="VALUE_DT" headerText="Value date" textAlign="Right" width="150"></e-grid-column>
+                    <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="150"></e-grid-column>
+                    <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL account type" textAlign="Right" width="150"></e-grid-column>
+                    <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="250"></e-grid-column>
+                    <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
+                    <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
+                    <e-grid-column field="BU_NM" headerText="Branch name" textAlign="Right" width="150"></e-grid-column>
+                    <e-grid-column field="CLOSING_BAL" headerText="Closing balance" textAlign="Right" width="150"></e-grid-column>
+                </e-grid-columns>
+            </ejs-grid>
+
+            <!-- Centered Button -->
+            <div class="button-container">
+                <button id="saveCombinedRows" class="custom-delete-button">Save MappedGL</button>
+            </div>
+
+            <!-- Add the "View Grid" button -->
+            <div class="button-container">
+                <a asp-action="Grid" class="btn btn-secondary">View Mapped GL</a>
+            </div>
+    
+
     </div>
 </div>
 
+<!-- Include Flatpickr CSS and JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Flatpickr for date pickers
+        flatpickr("#startDatePicker", {
+            dateFormat: "d-M-y", // Format: DD-MMM-YY
+            defaultDate: "@ViewBag.StartDate", // Set default date to the value from ViewBag
+            onChange: function (selectedDates, dateStr, instance) {
+                const formattedDate = dateStr.toUpperCase();
+                document.getElementById('startDatePicker').value = formattedDate;
+                document.getElementById('startDatePicker').classList.remove('is-invalid'); // Remove invalid class
+            }
+        });
+
+        flatpickr("#endDatePicker", {
+            dateFormat: "d-M-y", // Format: DD-MMM-YY
+            defaultDate: "@ViewBag.EndDate", // Set default date to the value from ViewBag
+            onChange: function (selectedDates, dateStr, instance) {
+                const formattedDate = dateStr.toUpperCase();
+                document.getElementById('endDatePicker').value = formattedDate;
+                document.getElementById('endDatePicker').classList.remove('is-invalid'); // Remove invalid class
+            }
+        });
+    });
+
+    // Function to validate the form before submission
+    function validateForm() {
+        const statementType = document.getElementById('statementTypeDropdown');
+        const startDate = document.getElementById('startDatePicker');
+        const endDate = document.getElementById('endDatePicker');
+
+        let isValid = true;
+
+        // Check if statement type is selected
+        if (!statementType.value) {
+            statementType.classList.add('is-invalid'); // Add invalid class
+            isValid = false;
+        } else {
+            statementType.classList.remove('is-invalid'); // Remove invalid class
+        }
+
+        // Check if start date is selected
+        if (!startDate.value) {
+            startDate.classList.add('is-invalid'); // Add invalid class
+            isValid = false;
+        } else {
+            startDate.classList.remove('is-invalid'); // Remove invalid class
+        }
+
+        // Check if end date is selected
+        if (!endDate.value) {
+            endDate.classList.add('is-invalid'); // Add invalid class
+            isValid = false;
+        } else {
+            endDate.classList.remove('is-invalid'); // Remove invalid class
+        }
+
+        // Show alert if any field is invalid
+        if (!isValid) {
+            alert('Please fill in all required fields.');
+        }
+
+        return isValid; // Prevent form submission if any field is invalid
+    }
+        // Get the page size dropdown element
+    var pageSizeDropdown = document.getElementById('pageSizeDropdown');
+
+    // Event listener for dropdown change
+    pageSizeDropdown.addEventListener('change', function () {
+        var selectedPageSize = parseInt(this.value); // Get the selected value as an integer
+
+        // Get the grid instance
+        var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
+
+        // Update the pageSize of the grid
+        accountGrid.pageSettings.pageSize = selectedPageSize;
+    });
+
+    // Event listener for dropdown change
+    document.getElementById('statementTypeDropdown').addEventListener('change', function () {
+        var selectedValue = this.value; // Get the STMNT_ID
+
+        if (selectedValue) {
+            // Reload the entire page with the selected STMNT_ID as a query parameter
+            window.location.href = `/Mapping/Index?stmntId=${encodeURIComponent(selectedValue)}`;
+        } else {
+            alert('Please select a valid statement type.');
+        }
+    });
+
+    // Event listener for saving combined rows
+    document.getElementById('saveCombinedRows').addEventListener('click', function () {
+        var orderGrid = document.getElementById('grid').ej2_instances[0];
+        var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
+
+        var selectedOrderRow = orderGrid.getSelectedRecords();
+        var selectedAccountRows = accountGrid.getSelectedRecords();
+
+        // Check if exactly one row is selected in the first grid
+        if (selectedOrderRow.length !== 1) {
+            alert('Please select exactly one row in the first grid.');
+            return;
+        }
+
+        // Proceed with combining rows if exactly one row is selected in the first grid
+        if (selectedAccountRows.length > 0) {
+            var combinedRows = selectedAccountRows.map(accountRow => ({
+                DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
+                STMNT_ID: selectedOrderRow[0].STMNT_ID,
+                SHEET_ID: selectedOrderRow[0].SHEET_ID,
+                HEADER_ID: selectedOrderRow[0].HEADER_ID,
+                GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
+                REF_CD: selectedOrderRow[0].REF_CD,
+                DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
+                SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
+                CREATED_BY: selectedOrderRow[0].CREATED_BY,
+                GL_ACCT_ID: accountRow.GL_ACCT_ID,
+                GL_ACCT_NO: accountRow.GL_ACCT_NO,
+                LEDGER_NO: accountRow.LEDGER_NO,
+                ACCT_DESC: accountRow.ACCT_DESC,
+                BAL_CD: accountRow.BAL_CD
+            }));
+
+            // Fetch request to save combined rows
+            fetch('/Mapping/SaveCombinedRows', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(combinedRows)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        alert(data.message);
+                        // Reload the page after a successful save
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error.message);
+                });
+        } else {
+            alert('No rows selected in the account grid.');
+        }
+    });
+
+
+
+</script>
 <style>
 
 
 
 
-     #statementTypeDropdown {
+
+
+    #statementTypeDropdown {
         width: 100%;
         padding: 10px;
         font-size: 16px;
@@ -93,29 +282,76 @@
         transition: border-color 0.3s ease;
     }
 
-    #statementTypeDropdown:hover {
-        border-color: #888;
-    }
+        #statementTypeDropdown:hover {
+            border-color: #888;
+        }
 
-    #statementTypeDropdown:focus {
-        border-color: #5b9bd5;
-        outline: none;
-        box-shadow: 0 0 3px rgba(91, 155, 213, 0.5);
-    }
+        #statementTypeDropdown:focus {
+            border-color: #5b9bd5;
+            outline: none;
+            box-shadow: 0 0 3px rgba(91, 155, 213, 0.5);
+        }
 
-    #statementTypeDropdown option {
+        #statementTypeDropdown option {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+.container {
+    margin-left: 100px; /* Space from the left */
+    padding-right: 5px; /* Space inside on the right */
+    display: flex; /* Enables centering */
+    justify-content: center; /* Centers contents horizontally */
+    width: calc(100% - 50px); /* Makes the container fill the remaining screen width */
+    box-sizing: border-box; /* Ensures padding is included in width */    
+}
+
+.content { 
+    max-width: 1200px; /* Optional: Set a max width for better layout on large screens */
+    margin: 0 auto; /* Center the content inside the container */
+    padding: 20px; /* Add padding for inner spacing */
+    box-sizing: border-box; /* Ensures padding is included in width */
+}
+
+.content h1, .content select, .content input, .content button, .content label {
+    max-width: 100%; /* Ensure child elements do not exceed the width of their parent */
+    box-sizing: border-box; /* Consistent sizing */
+}
+
+
+.is-invalid {
+    border: 1px solid red !important; /* Highlight with red border */
+}
+
+    #statementTypeDropdown {
+        width: 100%;
         padding: 10px;
         font-size: 16px;
+        font-family: Arial, sans-serif;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+        cursor: pointer;
+        transition: border-color 0.3s ease;
     }
 
+        #statementTypeDropdown:hover {
+            border-color: #888;
+        }
 
-    .container {
-        margin: 20px 10px; /* Margin around the container */
-        padding: 0px; /* Padding inside the container */
-        border: 1px solid #ddd; /* Optional: border for the container */
-        border-radius: 8px; /* Rounded corners for the container */
-        background-color: #f8f9fa; /* Light grey background for the container */
-    }
+        #statementTypeDropdown:focus {
+            border-color: #5b9bd5;
+            outline: none;
+            box-shadow: 0 0 3px rgba(91, 155, 213, 0.5);
+        }
+
+        #statementTypeDropdown option {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+
+
 
     /* Define the white-grid class */
     .white-grid {
@@ -218,9 +454,11 @@
     h1 {
         font-size: 18px; /* Smaller font size */
         color: #6c757d; /* Greyish color */
-        font-weight: normal; /* Normal font weight */
+        font-weight: bold; /* Bold font weight */
         margin-bottom: 10px; /* Margin below the heading */
+        text-align: center; /* Centers the text */
     }
+
 
     .custom-label {
         font-size: 18px; /* Smaller font size */
@@ -229,98 +467,96 @@
         margin-bottom: 10px; /* Margin below the heading */
     }
 
+
+
+
+
+
+    /*styles for date picker*/ 
+    .date-picker-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .date-label {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #495057;
+    }
+
+    .datePicker {
+        padding: 8px 12px;
+        font-size: 14px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        transition: border-color 0.3s ease;
+    }
+
+        .datePicker:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+    .form-group .datePicker::placeholder {
+        color: #6c757d;
+        font-style: italic;
+    }
+
+
+
+
+
+
+
+    /* Optional: Ensure form inputs take full width on small screens */
+    .form-group .datePicker {
+        width: 100%;
+    }
+
+    .date-label {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    /* Button Styling */
+    .search-btn {
+        padding: 8px 20px;
+        font-size: 16px;
+        font-weight: 600;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        align-self: flex-start; /* Aligns button to the left */
+        margin-top: 10px;
+        transition: background-color 0.3s ease;
+    }
+
+        .search-btn:hover {
+            background-color: #0056b3; /* Darker shade when hovered */
+        }
+
+        .search-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(38, 143, 255, 0.5); /* Focus state */
+        }
+
+        .search-btn:active {
+            background-color: #004085; /* Darker when clicked */
+        }
+
 </style>
-
-<script>
-
-    // Get the page size dropdown element
-    var pageSizeDropdown = document.getElementById('pageSizeDropdown');
-
-    // Event listener for dropdown change
-    pageSizeDropdown.addEventListener('change', function () {
-        var selectedPageSize = parseInt(this.value); // Get the selected value as an integer
-
-        // Get the grid instance
-        var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
-
-        // Update the pageSize of the grid
-        accountGrid.pageSettings.pageSize = selectedPageSize;
-    });
-
-    // Event listener for dropdown change
-    document.getElementById('statementTypeDropdown').addEventListener('change', function () {
-        var selectedValue = this.value; // Get the STMNT_ID
-
-        if (selectedValue) {
-            // Reload the entire page with the selected STMNT_ID as a query parameter
-            window.location.href = `/Mapping/Index?stmntId=${encodeURIComponent(selectedValue)}`;
-        } else {
-            alert('Please select a valid statement type.');
-        }
-    });
-
-    // Event listener for saving combined rows
-    document.getElementById('saveCombinedRows').addEventListener('click', function () {
-        var orderGrid = document.getElementById('grid').ej2_instances[0];
-        var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
-
-        var selectedOrderRow = orderGrid.getSelectedRecords();
-        var selectedAccountRows = accountGrid.getSelectedRecords();
-
-        // Check if exactly one row is selected in the first grid
-        if (selectedOrderRow.length !== 1) {
-            alert('Please select exactly one row in the first grid.');
-            return;
-        }
-
-        // Proceed with combining rows if exactly one row is selected in the first grid
-        if (selectedAccountRows.length > 0) {
-            var combinedRows = selectedAccountRows.map(accountRow => ({
-                DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
-                STMNT_ID: selectedOrderRow[0].STMNT_ID,
-                SHEET_ID: selectedOrderRow[0].SHEET_ID,
-                HEADER_ID: selectedOrderRow[0].HEADER_ID,
-                GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
-                REF_CD: selectedOrderRow[0].REF_CD,
-                DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
-                SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
-                CREATED_BY: selectedOrderRow[0].CREATED_BY,
-                GL_ACCT_ID: accountRow.GL_ACCT_ID,
-                GL_ACCT_NO: accountRow.GL_ACCT_NO,
-                LEDGER_NO: accountRow.LEDGER_NO,
-                ACCT_DESC: accountRow.ACCT_DESC,
-                BAL_CD: accountRow.BAL_CD
-            }));
-
-            // Fetch request to save combined rows
-            fetch('/Mapping/SaveCombinedRows', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(combinedRows)
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok: ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.error) {
-                        alert('Error: ' + data.error);
-                    } else {
-                        alert(data.message);
-                        // Reload the page after a successful save
-                        location.reload();
-                    }
-                })
-                .catch(error => {
-                    alert('Error: ' + error.message);
-                });
-        } else {
-            alert('No rows selected in the account grid.');
-        }
-    });
-</script>
 

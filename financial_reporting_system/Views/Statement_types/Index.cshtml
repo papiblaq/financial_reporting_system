@@ -4,22 +4,22 @@
 }
 
 <div class="container">
-    <h1 class="mt-5">Enter Statement Data</h1>
+    <h1 class="mt-5">Enter Files Data</h1>
     <form method="post" asp-action="SaveData" class="mt-4" enctype="multipart/form-data">
        
 
         <div class="form-group">
-            <label asp-for="REF_CD"></label>
+            <label asp-for="REF_CD">Reference code </label>
             <input asp-for="REF_CD" class="form-control" required />
             <span asp-validation-for="REF_CD" class="text-danger"></span>
         </div>
         <div class="form-group">
-            <label asp-for="DESCRIPTION"></label>
+            <label asp-for="DESCRIPTION">Files description</label>
             <input asp-for="DESCRIPTION" class="form-control" required />
             <span asp-validation-for="DESCRIPTION" class="text-danger"></span>
         </div>
         <div class="form-group">
-            <label asp-for="CREATED_BY"></label>
+            <label asp-for="CREATED_BY">User</label>
             <input asp-for="CREATED_BY" class="form-control" required />
             <span asp-validation-for="CREATED_BY" class="text-danger"></span>
         </div>
@@ -33,14 +33,14 @@
                 <i class="fa-solid fa-download"></i>
             </label>
             <input type="file" name="fileUpload" class="form-control-file" id="fileUpload" style="display: none;">
-            <label class="custom-file-label" for="fileUpload" id="fileUploadLabel">Upload your Excel sheet</label>
+            <label class="custom-file-label" for="fileUpload" id="fileUploadLabel">Upload your Excel file</label>
         </div>
 
         <!-- Hidden input for EXCEL_SHEET -->
         <input type="hidden" asp-for="EXCEL_SHEET" id="excelSheetName" />
 
         <button type="submit" class="btn btn-primary">Submit</button>
-        <a asp-action="Grid" class="btn btn-secondary">Available Statement Types</a>
+        <a asp-action="Grid" class="btn btn-secondary">Available Excel files</a>
     </form>
 </div>
 
@@ -72,14 +72,7 @@
 </script>
 
 <style>
-    .container {
-        max-width: 600px; /* Limits the width for better readability */
-        background-color: #f8f9fa; /* Light gray background for contrast */
-        padding: 20px; /* Adds padding around the container */
-        border-radius: 8px; /* Rounded corners for a modern look */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-        margin-top: 50px; /* Adds space above the container */
-    }
+
 
     h1 {
         font-size: 28px; /* Slightly larger heading font size */

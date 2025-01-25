@@ -18,7 +18,7 @@
 
 <form asp-action="SaveData" method="post">
     <div class="form-group">
-        <label asp-for="STMNT_ID" class="control-label"></label>
+        <label asp-for="STMNT_ID" class="control-label">Available excel</label>
         <select asp-for="STMNT_ID" class="form-control" asp-items="Model.StatementTypes">
             <option value="">-- Select Statement ID --</option>
         </select>
@@ -26,7 +26,7 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="SHEET_ID" class="control-label"></label>
+        <label asp-for="SHEET_ID" class="control-label">Sheet data</label>
         <select asp-for="SHEET_ID" class="form-control" asp-items="Model.SheetIds">
             <option value="">-- Select Sheet ID --</option>
         </select>
@@ -34,7 +34,7 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="HEADER_ID" class="control-label"></label>
+        <label asp-for="HEADER_ID" class="control-label">Header data</label>
         <select asp-for="HEADER_ID" class="form-control" asp-items="Model.HeaderIds">
             <option value="">-- Select Header ID --</option>
         </select>
@@ -42,7 +42,7 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="GL_ACCT_CAT_CD" class="control-label"></label>
+        <label asp-for="GL_ACCT_CAT_CD" class="control-label">Account category</label>
         <select asp-for="GL_ACCT_CAT_CD" class="form-control" asp-items="Model.AccountCategories">
             <option value="">-- Select GL_ACCT_CAT_CD --</option>
         </select>
@@ -50,19 +50,19 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="REF_CD" class="control-label"></label>
+        <label asp-for="REF_CD" class="control-label">Reference code</label>
         <input asp-for="REF_CD" class="form-control" />
         <span asp-validation-for="REF_CD" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="DESCRIPTION" class="control-label"></label>
+        <label asp-for="DESCRIPTION" class="control-label">Description</label>
         <input asp-for="DESCRIPTION" class="form-control" />
         <span asp-validation-for="DESCRIPTION" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="CREATED_BY" class="control-label"></label>
+        <label asp-for="CREATED_BY" class="control-label">User</label>
         <input asp-for="CREATED_BY" class="form-control" />
         <span asp-validation-for="CREATED_BY" class="text-danger"></span>
     </div>
@@ -113,14 +113,7 @@
 }
 
 <style>
-    .container {
-        max-width: 500px; /* Reduced width */
-        background-color: #f8f9fa;
-        padding: 15px; /* Reduced padding */
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        margin-top: 30px; /* Adjusted margin */
-    }
+
 
     h1 {
         font-size: 24px; /* Reduced font size */

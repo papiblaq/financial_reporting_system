@@ -9,7 +9,7 @@
     <form method="post" asp-action="SaveData" class="mt-4">
         @Html.AntiForgeryToken()
         <div class="form-group">
-            <label asp-for="STMNT_ID"></label>
+            <label asp-for="STMNT_ID">Available excels</label>
             <select asp-for="STMNT_ID" asp-items="Model.StatementTypes" class="form-control" required id="STMNT_ID">
                 <option value="">-- Select Statement Type --</option>
             </select>
@@ -18,7 +18,7 @@
 
         <!-- New dropdown for SHEET_ID -->
         <div class="form-group">
-            <label asp-for="SHEET_ID"></label>
+            <label asp-for="SHEET_ID">Sheet data</label>
             <select asp-for="SHEET_ID" asp-items="Model.SheetIds" class="form-control" required id="SHEET_ID">
                 <option value="">-- Select Sheet ID --</option>
             </select>
@@ -26,13 +26,13 @@
         </div>
 
         <div class="form-group">
-            <label asp-for="REF_CD"></label>
+            <label asp-for="REF_CD">Reference code</label>
             <input asp-for="REF_CD" class="form-control" required />
             <span asp-validation-for="REF_CD" class="text-danger"></span>
         </div>
 
         <div class="form-group">
-            <label asp-for="GL_ACCT_CAT_CD"></label>
+            <label asp-for="GL_ACCT_CAT_CD">Account category</label>
             <select asp-for="GL_ACCT_CAT_CD" asp-items="Model.AccountCategories" class="form-control" required>
                 <option value="">-- Select Account Category --</option>
             </select>
@@ -40,13 +40,13 @@
         </div>
 
         <div class="form-group">
-            <label asp-for="DESCRIPTION"></label>
+            <label asp-for="DESCRIPTION">Description</label>
             <input asp-for="DESCRIPTION" class="form-control" required />
             <span asp-validation-for="DESCRIPTION" class="text-danger"></span>
         </div>
 
         <div class="form-group">
-            <label asp-for="CREATED_BY"></label>
+            <label asp-for="CREATED_BY">User</label>
             <input asp-for="CREATED_BY" class="form-control" required />
             <span asp-validation-for="CREATED_BY" class="text-danger"></span>
         </div>
@@ -92,14 +92,7 @@
 }
 
 <style>
-    .container {
-        max-width: 600px; /* Keeps the container compact */
-        background-color: #ffffff; /* Neutral white background */
-        padding: 15px; /* Reduced padding for better compactness */
-        border-radius: 6px; /* Slightly smaller rounded corners */
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-        margin-top: 40px; /* Adjusted margin for more compact spacing */
-    }
+
 
     h1 {
         font-size: 24px; /* Smaller font size for heading */

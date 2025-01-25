@@ -63,14 +63,20 @@
             <input type="hidden" id="selectedTemplateHidden" name="selectedTemplate" value="@ViewBag.SelectedTemplate" />
 
             <!-- Cell Values Container -->
-            <div id="cellValuesContainer" style="display: @(ViewBag.SavedValues != null ? "block" : "none");">
+           <div id="cellValuesContainer" style="display: @(ViewBag.SavedValues != null && ViewBag.SavedValues.Count > 0 ? "block" : "none");">
                 @if (ViewBag.SavedValues != null)
                 {
                     var savedValues = ViewBag.SavedValues as Dictionary<string, List<financial_reporting_system.Controllers.ExcelMapping_Documentation.UserDefinedCellValues>>;
                     var rowIndex = 0;
-                    foreach (var worksheetName in savedValues.Keys)
+
+                    // Iterate over each worksheet in the saved values
+                    foreach (var worksheetEntry in savedValues)
                     {
-                        foreach (var item in savedValues[worksheetName])
+                        var worksheetName = worksheetEntry.Key;
+                        var cellValues = worksheetEntry.Value;
+
+                        // Iterate over each cell value in the worksheet
+                        foreach (var item in cellValues)
                         {
                             <div class="cellValueRow">
                                 <label for="RefCd">Reference Code:</label>
@@ -95,6 +101,7 @@
                 }
                 else
                 {
+                    <!-- Default row when no saved values exist -->
                     <div class="cellValueRow">
                         <label for="RefCd">Reference Code:</label>
                         <select name="savedValues[@ViewBag.SelectedWorkbook][0].RefCd" class="form-control" required>
@@ -230,7 +237,7 @@
                         <option value="">-- Select Reference Code --</option>
         @foreach (var refCode in ViewBag.RefCodes)
         {
-                                    <option value="@refCode.RefCd">@refCode.RefCd (@refCode.Description)</option>
+                                <option value="@refCode.RefCd">@refCode.RefCd (@refCode.Description)</option>
         }
                     </select>
                     <label for="ValueForCells">Value for Cells:</label>
@@ -436,15 +443,8 @@
             document.getElementById("helpModal").style.display = "none";
         }
     </script>
-}
-<style>
-    .container {
-        margin: 20px;
-        padding: 20px;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        background-color: #f9f9f9;
-    }
+    <style>
+
 
     .breadcrumb {
         display: flex; /* Arrange breadcrumb items in a horizontal row */
@@ -587,3 +587,4 @@
             cursor: pointer;
         }
 </style>
+}

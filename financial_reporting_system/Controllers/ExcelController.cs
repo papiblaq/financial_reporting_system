@@ -69,6 +69,13 @@ namespace financial_reporting_system.Controllers
 
             try
             {
+                // Check if the workbook already exists in the database
+                if (await WorkbookExistsAsync(file.FileName))
+                {
+                    ViewBag.Error = $"The workbook '{file.FileName}' already exists in the database.";
+                    return View();
+                }
+
                 using var memoryStream = new MemoryStream();
                 await file.CopyToAsync(memoryStream);
                 memoryStream.Position = 0;
@@ -85,6 +92,14 @@ namespace financial_reporting_system.Controllers
                 foreach (IWorksheet sheet in workbook.Worksheets)
                 {
                     _logger.LogInformation($"Processing sheet: {sheet.Name}");
+
+                    // Check if the sheet already exists in the database
+                    if (await SheetExistsAsync(sheet.Name))
+                    {
+                        ViewBag.Error = $"The sheet '{sheet.Name}' already exists in the database, Rename the sheet and try again";
+                        await DeleteFilePathAsync(file.FileName);
+                        return View();
+                    }
 
                     // Cache UsedRange bounds
                     int lastRow = sheet.UsedRange.LastRow;
@@ -120,6 +135,74 @@ namespace financial_reporting_system.Controllers
 
             return View();
         }
+
+
+
+
+
+        // helper method to check if workbook exists 
+
+        private async Task<bool> WorkbookExistsAsync(string workbookName)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new OracleCommand())
+                {
+                    command.Connection = connection;
+                    command.CommandText = @"
+                SELECT COUNT(*) 
+                FROM EXCEL_WORKBOOK_TEMP_FILE_PATHS 
+                WHERE FILE_IN_PATH = :FILE_IN_PATH";
+                    command.Parameters.Add(new OracleParameter("FILE_IN_PATH", workbookName));
+
+                    int count = Convert.ToInt32(await command.ExecuteScalarAsync());
+                    return count > 0;
+                }
+            }
+        }
+
+        // helper method tocheck if sheet exists 
+
+        private async Task<bool> SheetExistsAsync(string sheetName)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new OracleCommand())
+                {
+                    command.Connection = connection;
+                    command.CommandText = @"
+                SELECT COUNT(*) 
+                FROM ExcelSheetData 
+                WHERE Workbook_sheets = :Workbook_sheets";
+                    command.Parameters.Add(new OracleParameter("Workbook_sheets", sheetName));
+
+                    int count = Convert.ToInt32(await command.ExecuteScalarAsync());
+                    return count > 0;
+                }
+            }
+        }
+
+        // method to delete file path and workbook name 
+
+        private async Task DeleteFilePathAsync(string workbookName)
+        {
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new OracleCommand())
+                {
+                    command.Connection = connection;
+                    command.CommandText = @"
+                DELETE FROM EXCEL_WORKBOOK_TEMP_FILE_PATHS 
+                WHERE FILE_IN_PATH = :FILE_IN_PATH";
+                    command.Parameters.Add(new OracleParameter("FILE_IN_PATH", workbookName));
+
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+        } 
 
         // Helper method to save file path and workbook name to EXCEL_WORKBOOK_TEMP_FILE_PATHS table
         private async Task SaveFilePathAsync(string workbookName, string filePath)
@@ -250,7 +333,7 @@ namespace financial_reporting_system.Controllers
                 {
                     await connection.OpenAsync();
 
-                    using (var command = new OracleCommand("SELECT * FROM ExcelSheetData WHERE Work_bookName = :Work_bookName AND Workbook_sheets = :Workbook_sheets", connection))
+                    using (var command = new OracleCommand("SELECT DISTINCT * FROM ExcelSheetData WHERE Work_bookName = :Work_bookName AND Workbook_sheets = :Workbook_sheets", connection))
                     {
                         command.Parameters.Add(new OracleParameter("Work_bookName", selectedWorkbook));
                         command.Parameters.Add(new OracleParameter("Workbook_sheets", selectedSheet));

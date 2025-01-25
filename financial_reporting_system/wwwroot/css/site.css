@@ -64,8 +64,6 @@ img.profilePic {
     .profile-wrapper .titles {
         line-height: 1;
     }
-
-/* Navigation bar */
 #menu {
     width: 100% !important;
     background-color: inherit;
@@ -110,6 +108,12 @@ img.profilePic {
             margin-top: 35px;
         }
 
+
+
+
+
+
+
 /* Logo */
 .logo-wrapper {
     height: 70px;
@@ -129,6 +133,15 @@ img.profilePic {
         height: auto;
         width: auto;
     }
+
+
+
+
+
+
+
+
+
 
 /* Sidebar */
 #sidebar {
@@ -194,6 +207,13 @@ img.profilePic {
     content: '\f101';
 }
 
+
+
+
+
+
+
+
 body {
     margin-bottom: 60px;
     background-color: #f8f9fa; /* Light background color */
@@ -206,10 +226,25 @@ body {
 }
 
 .main-content {
-    margin-left: 290px;
-    overflow-y: auto;
-    height: 92vh;
+    margin-left: 330px; /* Left margin for the sidebar */
+    margin-right: 0; /* Remove any right margin */
+    overflow-y: auto; /* Enable vertical scrolling if needed */
+    height: 92vh; /* Keep the height consistent */
+    width: calc(100% - 290px); /* Adjust the width to occupy the remaining space */
+    background-color: #f8f9fa; /* Ensure background consistency */
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Radio button group */
 .e-btn-group.custom-rbt-group {
@@ -258,39 +293,7 @@ body {
     color: inherit !important;
 }
 
-/* Sidebar */
-#sidebar {
-    background-color: #ffffff; /* Light background color */
-    border-right: 1px dashed rgba(0, 0, 0, 0.1);
-    padding: 10px 20px;
-}
 
-.widget.summary > div:first-child {
-    background-color: #f1f3f5; /* Light background color */
-    padding: 1rem;
-    border-top-left-radius: 1rem;
-    border-bottom-left-radius: 1rem;
-}
-
-    .widget.summary > div:first-child i {
-        font-weight: bold;
-    }
-
-.widget.income > div:first-child {
-    color: #28a745; /* Brighter color for income */
-}
-
-.widget.expense > div:first-child {
-    color: #dc3545; /* Brighter color for expense */
-}
-
-.widget.balance > div:first-child {
-    color: #007bff; /* Brighter color for balance */
-}
-
-.widget.chart {
-    padding: 5px;
-}
 
 /* Container styles */
 .container {

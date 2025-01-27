@@ -201,6 +201,8 @@ namespace financial_reporting_system.Controllers
             }
         }
 
+        // method to feth all financial statenment details based on selected stmnt_id
+
         private List<FinancialStatementDetail> GetFinancialStatementDetails(int stmntId)
         {
             var financialStatementDetails = new List<FinancialStatementDetail>();
@@ -271,53 +273,53 @@ namespace financial_reporting_system.Controllers
             return accountDetails;
         }
 
-private void InsertCombinedRows(List<CombinedRow> combinedRows)
-{
-    using (var connection = new OracleConnection(_connectionString))
-    {
-        connection.Open();
-        using (var command = connection.CreateCommand())
+        private void InsertCombinedRows(List<CombinedRow> combinedRows)
         {
-            // Insert into ORG_MAPPED_DESCRIPTION
-            command.CommandText = @"
-                INSERT INTO ORG_MAPPED_DESCRIPTION 
-                (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC) 
-                VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :LEDGER_NO, :ACCT_DESC)";
-
-            foreach (var row in combinedRows)
+            using (var connection = new OracleConnection(_connectionString))
             {
-                // Clear parameters for each iteration
-                command.Parameters.Clear();
-
-                // Add parameters for the INSERT statement
-                command.Parameters.Add(new OracleParameter("DETAIL_ID", row.DETAIL_ID));
-                command.Parameters.Add(new OracleParameter("STMNT_ID", row.STMNT_ID));
-                command.Parameters.Add(new OracleParameter("SHEET_ID", row.SHEET_ID));
-                command.Parameters.Add(new OracleParameter("HEADER_ID", row.HEADER_ID));
-                command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", row.GL_ACCT_CAT_CD ?? (object)DBNull.Value));
-                command.Parameters.Add(new OracleParameter("REF_CD", row.REF_CD ?? (object)DBNull.Value));
-                command.Parameters.Add(new OracleParameter("DESCRIPTION", row.DESCRIPTION ?? (object)DBNull.Value));
-                command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", row.SYS_CREATE_TS));
-                command.Parameters.Add(new OracleParameter("CREATED_BY", row.CREATED_BY ?? (object)DBNull.Value));
-                command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO ?? (object)DBNull.Value));
-                command.Parameters.Add(new OracleParameter("ACCT_DESC", row.ACCT_DESC ?? (object)DBNull.Value));
-
-                // Execute the INSERT statement
-                command.ExecuteNonQuery();
-
-                // Call the CALL_TRIGGER_LOGIC procedure if LEDGER_NO is not null or empty
-                if (!string.IsNullOrEmpty(row.LEDGER_NO))
+                connection.Open();
+                using (var command = connection.CreateCommand())
                 {
-                    // Reuse the same command object for the procedure call
-                    command.CommandText = "CALL CALL_TRIGGER_LOGIC(:LEDGER_NO)";
-                    command.Parameters.Clear(); // Clear previous parameters
-                    command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO));
-                    command.ExecuteNonQuery();
+                    // Insert into ORG_MAPPED_DESCRIPTION
+                    command.CommandText = @"
+                        INSERT INTO ORG_MAPPED_DESCRIPTION 
+                        (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC) 
+                        VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :LEDGER_NO, :ACCT_DESC)";
+
+                    foreach (var row in combinedRows)
+                    {
+                        // Clear parameters for each iteration
+                        command.Parameters.Clear();
+
+                        // Add parameters for the INSERT statement
+                        command.Parameters.Add(new OracleParameter("DETAIL_ID", row.DETAIL_ID));
+                        command.Parameters.Add(new OracleParameter("STMNT_ID", row.STMNT_ID));
+                        command.Parameters.Add(new OracleParameter("SHEET_ID", row.SHEET_ID));
+                        command.Parameters.Add(new OracleParameter("HEADER_ID", row.HEADER_ID));
+                        command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", row.GL_ACCT_CAT_CD ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("REF_CD", row.REF_CD ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("DESCRIPTION", row.DESCRIPTION ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", row.SYS_CREATE_TS));
+                        command.Parameters.Add(new OracleParameter("CREATED_BY", row.CREATED_BY ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO ?? (object)DBNull.Value));
+                        command.Parameters.Add(new OracleParameter("ACCT_DESC", row.ACCT_DESC ?? (object)DBNull.Value));
+
+                        // Execute the INSERT statement
+                        command.ExecuteNonQuery();
+
+                        // Call the CALL_TRIGGER_LOGIC procedure if LEDGER_NO is not null or empty
+                        if (!string.IsNullOrEmpty(row.LEDGER_NO))
+                        {
+                            // Reuse the same command object for the procedure call
+                            command.CommandText = "CALL CALL_TRIGGER_LOGIC(:LEDGER_NO)";
+                            command.Parameters.Clear(); // Clear previous parameters
+                            command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO));
+                            command.ExecuteNonQuery();
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
         private void DeleteMappingRows(List<int> mappingIds)
         {

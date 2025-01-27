@@ -130,6 +130,18 @@
 <div class="container">
     <div class="formContainer">
         <form asp-action="ExportFinancialDataToExcel" method="post" class="formContent">
+
+            <!-- Date-Time Picker for Start Date and End Date -->
+            <div class="form-group">
+                <label for="startDatePicker">Start Date:</label>
+                <input type="text" id="startDatePicker" name="startDate" class="datePicker form-control" placeholder="Select Start Date" value="@ViewBag.StartDate">
+
+                <label for="endDatePicker" class="ml-3">End Date:</label>
+                <input type="text" id="endDatePicker" name="endDate" class="datePicker form-control" placeholder="Select End Date" value="@ViewBag.EndDate">
+
+
+            </div>
+
             <div class="form-group">
                 <label for="selectedDirectory">Select Directory:</label>
                 <select name="selectedDirectory" class="form-control" required onchange="updateSelectedDirectory(this.value)">
@@ -226,8 +238,41 @@
     </div>
 </div>
 
+
+
+
+<!-- Include Flatpickr CSS and JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 @section Scripts {
     <script>
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Flatpickr for date pickers
+            flatpickr("#startDatePicker", {
+                dateFormat: "d-M-y", // Format: DD-MMM-YY
+                defaultDate: "@ViewBag.StartDate", // Set default date to the value from ViewBag
+                onChange: function (selectedDates, dateStr, instance) {
+                    const formattedDate = dateStr.toUpperCase();
+                    document.getElementById('startDatePicker').value = formattedDate;
+                    document.getElementById('startDatePicker').classList.remove('is-invalid'); // Remove invalid class
+                }
+            });
+
+            flatpickr("#endDatePicker", {
+                dateFormat: "d-M-y", // Format: DD-MMM-YY
+                defaultDate: "@ViewBag.EndDate", // Set default date to the value from ViewBag
+                onChange: function (selectedDates, dateStr, instance) {
+                    const formattedDate = dateStr.toUpperCase();
+                    document.getElementById('endDatePicker').value = formattedDate;
+                    document.getElementById('endDatePicker').classList.remove('is-invalid'); // Remove invalid class
+                }
+            });
+        });
+    
+
         function updateSelectedTemplate(value) {
             document.getElementById("selectedTemplateHidden").value = value;
             var selectedTemplate = $("select[name='selectedTemplate']").val();

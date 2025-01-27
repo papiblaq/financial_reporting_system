@@ -17,26 +17,22 @@ namespace syncfusion_grid.Controllers
             _connectionString = configuration.GetConnectionString("OracleConnection");
         }
 
-        public IActionResult Index(int stmntId = 0, string startDate = null, string endDate = null)
+        public IActionResult Index(int stmntId = 0)
         {
             // Fetch filtered financial statement details based on the selected statement type
             var financialStatementDetails = GetFinancialStatementDetails(stmntId);
-            var accountDetails = GetAccountDetails(startDate, endDate); // Pass the date range
+            var accountDetails = GetAccountDetails(); // Pass the date range
             var statementTypes = GetOrgFinStatementTypes();
 
             // Find the selected statement type description
             var selectedDescription = statementTypes.FirstOrDefault(st => st.STMNT_ID == stmntId)?.DESCRIPTION ?? "All statement types";
 
-            // Calculate default dates
-            var currentDate = DateTime.Now;
-            var formattedDate = currentDate.ToString("dd-MMM-yy").ToUpper();
+
 
             // Pass the selected dates and statement type to the view
             ViewBag.AccountDetails = accountDetails;
             ViewBag.StatementTypes = statementTypes;
             ViewBag.SelectedDescription = selectedDescription;
-            ViewBag.StartDate = startDate ?? formattedDate; // Use selected start date or default
-            ViewBag.EndDate = endDate ?? formattedDate;     // Use selected end date or default
             ViewBag.SelectedStmntId = stmntId;             // Pass the selected statement type ID
 
             return View(financialStatementDetails);
@@ -106,13 +102,10 @@ namespace syncfusion_grid.Controllers
                     worksheet.Range["C1"].Text = "Description";
                     worksheet.Range["D1"].Text = "System Create Timestamp";
                     worksheet.Range["E1"].Text = "Created By";
-                    worksheet.Range["F1"].Text = "GL Account ID";
-                    worksheet.Range["G1"].Text = "GL Account No";
-                    worksheet.Range["H1"].Text = "Ledger No";
-                    worksheet.Range["I1"].Text = "Account Description";
-                    worksheet.Range["J1"].Text = "Branch name";
-                    worksheet.Range["k1"].Text = "Value date";
-                    worksheet.Range["l1"].Text = "Closing balance";
+
+                    worksheet.Range["F1"].Text = "Ledger No";
+                    worksheet.Range["G1"].Text = "Account Description";
+
 
                     // Set data
                     for (int i = 0; i < mappings.Count; i++)
@@ -122,13 +115,9 @@ namespace syncfusion_grid.Controllers
                         worksheet.Range["C" + (i + 2)].Text = mappings[i].DESCRIPTION;
                         worksheet.Range["D" + (i + 2)].Text = mappings[i].SYS_CREATE_TS.ToString("yyyy-MM-dd");
                         worksheet.Range["E" + (i + 2)].Text = mappings[i].CREATED_BY;
-                        worksheet.Range["F" + (i + 2)].Text = mappings[i].GL_ACCT_ID.ToString();
-                        worksheet.Range["G" + (i + 2)].Text = mappings[i].GL_ACCT_NO;
-                        worksheet.Range["H" + (i + 2)].Text = mappings[i].LEDGER_NO;
-                        worksheet.Range["I" + (i + 2)].Text = mappings[i].ACCT_DESC;
-                        worksheet.Range["J" + (i + 2)].Text = mappings[i].BU_NM;
-                        worksheet.Range["k" + (i + 2)].Text = mappings[i].VALUE_DT.ToString();
-                        worksheet.Range["l" + (i + 2)].Text = mappings[i].CLOSING_BAL;
+
+                        worksheet.Range["F" + (i + 2)].Text = mappings[i].LEDGER_NO;
+                        worksheet.Range["G" + (i + 2)].Text = mappings[i].ACCT_DESC;
 
                     }
 
@@ -191,19 +180,12 @@ namespace syncfusion_grid.Controllers
         }
 
 
-        // method to return the unmapped gl
 
-        private List<AccountDetail> GetAccountDetails(string hiddenStartDate = null, string hiddenEndDate = null)
+
+        // Updated method to fetch account details using the new query
+        private List<AccountDetail> GetAccountDetails()
         {
             var accountDetails = new List<AccountDetail>();
-
-            // If no dates are provided, use the current date as the default
-            if (string.IsNullOrEmpty(hiddenStartDate) || string.IsNullOrEmpty(hiddenEndDate))
-            {
-                var currentDate = DateTime.Now.ToString("dd-MMM-yy").ToUpper();
-                hiddenStartDate = currentDate;
-                hiddenEndDate = currentDate;
-            }
 
             using (var connection = new OracleConnection(_connectionString))
             {
@@ -211,24 +193,8 @@ namespace syncfusion_grid.Controllers
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                SELECT VALUE_DT,   -- VALUE_DT changed
-                       GL_ACCT_ID, 
-                       GL_ACCT_NO, 
-                       LEDGER_NO, 
-                       ACCT_DESC,
-                       BU_NM,           -- BU_NM
-                       CLOSING_BAL,      -- CLOSING_BAL
-                       GL_ACCT_CAT_CD
-                FROM V_ORG_CHART_OF_ACCOUNT_DETAILS_WITHVALUE_DATE A
-                WHERE A.GL_ACCT_ID NOT IN (
-                    SELECT GL_ACCT_ID 
-                    FROM ORG_FINANCIAL_MAPPING
-                )
-                AND A.VALUE_DT IS NOT NULL
-                AND A.VALUE_DT BETWEEN TO_DATE(:hiddenStartDate, 'DD-MON-YY') AND TO_DATE(:hiddenEndDate, 'DD-MON-YY')";
-
-                    command.Parameters.Add(new OracleParameter("hiddenStartDate", hiddenStartDate));
-                    command.Parameters.Add(new OracleParameter("hiddenEndDate", hiddenEndDate));
+                        SELECT DISTINCT LEDGER_NO, ACCT_DESC 
+                        FROM V_ORG_CHART_OF_ACCOUNT_DETAILS_WITHVALUE_DATE";
 
                     using (var reader = command.ExecuteReader())
                     {
@@ -236,14 +202,8 @@ namespace syncfusion_grid.Controllers
                         {
                             accountDetails.Add(new AccountDetail
                             {
-                                VALUE_DT = reader.IsDBNull(0) ? null : reader.GetString(0), // VALUE_DT
-                                GL_ACCT_ID = reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
-                                GL_ACCT_NO = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                LEDGER_NO = reader.IsDBNull(3) ? null : reader.GetString(3),
-                                ACCT_DESC = reader.IsDBNull(4) ? null : reader.GetString(4),
-                                BU_NM = reader.IsDBNull(5) ? null : reader.GetString(5),
-                                CLOSING_BAL = reader.IsDBNull(6) ? null : reader.GetString(6), // CLOSING_BAL
-                                GL_ACCT_CAT_CD = reader.IsDBNull(7) ? null : reader.GetString(7)
+                                LEDGER_NO = reader.IsDBNull(0) ? null : reader.GetString(0),
+                                ACCT_DESC = reader.IsDBNull(1) ? null : reader.GetString(1)
                             });
                         }
                     }
@@ -262,19 +222,18 @@ namespace syncfusion_grid.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
+                    // Insert into ORG_MAPPED_DESCRIPTION
                     command.CommandText = @"
-                    INSERT INTO ORG_FINANCIAL_MAPPING 
-                    (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD,   -- VALUE_DT
-                     REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, GL_ACCT_ID, 
-                     GL_ACCT_NO, LEDGER_NO, ACCT_DESC, BU_NM, VALUE_DT, CLOSING_BAL)                   -- CLOSING_BAL
-                    VALUES 
-                    (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD,  -- :VALUE_DT
-                     :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :GL_ACCT_ID, 
-                     :GL_ACCT_NO, :LEDGER_NO, :ACCT_DESC, :BU_NM, :VALUE_DT, :CLOSING_BAL)  --CLOSING_BAL "; 
+                        INSERT INTO SINGLE_SHEET_MAPPED_DESCRIPTION 
+                        (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC) 
+                        VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :LEDGER_NO, :ACCT_DESC)";
 
                     foreach (var row in combinedRows)
                     {
+                        // Clear parameters for each iteration
                         command.Parameters.Clear();
+
+                        // Add parameters for the INSERT statement
                         command.Parameters.Add(new OracleParameter("DETAIL_ID", row.DETAIL_ID));
                         command.Parameters.Add(new OracleParameter("STMNT_ID", row.STMNT_ID));
                         command.Parameters.Add(new OracleParameter("SHEET_ID", row.SHEET_ID));
@@ -284,14 +243,21 @@ namespace syncfusion_grid.Controllers
                         command.Parameters.Add(new OracleParameter("DESCRIPTION", row.DESCRIPTION ?? (object)DBNull.Value));
                         command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", row.SYS_CREATE_TS));
                         command.Parameters.Add(new OracleParameter("CREATED_BY", row.CREATED_BY ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("GL_ACCT_ID", row.GL_ACCT_ID));
-                        command.Parameters.Add(new OracleParameter("GL_ACCT_NO", row.GL_ACCT_NO ?? (object)DBNull.Value));
                         command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO ?? (object)DBNull.Value));
                         command.Parameters.Add(new OracleParameter("ACCT_DESC", row.ACCT_DESC ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("BU_NM", row.BU_NM ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("VALUE_DT", row.VALUE_DT ?? (object)DBNull.Value));//VALUE_DT
-                        command.Parameters.Add(new OracleParameter("CLOSING_BAL", row.CLOSING_BAL ?? (object)DBNull.Value));//CLOSING_BAL
+
+                        // Execute the INSERT statement
                         command.ExecuteNonQuery();
+
+                        // Call the CALL_TRIGGER_LOGIC procedure if LEDGER_NO is not null or empty
+                        if (!string.IsNullOrEmpty(row.LEDGER_NO))
+                        {
+                            // Reuse the same command object for the procedure call
+                            command.CommandText = "CALL CALL_SINGLE_SHEET_TRIGGER_LOGIC(:LEDGER_NO)";
+                            command.Parameters.Clear(); // Clear previous parameters
+                            command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO));
+                            command.ExecuteNonQuery();
+                        }
                     }
                 }
             }
@@ -326,32 +292,14 @@ namespace syncfusion_grid.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = @"
-                    SELECT MAPPING_ID, 
-                           DETAIL_ID, 
-                           STMNT_ID, 
-                           SHEET_ID, 
-                           HEADER_ID, 
-                           GL_ACCT_CAT_CD, 
-                           REF_CD, 
-                           DESCRIPTION, 
-                           SYS_CREATE_TS, 
-                           CREATED_BY, 
-                           GL_ACCT_ID, 
-                           GL_ACCT_NO, 
-                           LEDGER_NO, 
-                           ACCT_DESC, 
-                           BU_NM,
-                           VALUE_DT,
-                           CLOSING_BAL-- CLOSING_BAL
-                    FROM ORG_FINANCIAL_MAPPING";
+                    command.CommandText = "SELECT MAPPED_DESC_ID, DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC FROM SINGLE_SHEET_MAPPED_DESCRIPTION";
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
                             mappings.Add(new Mapping
                             {
-                                MAPPING_ID = reader.GetInt32(0),
+                                MAPPED_DESC_ID = reader.GetInt32(0),
                                 DETAIL_ID = reader.GetInt32(1),
                                 STMNT_ID = reader.GetInt32(2),
                                 SHEET_ID = reader.GetInt32(3),
@@ -361,13 +309,10 @@ namespace syncfusion_grid.Controllers
                                 DESCRIPTION = reader.IsDBNull(7) ? null : reader.GetString(7),
                                 SYS_CREATE_TS = reader.GetDateTime(8),
                                 CREATED_BY = reader.IsDBNull(9) ? null : reader.GetString(9),
-                                GL_ACCT_ID = reader.GetInt32(10),
-                                GL_ACCT_NO = reader.IsDBNull(11) ? null : reader.GetString(11),
-                                LEDGER_NO = reader.IsDBNull(12) ? null : reader.GetString(12),
-                                ACCT_DESC = reader.IsDBNull(13) ? null : reader.GetString(13),
-                                BU_NM = reader.IsDBNull(14) ? null : reader.GetString(14),
-                                VALUE_DT = reader.IsDBNull(15) ? null : reader.GetString(15),// VALUE_DT
-                                CLOSING_BAL = reader.IsDBNull(16) ? null : reader.GetString(16)// CLOSING_BAL
+
+                                LEDGER_NO = reader.IsDBNull(10) ? null : reader.GetString(10),
+                                ACCT_DESC = reader.IsDBNull(11) ? null : reader.GetString(11),
+
                             });
                         }
                     }
@@ -420,14 +365,8 @@ namespace syncfusion_grid.Controllers
 
         public class AccountDetail
         {
-            public string GL_ACCT_CAT_CD { get; set; }
-            public string VALUE_DT { get; set; } // VALUE_DT
-            public int GL_ACCT_ID { get; set; }
-            public string GL_ACCT_NO { get; set; }
             public string LEDGER_NO { get; set; }
             public string ACCT_DESC { get; set; }
-            public string BU_NM { get; set; }   // changed the BAL_CD to BU_NM
-            public string CLOSING_BAL { get; set; }// CLOSING_BAL
         }
 
         public class CombinedRow
@@ -441,18 +380,13 @@ namespace syncfusion_grid.Controllers
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }
             public string CREATED_BY { get; set; }
-            public int GL_ACCT_ID { get; set; }
-            public string GL_ACCT_NO { get; set; }
             public string LEDGER_NO { get; set; }
             public string ACCT_DESC { get; set; }
-            public string BU_NM { get; set; }
-            public string VALUE_DT { get; set; }// VALUE_DT
-            public string CLOSING_BAL { get; set; }// CLOSING_BAL
         }
 
         public class Mapping
         {
-            public int MAPPING_ID { get; set; }
+            public int MAPPED_DESC_ID { get; set; }
             public int DETAIL_ID { get; set; }
             public int STMNT_ID { get; set; }
             public int SHEET_ID { get; set; }
@@ -462,13 +396,9 @@ namespace syncfusion_grid.Controllers
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }
             public string CREATED_BY { get; set; }
-            public int GL_ACCT_ID { get; set; }
-            public string GL_ACCT_NO { get; set; }
+
             public string LEDGER_NO { get; set; }
             public string ACCT_DESC { get; set; }
-            public string BU_NM { get; set; }
-            public string VALUE_DT { get; set; }//VALUE_DT
-            public string CLOSING_BAL { get; set; }//CLOSING_BAL
         }
 
         public class OrgFinStatementType

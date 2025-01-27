@@ -10,7 +10,28 @@
         <div style="text-align: left; margin-bottom: 20px;">
             <a href="/ExcelMapping_Documentation" class="btn btn-secondary">Back</a>
         </div>
+
+
+
+
+
+
+
         <div class="formContent">
+            <!-- Date-Time Picker for Start Date and End Date -->
+            <div class="form-group">
+                <label for="startDatePicker">Start Date:</label>
+                <input type="text" id="startDatePicker" class="datePicker" placeholder="Select Start Date">
+
+                <label for="endDatePicker" class="ml-3">End Date:</label>
+                <input type="text" id="endDatePicker" class="datePicker" placeholder="Select End Date">
+
+
+            </div>
+
+
+
+
             <!-- Directory Dropdown -->
             <div class="form-group">
                 <label for="selectedDirectory">Select Directory:</label>
@@ -61,8 +82,49 @@
     </div>
 </div>
 
+
+<!-- Include Flatpickr CSS and JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+
 @section Scripts {
     <script>
+
+
+
+
+
+                // Initialize Flatpickr for date-time pickers with DD-MMM-YY format
+        flatpickr("#startDatePicker", {
+            dateFormat: "d-M-y", // Format: DD-MMM-YY
+            defaultDate: "today", // Set default date to today
+            onChange: function (selectedDates, dateStr, instance) {
+                // Convert the month to uppercase
+                const formattedDate = dateStr.toUpperCase();
+                document.getElementById('startDatePicker').value = formattedDate;
+
+                // Update the hidden text box
+                document.getElementById('hiddenStartDate').value = formattedDate;
+            }
+        });
+
+        flatpickr("#endDatePicker", {
+            dateFormat: "d-M-y", // Format: DD-MMM-YY
+            defaultDate: "today", // Set default date to today
+            onChange: function (selectedDates, dateStr, instance) {
+                // Convert the month to uppercase
+                const formattedDate = dateStr.toUpperCase();
+                document.getElementById('endDatePicker').value = formattedDate;
+
+                // Update the hidden text box
+                document.getElementById('hiddenEndDate').value = formattedDate;
+            }
+        });
+
+
+
+
         // Update Workbook Dropdown when Directory is selected
         function updateSelectedDirectory(value) {
             $.ajax({
@@ -328,4 +390,47 @@
          font-weight: bold; /* Bold text */
          padding: 10px; /* Add padding */
      }
+
+
+
+
+    /*styles for date picker*/
+    .date-picker-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .date-label {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #495057;
+    }
+
+    .datePicker {
+        padding: 8px 12px;
+        font-size: 14px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        transition: border-color 0.3s ease;
+    }
+
+        .datePicker:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+    .form-group .datePicker::placeholder {
+        color: #6c757d;
+        font-style: italic;
+    }
+
 </style>

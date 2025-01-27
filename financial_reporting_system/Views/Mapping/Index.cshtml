@@ -25,17 +25,7 @@
 
             <h1 class="mt-5">Select the Time Period for @ViewBag.SelectedDescription</h1>
 
-            <!-- Date-Time Picker for Start Date and End Date -->
-            <div class="mt-3">
-                <label for="startDatePicker">Start Date:</label>
-                <input type="text" id="startDatePicker" name="startDate" class="datePicker form-control" placeholder="Select Start Date" value="@ViewBag.StartDate">
 
-                <label for="endDatePicker" class="ml-3">End Date:</label>
-                <input type="text" id="endDatePicker" name="endDate" class="datePicker form-control" placeholder="Select End Date" value="@ViewBag.EndDate">
-
-                <!-- Search Button -->
-                <button type="submit" class="btn btn-primary search-btn">Apply</button>
-            </div>
         </form>
 
         <!-- Available Statement Details -->
@@ -57,37 +47,29 @@
         <!-- Spacer between grids -->
         <div class="grid-spacer"></div>
 
-        <!-- Unmapped GL Section -->
-        <h1 class="mt-5">Unmapped GL for date ranging from @ViewBag.StartDate to @ViewBag.EndDate</h1>
-
+        <h1 class="mt-5">Available Ledgers</h1>
         <!-- Dropdown for Page Size Selection -->
         <div class="mb-3">
             <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
             <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
-                <option value="10" selected>10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="150">150</option>
+                <option value="20" selected>20</option>
+                <option value="40">40</option>
+                <option value="80">80</option>
+                <option value="160">160</option>
+
             </select>
         </div>
         
-            <!-- Second Grid -->
-            <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-                <e-grid-pagesettings pageSize="10"></e-grid-pagesettings>
-                <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
-                <e-grid-columns>
-                    <e-grid-column type="checkbox" width="50"></e-grid-column>
-                    <e-grid-column field="VALUE_DT" headerText="Value date" textAlign="Right" width="150"></e-grid-column>
-                    <e-grid-column field="GL_ACCT_ID" headerText="GL Account ID" textAlign="Right" width="150"></e-grid-column>
-                    <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL account type" textAlign="Right" width="150"></e-grid-column>
-                    <e-grid-column field="GL_ACCT_NO" headerText="GL Account No" textAlign="Right" width="250"></e-grid-column>
-                    <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
-                    <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
-                    <e-grid-column field="BU_NM" headerText="Branch name" textAlign="Right" width="150"></e-grid-column>
-                    <e-grid-column field="CLOSING_BAL" headerText="Closing balance" textAlign="Right" width="150"></e-grid-column>
-                </e-grid-columns>
-            </ejs-grid>
+        <!-- Second Grid -->
+        <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+            <e-grid-pagesettings pageSize="20"></e-grid-pagesettings>
+            <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+            <e-grid-columns>
+                <e-grid-column type="checkbox" width="50"></e-grid-column>
+                <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
+            </e-grid-columns>
+        </ejs-grid>
 
             <!-- Centered Button -->
             <div class="button-container">
@@ -210,54 +192,51 @@
             return;
         }
 
-        // Proceed with combining rows if exactly one row is selected in the first grid
-        if (selectedAccountRows.length > 0) {
-            var combinedRows = selectedAccountRows.map(accountRow => ({
-                DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
-                STMNT_ID: selectedOrderRow[0].STMNT_ID,
-                SHEET_ID: selectedOrderRow[0].SHEET_ID,
-                HEADER_ID: selectedOrderRow[0].HEADER_ID,
-                GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
-                REF_CD: selectedOrderRow[0].REF_CD,
-                DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
-                SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
-                CREATED_BY: selectedOrderRow[0].CREATED_BY,
-                GL_ACCT_ID: accountRow.GL_ACCT_ID,
-                GL_ACCT_NO: accountRow.GL_ACCT_NO,
-                LEDGER_NO: accountRow.LEDGER_NO,
-                ACCT_DESC: accountRow.ACCT_DESC,
-                BAL_CD: accountRow.BAL_CD
-            }));
+            // Proceed with combining rows if exactly one row is selected in the first grid
+            if (selectedAccountRows.length > 0) {
+                var combinedRows = selectedAccountRows.map(accountRow => ({
+                    DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
+                    STMNT_ID: selectedOrderRow[0].STMNT_ID,
+                    SHEET_ID: selectedOrderRow[0].SHEET_ID,
+                    HEADER_ID: selectedOrderRow[0].HEADER_ID,
+                    GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
+                    REF_CD: selectedOrderRow[0].REF_CD,
+                    DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
+                    SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
+                    CREATED_BY: selectedOrderRow[0].CREATED_BY,
+                    LEDGER_NO: accountRow.LEDGER_NO, // Only LEDGER_NO and ACCT_DESC are available
+                    ACCT_DESC: accountRow.ACCT_DESC
+                }));
 
-            // Fetch request to save combined rows
-            fetch('/Mapping/SaveCombinedRows', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(combinedRows)
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok: ' + response.statusText);
-                    }
-                    return response.json();
+                // Fetch request to save combined rows
+                fetch('/Mapping/SaveCombinedRows', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(combinedRows)
                 })
-                .then(data => {
-                    if (data.error) {
-                        alert('Error: ' + data.error);
-                    } else {
-                        alert(data.message);
-                        // Reload the page after a successful save
-                        location.reload();
-                    }
-                })
-                .catch(error => {
-                    alert('Error: ' + error.message);
-                });
-        } else {
-            alert('No rows selected in the account grid.');
-        }
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            alert('Error: ' + data.error);
+                        } else {
+                            alert(data.message);
+                            // Reload the page after a successful save
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error.message);
+                    });
+            } else {
+                alert('No rows selected in the account grid.');
+            }
     });
 
 

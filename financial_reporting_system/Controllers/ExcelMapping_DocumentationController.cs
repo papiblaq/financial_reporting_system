@@ -10,6 +10,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text.Json;
 
+
 namespace financial_reporting_system.Controllers
 {
     public class ExcelMapping_Documentation : Controller
@@ -111,16 +112,30 @@ namespace financial_reporting_system.Controllers
         }
 
         // Export Financial Data to Excel
+        // Controller action to export financial data to Excel
         [HttpPost]
-        public IActionResult ExportFinancialDataToExcel(string selectedDirectory, string selectedWorkbook)
+        public IActionResult ExportFinancialDataToExcel([FromBody] ExportExcelRequestModel model)
         {
+            // Validate the model
+            if (model == null || string.IsNullOrEmpty(model.SelectedDirectory) || string.IsNullOrEmpty(model.SelectedWorkbook))
+            {
+                return Json(new { error = "Invalid input. Please provide both the directory and workbook name." });
+            }
+
             try
             {
+
                 // Fetch the saved values from the database
-                var savedValues = ExcelWorkbookMappingData(selectedWorkbook);
+                var savedValues = ExcelWorkbookMappingData(model.SelectedWorkbook);
 
                 // Construct the workbook path
-                string workbookPath = Path.Combine(selectedDirectory, selectedWorkbook);
+                string workbookPath = Path.Combine(model.SelectedDirectory, model.SelectedWorkbook);
+
+                // Ensure the file exists
+                if (!System.IO.File.Exists(workbookPath))
+                {
+                    throw new FileNotFoundException("The specified workbook does not exist.", workbookPath);
+                }
 
                 // Open the workbook
                 using (FileStream fileStream = new FileStream(workbookPath, FileMode.Open, FileAccess.Read))
@@ -181,14 +196,20 @@ namespace financial_reporting_system.Controllers
                     // Return the workbook as a downloadable file
                     return File(workbookStream, "application/vnd.ms-excel", $"{Path.GetFileNameWithoutExtension(workbookPath)}_Processed.xls");
                 }
+            
             }
             catch (Exception ex)
             {
+                // Log the exception (if logging is set up)
                 Console.WriteLine($"Exception: {ex.Message}");
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+
+                // Return error details
                 return Json(new { error = "An error occurred while exporting to Excel.", details = ex.Message });
             }
         }
+
+
 
         // Save Exporting Data
         [HttpPost]
@@ -666,5 +687,17 @@ namespace financial_reporting_system.Controllers
             public string RefCd { get; set; }
             public string ValueForCells { get; set; }
         }
+
+
+
+
+        // Strongly-typed request model for the export action
+        public class ExportExcelRequestModel
+        {
+            public string SelectedDirectory { get; set; }
+            public string SelectedWorkbook { get; set; }
+        }
     }
+
+
 }

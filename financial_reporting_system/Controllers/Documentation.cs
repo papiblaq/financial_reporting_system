@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
 using Syncfusion.XlsIO;
@@ -67,7 +68,12 @@ namespace financial_reporting_system.Controllers
         }
 
         [HttpPost]
-        public IActionResult ExportFinancialDataToExcel(List<UserDefinedCellValues> exellCellsMappingInfo, string selectedDirectory, string selectedTemplate)
+        public IActionResult ExportFinancialDataToExcel(
+            List<UserDefinedCellValues> exellCellsMappingInfo,
+            string selectedDirectory,
+            string selectedTemplate,
+            string startDate,  // Start Date from the form
+            string endDate)    // End Date from the form
         {
             try
             {
@@ -104,8 +110,17 @@ namespace financial_reporting_system.Controllers
                         // Loop through the list of UserDefinedCellValues
                         foreach (var cellValue in exellCellsMappingInfo)
                         {
-                            // Construct the SQL query using the ref_cd
-                            string sqlQuery = $"SELECT SUM(gas.ledger_bal) FROM ORG_FINANCIAL_MAPPING a, gl_account_summary gas WHERE a.gl_acct_id = gas.gl_acct_id AND ref_cd = '{cellValue.RefCd}'";
+                            // Format the dates for the SQL query
+                            var formattedStartDate = DateTime.Parse(startDate).ToString("dd-MMM-yyyy").ToUpper();
+                            var formattedEndDate = DateTime.Parse(endDate).ToString("dd-MMM-yyyy").ToUpper();
+
+                            // Construct the SQL query using the ref_cd and date range
+                            string sqlQuery = $@"
+                            SELECT SUM(gas.ledger_bal) 
+                            FROM SINGLE_SHEET_MAPPED_DESCRIPTION_WITH_LEDGRRS a, gl_account_summary gas 
+                            WHERE a.gl_acct_id = gas.gl_acct_id 
+                            AND ref_cd = '{cellValue.RefCd}' 
+                            AND VALUE_DATE BETWEEN TO_DATE('{formattedStartDate}', 'DD-MON-YYYY') AND TO_DATE('{formattedEndDate}', 'DD-MON-YYYY')";
 
                             // Execute the SQL query to fetch the specific value
                             double specificValue = GetSpecificValueFromDatabase(sqlQuery);
@@ -132,6 +147,29 @@ namespace financial_reporting_system.Controllers
                 return Json(new { error = "An error occurred while exporting to Excel.", details = ex.Message });
             }
         }
+
+        private double GetSpecificValueFromDatabase(string sqlQuery, string refCd, string formattedStartDate, string formattedEndDate)
+        {
+            double result = 0.0;
+
+            // Replace with your actual database connection string
+            string connectionString = "YourConnectionStringHere";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var command = new SqlCommand(sqlQuery, connection);
+                command.Parameters.AddWithValue("@RefCd", refCd);
+                command.Parameters.AddWithValue("@StartDate", formattedStartDate);
+                command.Parameters.AddWithValue("@EndDate", formattedEndDate);
+
+                connection.Open();
+                var dbResult = command.ExecuteScalar();
+                result = dbResult != DBNull.Value ? Convert.ToDouble(dbResult) : 0.0;
+            }
+
+            return result;
+        }
+
 
         [HttpPost]
         public IActionResult SaveExportingData([FromBody] SaveExportingDataModel model)

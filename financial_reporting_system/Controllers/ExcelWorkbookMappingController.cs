@@ -201,8 +201,7 @@ namespace financial_reporting_system.Controllers
             }
         }
 
-        // method to feth all financial statenment details based on selected stmnt_id
-
+        // Method to fetch all financial statement details or filter by STMNT_ID, excluding mapped descriptions
         private List<FinancialStatementDetail> GetFinancialStatementDetails(int stmntId)
         {
             var financialStatementDetails = new List<FinancialStatementDetail>();
@@ -212,11 +211,39 @@ namespace financial_reporting_system.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = @"
-                        SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY 
-                        FROM EXCEL_WORKBOOK_STMNT_DETAIL 
-                        WHERE :stmntId = 0 OR STMNT_ID = :stmntId";
-                    command.Parameters.Add(new OracleParameter("stmntId", stmntId));
+                    // Build the query based on the value of stmntId
+                    if (stmntId == 0)
+                    {
+                        command.CommandText = @"
+                    SELECT D.DETAIL_ID, D.STMNT_ID, D.SHEET_ID, D.HEADER_ID, D.GL_ACCT_CAT_CD, 
+                           D.REF_CD, D.DESCRIPTION, D.SYS_CREATE_TS, D.CREATED_BY
+                    FROM EXCEL_WORKBOOK_STMNT_DETAIL D";
+                    }
+                    else
+                    {
+                        command.CommandText = @"
+                    SELECT D.DETAIL_ID, D.STMNT_ID, D.SHEET_ID, D.HEADER_ID, D.GL_ACCT_CAT_CD, 
+                           D.REF_CD, D.DESCRIPTION, D.SYS_CREATE_TS, D.CREATED_BY
+                    FROM EXCEL_WORKBOOK_STMNT_DETAIL D
+                    WHERE NOT EXISTS (
+                        SELECT 1 
+                        FROM ORG_MAPPED_DESCRIPTION_WITH_LEDGRRS S
+                        WHERE S.DETAIL_ID = D.DETAIL_ID
+                    ) AND D.STMNT_ID = :stmntId";
+                    }
+
+                    // Log the parameter value for debugging
+                    Console.WriteLine($"Executing query with STMNT_ID: {stmntId}");
+
+                    // If stmntId is not 0, add the parameter to the query
+                    if (stmntId != 0)
+                    {
+                        var stmntIdParam = new OracleParameter("stmntId", OracleDbType.Int32)
+                        {
+                            Value = stmntId
+                        };
+                        command.Parameters.Add(stmntIdParam);
+                    }
 
                     using (var reader = command.ExecuteReader())
                     {
@@ -237,6 +264,7 @@ namespace financial_reporting_system.Controllers
                         }
                     }
                 }
+                Console.WriteLine("Financial statement details fetched successfully.");
             }
 
             return financialStatementDetails;

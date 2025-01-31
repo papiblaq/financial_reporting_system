@@ -1,14 +1,13 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
 using Syncfusion.XlsIO;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Text.Json;
 
 
 namespace financial_reporting_system.Controllers
@@ -117,14 +116,13 @@ namespace financial_reporting_system.Controllers
         public IActionResult ExportFinancialDataToExcel([FromBody] ExportExcelRequestModel model)
         {
             // Validate the model
-            if (model == null || string.IsNullOrEmpty(model.SelectedDirectory) || string.IsNullOrEmpty(model.SelectedWorkbook))
+            if (model == null || string.IsNullOrEmpty(model.SelectedDirectory) || string.IsNullOrEmpty(model.SelectedWorkbook) || string.IsNullOrEmpty(model.StartDate) || string.IsNullOrEmpty(model.EndDate))
             {
-                return Json(new { error = "Invalid input. Please provide both the directory and workbook name." });
+                return Json(new { error = "Invalid input. Please provide the directory, workbook name, start date, and end date." });
             }
 
             try
             {
-
                 // Fetch the saved values from the database
                 var savedValues = ExcelWorkbookMappingData(model.SelectedWorkbook);
 
@@ -173,8 +171,13 @@ namespace financial_reporting_system.Controllers
                                 throw new Exception("Cell address is null or empty.");
                             }
 
-                            // Construct the SQL query
-                            string sqlQuery = $"SELECT SUM(gas.ledger_bal) FROM EXCEL_WORKBOOK_FINANCIAL_MAPPING a, gl_account_summary gas WHERE a.gl_acct_id = gas.gl_acct_id AND ref_cd = '{cellValue.RefCd}'";
+                            // Construct the SQL query with start and end dates
+                            string sqlQuery = $@"
+                            SELECT SUM(gas.ledger_bal) 
+                            FROM ORG_MAPPED_DESCRIPTION_WITH_LEDGRRS a, gl_account_summary gas 
+                            WHERE a.gl_acct_id = gas.gl_acct_id 
+                            AND ref_cd = '1' 
+                            AND VALUE_DATE BETWEEN TO_DATE('31-DEC-22', 'DD-MON-YYY') AND TO_DATE('31-AUG-24', 'DD-MON-YYY')";
 
                             // Execute the SQL query to fetch the specific value
                             double specificValue = GetSpecificValueFromDatabase(sqlQuery);
@@ -196,7 +199,6 @@ namespace financial_reporting_system.Controllers
                     // Return the workbook as a downloadable file
                     return File(workbookStream, "application/vnd.ms-excel", $"{Path.GetFileNameWithoutExtension(workbookPath)}_Processed.xls");
                 }
-            
             }
             catch (Exception ex)
             {
@@ -286,30 +288,65 @@ namespace financial_reporting_system.Controllers
         {
             double specificValue = 0;
 
+            // Debugging: Print the SQL query
+            Console.WriteLine($"SQL Query: {sqlQuery}");
+
+            // Execute the query and fetch the result
             using (var connection = new OracleConnection(_connectionString))
             {
-                connection.Open();
-                using (var command = new OracleCommand(sqlQuery, connection))
+                try
                 {
-                    try
+                    connection.Open();
+                    Console.WriteLine("Database connection established successfully.");
+
+                    using (var command = new OracleCommand(sqlQuery, connection))
                     {
-                        object result = command.ExecuteScalar();
-                        if (result != null && result != DBNull.Value)
+                        try
                         {
-                            specificValue = Convert.ToDouble(result);
+                            object result = command.ExecuteScalar();
+
+                            // Log the raw result from the database
+                            Console.WriteLine($"Raw Query Result: {result}");
+
+                            if (result != null && result != DBNull.Value)
+                            {
+                                if (double.TryParse(result.ToString(), out specificValue))
+                                {
+                                    Console.WriteLine($"Parsed Result as Double: {specificValue}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Result is not a valid double. Defaulting to 0.");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Query returned NULL or no result.");
+                            }
+                        }
+                        catch (OracleException ex)
+                        {
+                            // Log the Oracle exception details
+                            Console.WriteLine($"Oracle Exception: {ex.Message}");
+                            Console.WriteLine($"Oracle Error Code: {ex.ErrorCode}");
+                            Console.WriteLine($"Oracle Error State: {ex.Source}");
+                            throw;
                         }
                     }
-                    catch (OracleException ex)
-                    {
-                        Console.WriteLine($"Oracle Exception: {ex.Message}");
-                        Console.WriteLine($"Oracle Error Code: {ex.ErrorCode}");
-                        throw;
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"General Exception: {ex.Message}");
+                    throw;
                 }
             }
 
+            // Log the final value being returned
+            Console.WriteLine($"Final Returned Value: {specificValue}");
+
             return specificValue;
         }
+
 
         // Fetch Directories
         private List<string> FetchingExcelDirectories()
@@ -696,6 +733,8 @@ namespace financial_reporting_system.Controllers
         {
             public string SelectedDirectory { get; set; }
             public string SelectedWorkbook { get; set; }
+            public string StartDate { get; set; }
+            public string EndDate { get; set; }
         }
     }
 

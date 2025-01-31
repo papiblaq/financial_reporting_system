@@ -23,7 +23,7 @@
                 }
             </select>
 
-            <h1 class="mt-5">Select the Time Period for @ViewBag.SelectedDescription</h1>
+           
 
 
         </form>
@@ -67,14 +67,21 @@
             <e-grid-columns>
                 <e-grid-column type="checkbox" width="50"></e-grid-column>
                 <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="GL_ACCT_NO" headerText="Ledger account" textAlign="Right" width="150"></e-grid-column>
                 <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
             </e-grid-columns>
         </ejs-grid>
 
             <!-- Centered Button -->
-            <div class="button-container">
-                <button id="saveCombinedRows" class="custom-delete-button">Save MappedGL</button>
-            </div>
+        <div class="button-container">
+            <!-- Save MappedGL Button -->
+            <button id="saveCombinedRows" class="custom-delete-button">Save MappedGL</button>
+
+            <!-- Uploading Button (Initially Hidden) -->
+            <button id="uploadingButton" class="custom-delete-button" style="display: none;" disabled>
+                Uploading...
+            </button>
+        </div>
 
             <!-- Add the "View Grid" button -->
             <div class="button-container">
@@ -91,27 +98,65 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize Flatpickr for date pickers
-        flatpickr("#startDatePicker", {
-            dateFormat: "d-M-y", // Format: DD-MMM-YY
-            defaultDate: "@ViewBag.StartDate", // Set default date to the value from ViewBag
-            onChange: function (selectedDates, dateStr, instance) {
-                const formattedDate = dateStr.toUpperCase();
-                document.getElementById('startDatePicker').value = formattedDate;
-                document.getElementById('startDatePicker').classList.remove('is-invalid'); // Remove invalid class
-            }
-        });
+        var orderGrid = document.getElementById('grid').ej2_instances[0]; // Get Syncfusion Grid instance
 
-        flatpickr("#endDatePicker", {
-            dateFormat: "d-M-y", // Format: DD-MMM-YY
-            defaultDate: "@ViewBag.EndDate", // Set default date to the value from ViewBag
-            onChange: function (selectedDates, dateStr, instance) {
-                const formattedDate = dateStr.toUpperCase();
-                document.getElementById('endDatePicker').value = formattedDate;
-                document.getElementById('endDatePicker').classList.remove('is-invalid'); // Remove invalid class
+        // ✅ Function to handle row selection & reload with new DETAIL_ID
+        function handleRowSelection(args) {
+            var selectedRow = orderGrid.getSelectedRecords()[0]; // Get selected row
+            if (selectedRow) {
+                var DETAIL_ID = selectedRow.DETAIL_ID; // Capture DETAIL_ID
+
+                // ✅ If the selected DETAIL_ID is different, update and reload
+                if (sessionStorage.getItem('selectedDetailId') !== DETAIL_ID.toString()) {
+                    sessionStorage.setItem('selectedDetailId', DETAIL_ID); // Save new DETAIL_ID
+
+                    var stmntId = document.getElementById('statementTypeDropdown').value; // Get STMNT_ID
+                    if (DETAIL_ID && stmntId) {
+                        var newUrl = `/Mapping/Index?stmntId=${encodeURIComponent(stmntId)}&detailId=${encodeURIComponent(DETAIL_ID)}`;
+                        window.location.href = newUrl; // ✅ Reload with updated DETAIL_ID
+                    }
+                }
             }
-        });
+        }
+
+        // ✅ Assign rowSelected event to handle row selection
+        orderGrid.rowSelected = handleRowSelection;
+
+        // ✅ After page reload, reselect the previously selected row WITHOUT triggering rowSelected event
+        setTimeout(() => {
+            var storedDetailId = sessionStorage.getItem('selectedDetailId'); // Retrieve stored DETAIL_ID
+            if (storedDetailId) {
+                var gridData = orderGrid.getCurrentViewRecords(); // Get grid data
+                var selectedRecord = gridData.find(record => record.DETAIL_ID == storedDetailId);
+
+                if (selectedRecord) {
+                    var rowIndex = gridData.indexOf(selectedRecord); // Get row index
+                    if (rowIndex !== -1) {
+                        // ✅ Temporarily disable event listener to prevent reload loop
+                        orderGrid.rowSelected = null;
+
+                        orderGrid.selectRows([rowIndex]); // ✅ Reselect row
+
+                        // ✅ Re-enable row selection after a delay
+                        setTimeout(() => {
+                            orderGrid.rowSelected = handleRowSelection; // ✅ Re-enable row selection
+                        }, 1000);
+                    }
+                }
+            }
+        }, 1500); // Delay to ensure grid is fully loaded
     });
+
+
+
+
+
+
+
+
+
+
+
 
     // Function to validate the form before submission
     function validateForm() {
@@ -152,7 +197,8 @@
 
         return isValid; // Prevent form submission if any field is invalid
     }
-        // Get the page size dropdown element
+
+    // Get the page size dropdown element
     var pageSizeDropdown = document.getElementById('pageSizeDropdown');
 
     // Event listener for dropdown change
@@ -180,68 +226,75 @@
 
     // Event listener for saving combined rows
     document.getElementById('saveCombinedRows').addEventListener('click', function () {
+        var saveButton = document.getElementById('saveCombinedRows');
+        var uploadingButton = document.getElementById('uploadingButton');
+
         var orderGrid = document.getElementById('grid').ej2_instances[0];
         var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
 
         var selectedOrderRow = orderGrid.getSelectedRecords();
         var selectedAccountRows = accountGrid.getSelectedRecords();
 
-        // Check if exactly one row is selected in the first grid
+        // Ensure exactly one row is selected in the first grid
         if (selectedOrderRow.length !== 1) {
             alert('Please select exactly one row in the first grid.');
             return;
         }
 
-            // Proceed with combining rows if exactly one row is selected in the first grid
-            if (selectedAccountRows.length > 0) {
-                var combinedRows = selectedAccountRows.map(accountRow => ({
-                    DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
-                    STMNT_ID: selectedOrderRow[0].STMNT_ID,
-                    SHEET_ID: selectedOrderRow[0].SHEET_ID,
-                    HEADER_ID: selectedOrderRow[0].HEADER_ID,
-                    GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
-                    REF_CD: selectedOrderRow[0].REF_CD,
-                    DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
-                    SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
-                    CREATED_BY: selectedOrderRow[0].CREATED_BY,
-                    LEDGER_NO: accountRow.LEDGER_NO, // Only LEDGER_NO and ACCT_DESC are available
-                    ACCT_DESC: accountRow.ACCT_DESC
-                }));
+        if (selectedAccountRows.length === 0) {
+            alert('No rows selected in the account grid.');
+            return;
+        }
 
-                // Fetch request to save combined rows
-                fetch('/Mapping/SaveCombinedRows', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(combinedRows)
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok: ' + response.statusText);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.error) {
-                            alert('Error: ' + data.error);
-                        } else {
-                            alert(data.message);
-                            // Reload the page after a successful save
-                            location.reload();
-                        }
-                    })
-                    .catch(error => {
-                        alert('Error: ' + error.message);
-                    });
-            } else {
-                alert('No rows selected in the account grid.');
+        // Hide "Save MappedGL" and show "Uploading..."
+        saveButton.style.display = 'none';
+        uploadingButton.style.display = 'inline-block';
+
+        var combinedRows = selectedAccountRows.map(accountRow => ({
+            DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
+            STMNT_ID: selectedOrderRow[0].STMNT_ID,
+            SHEET_ID: selectedOrderRow[0].SHEET_ID,
+            HEADER_ID: selectedOrderRow[0].HEADER_ID,
+            GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
+            REF_CD: selectedOrderRow[0].REF_CD,
+            DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
+            SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
+            CREATED_BY: selectedOrderRow[0].CREATED_BY,
+            LEDGER_NO: accountRow.LEDGER_NO,
+            ACCT_DESC: accountRow.ACCT_DESC
+        }));
+
+        fetch('/Mapping/SaveCombinedRows', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(combinedRows)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
             }
+            return response.json();
+        })
+        .then(data => {
+            alert(data.message || 'Upload successful.');
+            // Restore buttons after alert is dismissed
+            saveButton.style.display = 'inline-block';
+            uploadingButton.style.display = 'none';
+
+            // Reload the page to reflect saved data
+            location.reload();
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+            // Restore buttons in case of failure
+            saveButton.style.display = 'inline-block';
+            uploadingButton.style.display = 'none';
+        });
     });
-
-
-
 </script>
+
 <style>
 
 

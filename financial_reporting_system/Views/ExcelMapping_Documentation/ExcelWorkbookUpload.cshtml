@@ -23,6 +23,9 @@
 
                 <label for="endDatePicker" class="ml-3">End Date:</label>
                 <input type="text" id="endDatePicker" class="datePicker" placeholder="Select End Date">
+
+                <input type="hidden" id="hiddenStartDate" name="hiddenStartDate" />
+                <input type="hidden" id="hiddenEndDate" name="hiddenEndDate" />
             </div>
 
             <!-- Directory Dropdown -->
@@ -162,22 +165,25 @@
             });
         }
 
-                // JavaScript to handle the export button click
-        document.getElementById("exportToExcelButton").addEventListener("click", function () {
-            // Get the selected values from the dropdowns
+                       document.getElementById("exportToExcelButton").addEventListener("click", function () {
+            // Get the selected values from the dropdowns and date pickers
             var selectedDirectory = document.getElementById("selectedDirectory").value;
             var selectedWorkbook = document.getElementById("selectedWorkbook").value;
+            var startDate = document.getElementById("hiddenStartDate").value;
+            var endDate = document.getElementById("hiddenEndDate").value;
 
             // Validate the inputs
-            if (!selectedDirectory || !selectedWorkbook) {
-                alert("Please select both a directory and a workbook.");
+            if (!selectedDirectory || !selectedWorkbook || !startDate || !endDate) {
+                alert("Please select a directory, workbook, start date, and end date.");
                 return;
             }
 
             // Create the request payload
             var requestPayload = {
                 selectedDirectory: selectedDirectory,
-                selectedWorkbook: selectedWorkbook
+                selectedWorkbook: selectedWorkbook,
+                startDate: startDate,
+                endDate: endDate
             };
 
             // Send the request using Fetch API

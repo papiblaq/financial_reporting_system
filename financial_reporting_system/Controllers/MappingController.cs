@@ -17,26 +17,32 @@ namespace syncfusion_grid.Controllers
             _connectionString = configuration.GetConnectionString("OracleConnection");
         }
 
-        public IActionResult Index(int stmntId = 0)
+        public IActionResult Index(int stmntId = 0, int detailId = 0)
         {
             // Fetch filtered financial statement details based on the selected statement type
             var financialStatementDetails = GetFinancialStatementDetails(stmntId);
-            var accountDetails = GetAccountDetails(); // Pass the date range
+
+            // Pass the detailId to GetAccountDetails if needed
+            var accountDetails = GetAccountDetails(detailId);  // Fetch account details based on selected DETAIL_ID
+
+            // Get available statement types
             var statementTypes = GetOrgFinStatementTypes();
 
             // Find the selected statement type description
-            var selectedDescription = statementTypes.FirstOrDefault(st => st.STMNT_ID == stmntId)?.DESCRIPTION ?? "All statement types";
+            var selectedDescription = statementTypes
+                .FirstOrDefault(st => st.STMNT_ID == stmntId)?.DESCRIPTION ?? "All statement types";
 
-
-
-            // Pass the selected dates and statement type to the view
+            // Pass data to the view using ViewBag
             ViewBag.AccountDetails = accountDetails;
             ViewBag.StatementTypes = statementTypes;
             ViewBag.SelectedDescription = selectedDescription;
             ViewBag.SelectedStmntId = stmntId;             // Pass the selected statement type ID
+            ViewBag.SelectedDetailId = detailId;           // Pass the selected detail ID
 
             return View(financialStatementDetails);
         }
+
+
 
 
         // New action to fetch filtered financial statements based on STMNT_ID
@@ -138,8 +144,42 @@ namespace syncfusion_grid.Controllers
             }
         }
 
-        // Method to fetch all financial statement details or filter by STMNT_ID
-        private  List<FinancialStatementDetail> GetFinancialStatementDetails(int stmntId)
+
+
+
+        // Fetch financial statement types (used for dropdown)
+        private List<OrgFinStatementType> GetOrgFinStatementTypes()
+        {
+            var statementTypes = new List<OrgFinStatementType>();
+
+            using (var connection = new OracleConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT STMNT_ID, DESCRIPTION FROM ORG_FIN_STATEMENT_TYPE WHERE EXCEL_SHEET IS NOT NULL";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            statementTypes.Add(new OrgFinStatementType
+                            {
+                                STMNT_ID = reader.GetInt32(0),
+                                DESCRIPTION = reader.GetString(1)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return statementTypes;
+        }
+
+
+
+
+        // Method to fetch all financial statement details or filter by STMNT_ID, excluding mapped descriptions
+        private List<FinancialStatementDetail> GetFinancialStatementDetails(int stmntId)
         {
             var financialStatementDetails = new List<FinancialStatementDetail>();
 
@@ -148,11 +188,26 @@ namespace syncfusion_grid.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = @"
-                        SELECT DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY 
-                        FROM ORG_FINANCIAL_STMNT_DETAIL 
-                        WHERE :stmntId = 0 OR STMNT_ID = :stmntId";
-                    command.Parameters.Add(new OracleParameter("stmntId", stmntId));
+                    // Build the query based on the value of stmntId
+
+                        command.CommandText = @"
+                        SELECT D.DETAIL_ID, D.STMNT_ID, D.SHEET_ID, D.HEADER_ID, D.GL_ACCT_CAT_CD, 
+                        D.REF_CD, D.DESCRIPTION, D.SYS_CREATE_TS, D.CREATED_BY
+                        FROM ORG_FINANCIAL_STMNT_DETAIL D";
+
+
+                    // Log the parameter value for debugging
+                    Console.WriteLine($"Executing query with STMNT_ID: {stmntId}");
+
+                    // If stmntId is not 0, add the parameter to the query
+                    if (stmntId != 0)
+                    {
+                        var stmntIdParam = new OracleParameter("stmntId", OracleDbType.Int32)
+                        {
+                            Value = stmntId
+                        };
+                        command.Parameters.Add(stmntIdParam);
+                    }
 
                     using (var reader = command.ExecuteReader())
                     {
@@ -173,7 +228,7 @@ namespace syncfusion_grid.Controllers
                         }
                     }
                 }
-                Console.WriteLine("financial details ", financialStatementDetails);
+                Console.WriteLine("Financial statement details fetched successfully.");
             }
 
             return financialStatementDetails;
@@ -182,19 +237,38 @@ namespace syncfusion_grid.Controllers
 
 
 
-        // Updated method to fetch account details using the new query
-        private List<AccountDetail> GetAccountDetails()
+
+
+
+
+
+        private List<AccountDetail> GetAccountDetails(int detailId = 0)
         {
             var accountDetails = new List<AccountDetail>();
-
             using (var connection = new OracleConnection(_connectionString))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                        SELECT DISTINCT LEDGER_NO, ACCT_DESC 
-                        FROM V_ORG_CHART_OF_ACCOUNT_DETAILS_WITHVALUE_DATE";
+            SELECT DISTINCT v.LEDGER_NO, v.ACCT_DESC, v.GL_ACCT_NO
+            FROM V_ORG_CHART_OF_ACCOUNT_DETAILS_WITHVALUE_DATE v
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM SINGLE_SHEET_MAPPED_DESCRIPTION_WITH_LEDGRRS l
+                WHERE l.DETAIL_ID = :selectedDetailId
+                  AND l.LEDGER_NO = v.LEDGER_NO
+            )";
+
+                    // Add the parameter for DETAIL_ID (selectedDetailId)
+                    if (detailId > 0)  // Only pass DETAIL_ID if it's greater than 0
+                    {
+                        command.Parameters.Add(new OracleParameter("selectedDetailId", detailId));
+                    }
+                    else
+                    {
+                        command.Parameters.Add(new OracleParameter("selectedDetailId", DBNull.Value));
+                    }
 
                     using (var reader = command.ExecuteReader())
                     {
@@ -203,15 +277,19 @@ namespace syncfusion_grid.Controllers
                             accountDetails.Add(new AccountDetail
                             {
                                 LEDGER_NO = reader.IsDBNull(0) ? null : reader.GetString(0),
-                                ACCT_DESC = reader.IsDBNull(1) ? null : reader.GetString(1)
+                                ACCT_DESC = reader.IsDBNull(1) ? null : reader.GetString(1),
+                                GL_ACCT_NO = reader.IsDBNull(2) ? null : reader.GetString(2)
                             });
                         }
                     }
                 }
             }
-
             return accountDetails;
         }
+
+
+
+
 
 
         // method to join all the rows selected by the user
@@ -292,14 +370,14 @@ namespace syncfusion_grid.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT MAPPED_DESC_ID, DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC FROM SINGLE_SHEET_MAPPED_DESCRIPTION";
+                    command.CommandText = " SELECT SINGLE_SHEET_MAPPED_DESC_ID, DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC FROM SINGLE_SHEET_MAPPED_DESCRIPTION";
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
                             mappings.Add(new Mapping
                             {
-                                MAPPED_DESC_ID = reader.GetInt32(0),
+                                SINGLE_SHEET_MAPPED_DESC_ID = reader.GetInt32(0),
                                 DETAIL_ID = reader.GetInt32(1),
                                 STMNT_ID = reader.GetInt32(2),
                                 SHEET_ID = reader.GetInt32(3),
@@ -322,33 +400,7 @@ namespace syncfusion_grid.Controllers
             return mappings;
         }
 
-        // Fetch financial statement types (used for dropdown)
-        private List<OrgFinStatementType> GetOrgFinStatementTypes()
-        {
-            var statementTypes = new List<OrgFinStatementType>();
 
-            using (var connection = new OracleConnection(_connectionString))
-            {
-                connection.Open();
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "SELECT STMNT_ID, DESCRIPTION FROM ORG_FIN_STATEMENT_TYPE";
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            statementTypes.Add(new OrgFinStatementType
-                            {
-                                STMNT_ID = reader.GetInt32(0),
-                                DESCRIPTION = reader.GetString(1)
-                            });
-                        }
-                    }
-                }
-            }
-
-            return statementTypes;
-        }
 
         public class FinancialStatementDetail
         {
@@ -367,6 +419,7 @@ namespace syncfusion_grid.Controllers
         {
             public string LEDGER_NO { get; set; }
             public string ACCT_DESC { get; set; }
+            public string GL_ACCT_NO { get; set; }
         }
 
         public class CombinedRow
@@ -386,7 +439,7 @@ namespace syncfusion_grid.Controllers
 
         public class Mapping
         {
-            public int MAPPED_DESC_ID { get; set; }
+            public int SINGLE_SHEET_MAPPED_DESC_ID { get; set; }
             public int DETAIL_ID { get; set; }
             public int STMNT_ID { get; set; }
             public int SHEET_ID { get; set; }

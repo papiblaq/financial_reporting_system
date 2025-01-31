@@ -120,6 +120,8 @@ namespace financial_reporting_system.Controllers
 
             return Json(headerIds);
         }
+
+
         // for the message after sucessful saving
         private string GetHeaderFormattedText(int headerId)
         {
@@ -181,6 +183,17 @@ namespace financial_reporting_system.Controllers
 
             input.SYS_CREATE_TS = DateTime.Now;
 
+            // Ensure VERSION_NUMBER and REC_ST are set
+            if (input.VERSION_NUMBER == null || input.VERSION_NUMBER <= 0)
+            {
+                input.VERSION_NUMBER = 1; // Default to 1 if not provided
+            }
+
+            if (string.IsNullOrEmpty(input.REC_ST))
+            {
+                input.REC_ST = "A"; // Default to 'A' if not provided
+            }
+
             try
             {
                 using (var connection = new OracleConnection(_connectionString))
@@ -189,9 +202,9 @@ namespace financial_reporting_system.Controllers
 
                     // Insert the record
                     string insertQuery = @"
-                INSERT INTO ORG_FINANCIAL_STMNT_DETAIL 
-                (STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY) 
-                VALUES (:STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY)";
+            INSERT INTO ORG_FINANCIAL_STMNT_DETAIL 
+            (STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, VERSION_NUMBER, REC_ST) 
+            VALUES (:STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :VERSION_NUMBER, :REC_ST)";
 
                     using (var insertCommand = new OracleCommand(insertQuery, connection))
                     {
@@ -203,6 +216,8 @@ namespace financial_reporting_system.Controllers
                         AddParameter(insertCommand, "DESCRIPTION", OracleDbType.Varchar2, input.DESCRIPTION);
                         AddParameter(insertCommand, "SYS_CREATE_TS", OracleDbType.TimeStamp, input.SYS_CREATE_TS);
                         AddParameter(insertCommand, "CREATED_BY", OracleDbType.Varchar2, input.CREATED_BY);
+                        AddParameter(insertCommand, "VERSION_NUMBER", OracleDbType.Int32, input.VERSION_NUMBER); // Ensuring VERSION_NUMBER is set
+                        AddParameter(insertCommand, "REC_ST", OracleDbType.Varchar2, input.REC_ST); // Ensuring REC_ST is set
 
                         insertCommand.ExecuteNonQuery();
                     }
@@ -210,7 +225,8 @@ namespace financial_reporting_system.Controllers
                     // Fetch the formattedText for the selected HEADER_ID
                     string formattedText = GetHeaderFormattedText(input.HEADER_ID);
 
-                    _logger.LogInformation("Data saved successfully for STMNT_ID: {STMNT_ID}, SHEET_ID: {SHEET_ID}", input.STMNT_ID, input.SHEET_ID);
+                    _logger.LogInformation("Data saved successfully for STMNT_ID: {STMNT_ID}, SHEET_ID: {SHEET_ID}, VERSION_NUMBER: {VERSION_NUMBER}, REC_ST: {REC_ST}",
+                        input.STMNT_ID, input.SHEET_ID, input.VERSION_NUMBER, input.REC_ST);
                     TempData["SuccessMessage"] = $"Successfully created details for statement header: {formattedText}";
                 }
 
@@ -218,8 +234,21 @@ namespace financial_reporting_system.Controllers
             }
             catch (OracleException ex)
             {
+                // Detailed Oracle error handling
+                string detailedError = $"Oracle Error {ex.Number}: {ex.Message}\nStackTrace: {ex.StackTrace}";
                 _logger.LogError(ex, "Database error occurred while saving statement details.");
-                TempData["ErrorMessage"] = "An error occurred while saving your data. Please try again.";
+
+                // Log query and parameter values for debugging
+                _logger.LogError("Failed Query: {Query}", @"
+            INSERT INTO ORG_FINANCIAL_STMNT_DETAIL 
+            (STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, VERSION_NUMBER, REC_ST) 
+            VALUES (:STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :VERSION_NUMBER, :REC_ST)");
+
+                _logger.LogError("Parameters: STMNT_ID={STMNT_ID}, SHEET_ID={SHEET_ID}, HEADER_ID={HEADER_ID}, GL_ACCT_CAT_CD={GL_ACCT_CAT_CD}, REF_CD={REF_CD}, DESCRIPTION={DESCRIPTION}, SYS_CREATE_TS={SYS_CREATE_TS}, CREATED_BY={CREATED_BY}, VERSION_NUMBER={VERSION_NUMBER}, REC_ST={REC_ST}",
+                    input.STMNT_ID, input.SHEET_ID, input.HEADER_ID, input.GL_ACCT_CAT_CD, input.REF_CD, input.DESCRIPTION, input.SYS_CREATE_TS, input.CREATED_BY, input.VERSION_NUMBER, input.REC_ST);
+
+                // Display error message in UI
+                TempData["ErrorMessage"] = $"Database error occurred: {ex.Message} (Error Code: {ex.Number})";
 
                 // Repopulate dropdown lists after a failed insertion
                 input.StatementTypes = GetStatementTypes();
@@ -229,7 +258,17 @@ namespace financial_reporting_system.Controllers
 
                 return View("Index", input);
             }
+            catch (Exception ex)
+            {
+                // General error handling
+                _logger.LogError(ex, "Unexpected error occurred while saving statement details.");
+                TempData["ErrorMessage"] = "An unexpected error occurred. Please try again later.";
+
+                return View("Index", input);
+            }
         }
+
+
 
         private List<SelectListItem> GetStatementTypes()
         {
@@ -561,6 +600,9 @@ namespace financial_reporting_system.Controllers
         [Required(ErrorMessage = "CREATED_BY is required.")]
         [StringLength(100, ErrorMessage = "CREATED_BY cannot be longer than 100 characters.")]
         public string CREATED_BY { get; set; }
+
+        public int VERSION_NUMBER { get; set; } = 1; // Default value
+        public string REC_ST { get; set; } = "A"; // Default value
 
         public List<SelectListItem> StatementTypes { get; set; }
         public List<SelectListItem> SheetIds { get; set; }

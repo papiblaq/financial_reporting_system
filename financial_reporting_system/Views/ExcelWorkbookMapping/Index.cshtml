@@ -104,7 +104,13 @@
 
         <!-- Buttons -->
         <div class="button-container">
+            <!-- Save MappedGL Button -->
             <button id="saveCombinedRows" class="custom-delete-button">Save MappedGL</button>
+
+            <!-- Uploading Button (Initially Hidden) -->
+            <button id="uploadingButton" class="custom-delete-button" style="display: none;" disabled>
+                Uploading...
+            </button>
         </div>
         <div class="button-container">
             <a href="@Url.Action("Grid", "ExcelWorkbookMapping")" class="btn btn-secondary">View Mapped GL</a>
@@ -181,64 +187,73 @@
         });
 
         // Event listener for saving combined rows
-        document.getElementById('saveCombinedRows').addEventListener('click', function () {
+               document.getElementById('saveCombinedRows').addEventListener('click', function () {
+            var saveButton = document.getElementById('saveCombinedRows');
+            var uploadingButton = document.getElementById('uploadingButton');
+
             var orderGrid = document.getElementById('grid').ej2_instances[0];
             var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
 
             var selectedOrderRow = orderGrid.getSelectedRecords();
             var selectedAccountRows = accountGrid.getSelectedRecords();
 
-            // Check if exactly one row is selected in the first grid
+            // Ensure exactly one row is selected in the first grid
             if (selectedOrderRow.length !== 1) {
                 alert('Please select exactly one row in the first grid.');
                 return;
             }
 
-            // Proceed with combining rows if exactly one row is selected in the first grid
-            if (selectedAccountRows.length > 0) {
-                var combinedRows = selectedAccountRows.map(accountRow => ({
-                    DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
-                    STMNT_ID: selectedOrderRow[0].STMNT_ID,
-                    SHEET_ID: selectedOrderRow[0].SHEET_ID,
-                    HEADER_ID: selectedOrderRow[0].HEADER_ID,
-                    GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
-                    REF_CD: selectedOrderRow[0].REF_CD,
-                    DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
-                    SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
-                    CREATED_BY: selectedOrderRow[0].CREATED_BY,
-                    LEDGER_NO: accountRow.LEDGER_NO, // Only LEDGER_NO and ACCT_DESC are available
-                    ACCT_DESC: accountRow.ACCT_DESC
-                }));
-
-                // Fetch request to save combined rows
-                fetch('/ExcelWorkbookMapping/SaveCombinedRows', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(combinedRows)
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok: ' + response.statusText);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.error) {
-                            alert('Error: ' + data.error);
-                        } else {
-                            alert(data.message);
-                            // Reload the page after a successful save
-                            location.reload();
-                        }
-                    })
-                    .catch(error => {
-                        alert('Error: ' + error.message);
-                    });
-            } else {
+            if (selectedAccountRows.length === 0) {
                 alert('No rows selected in the account grid.');
+                return;
             }
+
+            // Hide "Save MappedGL" and show "Uploading..."
+            saveButton.style.display = 'none';
+            uploadingButton.style.display = 'inline-block';
+
+            var combinedRows = selectedAccountRows.map(accountRow => ({
+                DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
+                STMNT_ID: selectedOrderRow[0].STMNT_ID,
+                SHEET_ID: selectedOrderRow[0].SHEET_ID,
+                HEADER_ID: selectedOrderRow[0].HEADER_ID,
+                GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
+                REF_CD: selectedOrderRow[0].REF_CD,
+                DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
+                SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
+                CREATED_BY: selectedOrderRow[0].CREATED_BY,
+                LEDGER_NO: accountRow.LEDGER_NO,
+                ACCT_DESC: accountRow.ACCT_DESC
+            }));
+
+            fetch('/ExcelWorkbookMapping/SaveCombinedRows', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(combinedRows)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message || 'Upload successful.');
+                // Restore buttons after alert is dismissed
+                saveButton.style.display = 'inline-block';
+                uploadingButton.style.display = 'none';
+
+                // Reload the page to reflect saved data
+                location.reload();
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+                // Restore buttons in case of failure
+                saveButton.style.display = 'inline-block';
+                uploadingButton.style.display = 'none';
+            });
         });
     </script>
 

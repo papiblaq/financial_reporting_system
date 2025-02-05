@@ -1,7 +1,8 @@
-﻿@model financial_reporting_system.Controllers.ExcelWorkbook_Statement_HeaderController.SheetInputModel
+﻿@model financial_reporting_system.Controllers.ExcelWorkbook_Statement_HeaderController.SaveHeaderInputModel
 @{
     Layout = null;
     ViewData["Title"] = "Header Data Form";
+    
 }
 
 <!DOCTYPE html>
@@ -11,125 +12,228 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewData["Title"]</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+
     <style>
-
-
         body {
-            background-color: #f8f9fa;
-            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full height of the viewport */
+            margin: 0;
+            background-color: #f4f4f4; /* Light grey background for modern look */
+            font-family: Arial, sans-serif;
         }
 
         .container {
-            margin-top: 50px;
+            width: 60%;
+            min-height: 100vh; /* Stretch to full height */
+            background: #fff; /* White background */
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow for modern feel */
+            border-radius: 10px;
         }
 
-        .breadcrumb {
-            display: flex; /* Arrange breadcrumb items in a horizontal row */
-            flex-wrap: nowrap; /* Prevent wrapping to the next line */
-            background-color: #f8f9fa; /* Optional: Background color for breadcrumb */
-            padding: 8px 16px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            list-style: none; /* Remove default list styling */
+        h1 {
+            text-align: center;
+            color: #333;
         }
 
-        .breadcrumb-item {
-            margin-right: 8px; /* Space between breadcrumb items */
-            font-size: 1rem;
-            color: #007bff; /* Default link color */
+        .breadcrumb-modern {
+            display: flex;
+            justify-content: space-between; /* Distributes items evenly */
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            list-style: none;
+            width: 100%;
         }
 
-            .breadcrumb-item a {
-                text-decoration: none; /* Remove underline from links */
-                color: #007bff; /* Link color */
-                transition: color 0.3s ease; /* Smooth hover transition */
+            .breadcrumb-modern .breadcrumb-item {
+                flex: 1; /* Makes each item take equal space */
+                text-align: center; /* Centers text */
             }
 
-                .breadcrumb-item a:hover {
-                    color: #0056b3; /* Darker shade on hover */
+                .breadcrumb-modern .breadcrumb-item a {
+                    display: inline-block;
+                    padding: 10px 15px;
+                    background-color: #00CC00; /* Green background */
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: all 0.3s ease-in-out;
+                    width: 80%; /* Adjust width to prevent overly stretched buttons */
+                }
+
+                    .breadcrumb-modern .breadcrumb-item a:hover {
+                        background-color: #339933; /* Darker green on hover */
+                        transform: scale(1.05);
+                    }
+
+                .breadcrumb-modern .breadcrumb-item::after {
+                    content: ">";
+                    color: #00CC00;
+                    font-weight: bold;
+                    margin-left: 10px;
+                }
+
+                .breadcrumb-modern .breadcrumb-item:last-child::after {
+                    content: "";
                 }
 
 
 
 
-        .profile-card {
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .form-group label {
-            font-weight: 500;
-            color: #555;
+        .form-group {
+            margin-top: 20px;
         }
 
         .form-control {
-            border-radius: 5px;
-            border: 1px solid #ddd;
+            width: 100%;
             padding: 10px;
-            font-size: 14px;
-        }
-
-        .btn-primary {
-            background-color: #007bff;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
+            border: 1px solid #ccc;
             border-radius: 5px;
+            font-size: 16px;
         }
 
-        .text-danger {
-            font-size: 12px;
-            color: #dc3545;
+        .back-button {
+            display: inline-block;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            text-decoration: none;
+            font-size: 18px;
         }
+
+            .back-button i {
+                color: white;
+            }
+
+        #message {
+            margin-top: 10px;
+            font-size: 14px;
+            color: green;
+        }
+
+
+        /* Navigation buttons container */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Navigation buttons container */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Right-side buttons container */
+        .right-buttons {
+            display: flex;
+            gap: 10px; /* Space between Next and Previous buttons */
+        }
+
+        /* Common styles for buttons */
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            background-color: #00CC00;
+            color: white;
+            text-decoration: none;
+            border-radius: 50%;
+            font-size: 20px;
+            transition: all 0.3s ease-in-out;
+        }
+
+            /* Hover effect */
+            .nav-button:hover {
+                background-color: #339933;
+                transform: scale(1.1);
+            }
+
+        /* Specific styles for back, previous, and next buttons */
+        .back-button {
+            margin-left: 10px;
+        }
+
+        .prev-button {
+        }
+
+        .next-button {
+            margin-right: 10px;
+        }
+
+
     </style>
 </head>
 <body>
     <div class="container">
+
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+            <!-- Back Button -->
+            <a href="@Url.Action("ExcelWorkbookUpload", "ExcelMapping_Documentation")" class="nav-button back-button">
+                <i class="fa-solid fa-house"></i>
+            </a>
+
+            <div class="right-buttons">
+                <!-- Previous Button (Inverted Next) -->
+                <a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")" class="nav-button prev-button">
+                    <i class="fa-solid fa-share fa-flip-horizontal"></i>
+                </a>
+
+                <!-- Next Button -->
+                <a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")" class="nav-button next-button">
+                    <i class="fa-solid fa-share"></i>
+                </a>
+            </div>
+        </div>
         <!-- Breadcrumb Navigation -->
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Statement types</a></li>
-                <li class="breadcrumb-item" id="step2"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement Sheet</a></li>
-                <li class="breadcrumb-item" id="step3"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Statement header</a></li>
-                <li class="breadcrumb-item" id="step4"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Statement details</a></li>
-                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Workbook mappings</a></li>
-                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Workbook Reports</a></li>
+            <ol class="breadcrumb breadcrumb-modern">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Report type</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Report</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Report header</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Report details</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Report mappings</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Report cells</a></li>
             </ol>
         </nav>
 
         <div class="profile-card">
-            <h1>Enter Header Data</h1>
+            <h1>Report header</h1>
             <form method="post" asp-action="SaveData" class="mt-4">
-                <!-- Workbook Dropdown -->
+
+                <!-- Report Type Dropdown -->
                 <div class="form-group">
-                    <label for="SelectedWorkbook">Workbook</label>
-                    <select id="SelectedWorkbook" class="form-control">
-                        <option value="">-- Select Workbook --</option>
-                        @foreach (var workbook in ViewBag.Workbooks)
-                        {
-                            <option value="@workbook.Value">@workbook.Text</option>
-                        }
+                    <label for="STMNT_ID">Report Type</label>
+                    <select id="ExcelSheetDropdown" asp-for="STMNT_ID" class="form-control" required>
+                        <option value="">-- Select Sheet --</option>
+                        <option value="@ViewBag.SelectedWorkbook" selected>@ViewBag.SelectedWorkbook</option>
                     </select>
+                    <span class="text-danger" data-valmsg-for="STMNT_ID" data-valmsg-replace="true"></span>
                 </div>
 
-                <!-- Excel Sheet Dropdown -->
+                <!-- Report Dropdown -->
                 <div class="form-group">
-                    <label for="EXCEL_SHEET">Excel Sheet</label>
-                    <select id="ExcelSheetDropdown" name="EXCEL_SHEET" class="form-control" required>
+                    <label for="SHEET_ID">Report</label>
+                    <select id="AvailableSheets" asp-for="SHEET_ID" class="form-control" required>
                         <option value="">-- Select Sheet --</option>
-                    </select>
-                    <span class="text-danger" data-valmsg-for="EXCEL_SHEET" data-valmsg-replace="true"></span>
-                </div>
-
-                <!-- Available Sheets Dropdown -->
-                <div class="form-group">
-                    <label for="SHEET_ID">Contents In the Sheets</label>
-                    <select id="AvailableSheets" name="SHEET_ID" class="form-control">
-                        <option value="">-- Select Sheet --</option>
+                        <option value="@ViewBag.SelectedWorksheet" selected>@ViewBag.SelectedWorksheet</option>
                     </select>
                     <span class="text-danger" data-valmsg-for="SHEET_ID" data-valmsg-replace="true"></span>
                 </div>
@@ -137,125 +241,60 @@
                 <!-- GL Account Category Dropdown -->
                 <div class="form-group">
                     <label for="GL_ACCT_CAT_CD">GL Account Category</label>
-                    <select id="GL_ACCT_CAT_CD" name="GL_ACCT_CAT_CD" class="form-control" required>
+                    <select id="GL_ACCT_CAT_CD" asp-for="GL_ACCT_CAT_CD" class="form-control" asp-items="@(new SelectList(Model.AccountCategories, "Value", "Text"))" required>
                         <option value="">-- Select GL Account Category --</option>
-                        @foreach (var category in ViewBag.AccountCategories)
-                        {
-                            <option value="@category.Value">@category.Text</option>
-                        }
                     </select>
                     <span class="text-danger" data-valmsg-for="GL_ACCT_CAT_CD" data-valmsg-replace="true"></span>
                 </div>
 
-                <!-- Other form fields -->
+                <!-- Reference Code -->
                 <div class="form-group">
                     <label for="REF_CD">Reference Code</label>
-                    <input id="REF_CD" name="REF_CD" class="form-control" required />
+                    <input id="REF_CD" asp-for="REF_CD" class="form-control" required />
                     <span class="text-danger" data-valmsg-for="REF_CD" data-valmsg-replace="true"></span>
                 </div>
 
+                <!-- Description -->
                 <div class="form-group">
                     <label for="DESCRIPTION">Description</label>
-                    <input id="DESCRIPTION" name="DESCRIPTION" class="form-control" required />
+                    <input id="DESCRIPTION" asp-for="DESCRIPTION" class="form-control" required />
                     <span class="text-danger" data-valmsg-for="DESCRIPTION" data-valmsg-replace="true"></span>
                 </div>
 
+                <!-- Created By -->
                 <div class="form-group">
                     <label for="CREATED_BY">Created By</label>
-                    <input id="CREATED_BY" name="CREATED_BY" class="form-control" required />
+                    <input id="CREATED_BY" asp-for="CREATED_BY" class="form-control" required />
                     <span class="text-danger" data-valmsg-for="CREATED_BY" data-valmsg-replace="true"></span>
                 </div>
 
-                <!-- Hidden field for STMNT_ID -->
-                <input type="hidden" id="StmntId" name="STMNT_ID" />
-
-                <!-- Submit and Available Headers Buttons -->
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Submit</button>
                     <a href="/ExcelWorkbook_Statement_Header/HeaderGridView" class="btn btn-secondary">Available Headers</a>
                 </div>
             </form>
+
         </div>
     </div>
 
     <!-- JavaScript to populate dropdowns dynamically -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        $(document).ready(function () {
-            // When the workbook dropdown changes
-            $('#SelectedWorkbook').change(function () {
-                var selectedWorkbook = $(this).val();
-                if (selectedWorkbook) {
-                    // Fetch sheets for the selected workbook
-                    $.getJSON('/ExcelWorkbook_Statement_Header/GetSheetsForWorkbook', { workbook: selectedWorkbook }, function (data) {
-                        var sheetsDropdown = $('#ExcelSheetDropdown');
-                        sheetsDropdown.empty();
-                        sheetsDropdown.append('<option value="">-- Select Sheet --</option>');
-                        $.each(data.sheets, function (index, item) {
-                            sheetsDropdown.append($('<option></option>').val(item.value).text(item.text));
-                        });
-                    });
-                } else {
-                    $('#ExcelSheetDropdown').empty().append('<option value="">-- Select Sheet --</option>');
-                    $('#AvailableSheets').empty().append('<option value="">-- Select Sheet --</option>');
-                }
-            });
 
-            // When the Excel sheet dropdown changes
-            $('#ExcelSheetDropdown').change(function () {
-                var selectedSheet = $(this).val();
-                if (selectedSheet) {
-                    // Fetch STMNT_ID for the selected sheet
-                    $.getJSON('/ExcelWorkbook_Statement_Header/GetStmntIdByExcelSheet', { excelSheet: selectedSheet }, function (data) {
-                        var excelStmntId = data.excelStmntId; // Use the returned excelStmntId
-                        if (excelStmntId) {
-                            // Set the STMNT_ID in the hidden field
-                            $('#StmntId').val(excelStmntId);
-
-                            // Fetch Sheet IDs based on STMNT_ID
-                            $.post('/ExcelWorkbook_Statement_Header/GetSheetIdsByStatementId', { stmntId: excelStmntId }, function (data) {
-                                var availableSheetsDropdown = $('#AvailableSheets');
-                                availableSheetsDropdown.empty();
-                                availableSheetsDropdown.append('<option value="">-- Select Sheet Contents --</option>');
-                                $.each(data, function (index, item) {
-                                    availableSheetsDropdown.append($('<option></option>').val(item.value).text(item.text));
-                                });
-                            });
-                        } else {
-                            console.error("No STMNT_ID found for the selected sheet.");
-                        }
-                    });
-                } else {
-                    $('#StmntId').val(''); // Clear the STMNT_ID if no sheet is selected
-                    $('#AvailableSheets').empty().append('<option value="">-- Select Sheet contents --</option>');
-                }
-            });
-
-            // When the Available Sheets dropdown changes
-            $('#AvailableSheets').change(function () {
-                var selectedSheetId = $(this).val();
-                if (selectedSheetId) {
-                    // Perform any additional logic when a sheet is selected from the Available Sheets dropdown
-                    console.log("Selected Sheet ID:", selectedSheetId);
-                }
-            });
-
-            // Display success message
+                // Check if there is a success or error message in TempData and display the appropriate alert
         @if (TempData["SuccessMessage"] != null)
         {
             <text>
-                        alert('@TempData["SuccessMessage"]');
+                    alert('@TempData["SuccessMessage"]');
             </text>
         }
 
-            // Display error message
         @if (TempData["ErrorMessage"] != null)
         {
             <text>
-                        alert('@TempData["ErrorMessage"]');
+                    alert('@TempData["ErrorMessage"]');
             </text>
         }
-        });
     </script>
 </body>
 </html>

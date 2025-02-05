@@ -1,8 +1,8 @@
-﻿@model financial_reporting_system.Controllers.ExcelWorkbook_Statement_DetailsController.EditDetailInputModel
+﻿@model financial_reporting_system.Controllers.ExcelWorkbook_Statement_DetailsController.EditDetailsInputModel
 
 @{
     Layout = null;
-    ViewData["Title"] = "Edit Statement Detail";
+    ViewData["Title"] = "Edit Statement Details";
 }
 
 <!DOCTYPE html>
@@ -16,12 +16,12 @@
     <!-- Custom CSS for the form -->
     <style>
         /* Center the <h1> heading */
-        .header-container {
+        .Details-container {
             display: flex;
             justify-content: center; /* Center horizontally */
             align-items: center; /* Center vertically */
             height: 100px; /* Adjust height as needed */
-            margin-bottom: 20px; /* Space below the header */
+            margin-bottom: 20px; /* Space below the Details */
         }
 
         /* Custom styles for the form */
@@ -90,35 +90,34 @@
 <body>
     <div class="container">
         <!-- Centered <h1> heading -->
-        <div class="header-container">
-            <h1>Editing the Statement Detail for @Model.REF_CD</h1>
+        <div class="Details-container">
+            <h1>Editing the Statement Details for @Model.REF_CD</h1>
         </div>
         <hr />
 
-        <form asp-action="Edit" asp-route-id="@Model.DETAIL_ID" method="post" onsubmit="validateForm(event)">
+        <form asp-action="Edit" asp-route-id="@Model.Details_ID" method="post" onsubmit="validateForm(event)">
             <!-- Hidden input fields -->
-            <input type="hidden" name="DETAIL_ID" value="@Model.DETAIL_ID" />
+            <input type="hidden" name="Details_ID" value="@Model.Details_ID" />
             <input type="hidden" name="STMNT_ID" value="@Model.STMNT_ID" />
             <input type="hidden" name="SHEET_ID" value="@Model.SHEET_ID" />
-            <input type="hidden" name="HEADER_ID" value="@Model.HEADER_ID" />
             <input type="hidden" name="SYS_CREATE_TS" value="@Model.SYS_CREATE_TS.ToString("yyyy-MM-ddTHH:mm:ss")" />
             <input type="hidden" name="CREATED_BY" value="@Model.CREATED_BY" />
 
             <!-- Editable fields -->
+            <div class="mb-3">
+                <label for="REF_CD">REF CD</label>
+                <input type="text" id="REF_CD" name="REF_CD" class="form-control" placeholder="REF CD" value="@Model.REF_CD" required>
+                <div class="error" id="REF_CD_error">Please enter a valid REF CD.</div>
+            </div>
             <div class="mb-3">
                 <label for="GL_ACCT_CAT_CD">GL Account Category Code</label>
                 <input type="text" id="GL_ACCT_CAT_CD" name="GL_ACCT_CAT_CD" class="form-control" placeholder="GL Account Category Code" value="@Model.GL_ACCT_CAT_CD" required>
                 <div class="error" id="GL_ACCT_CAT_CD_error">Please enter a valid GL Account Category Code.</div>
             </div>
             <div class="mb-3">
-                <label for="REF_CD">Reference Code</label>
-                <input type="text" id="REF_CD" name="REF_CD" class="form-control" placeholder="Reference Code" value="@Model.REF_CD" required>
-                <div class="error" id="REF_CD_error">Please enter a valid Reference Code.</div>
-            </div>
-            <div class="mb-3">
-                <label for="DESCRIPTION">Description</label>
-                <input type="text" id="DESCRIPTION" name="DESCRIPTION" class="form-control" placeholder="Description" value="@Model.DESCRIPTION" required>
-                <div class="error" id="DESCRIPTION_error">Please enter a valid Description.</div>
+                <label for="DESCRIPTION">DESCRIPTION</label>
+                <input type="text" id="DESCRIPTION" name="DESCRIPTION" class="form-control" placeholder="DESCRIPTION" value="@Model.DESCRIPTION" required>
+                <div class="error" id="DESCRIPTION_error">Please enter a valid DESCRIPTION.</div>
             </div>
             <div class="mb-3">
                 <input type="submit" value="Save" class="btn btn-success">
@@ -140,15 +139,6 @@
                 // Validate form fields
                 var isValid = true;
 
-                // Check GL_ACCT_CAT_CD
-                var glAcctCatCd = document.getElementById('GL_ACCT_CAT_CD').value;
-                if (!glAcctCatCd) {
-                    document.getElementById('GL_ACCT_CAT_CD_error').style.display = 'block';
-                    isValid = false;
-                } else {
-                    document.getElementById('GL_ACCT_CAT_CD_error').style.display = 'none';
-                }
-
                 // Check REF_CD
                 var refCd = document.getElementById('REF_CD').value;
                 if (!refCd) {
@@ -156,6 +146,15 @@
                     isValid = false;
                 } else {
                     document.getElementById('REF_CD_error').style.display = 'none';
+                }
+
+                // Check GL_ACCT_CAT_CD
+                var glAcctCatCd = document.getElementById('GL_ACCT_CAT_CD').value;
+                if (!glAcctCatCd) {
+                    document.getElementById('GL_ACCT_CAT_CD_error').style.display = 'block';
+                    isValid = false;
+                } else {
+                    document.getElementById('GL_ACCT_CAT_CD_error').style.display = 'none';
                 }
 
                 // Check DESCRIPTION

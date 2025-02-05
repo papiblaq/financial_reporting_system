@@ -3,7 +3,7 @@
 
 @{
     Layout = null;
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Report mapping";
 }
 
 <!DOCTYPE html>
@@ -19,255 +19,53 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <!-- Breadcrumb Navigation -->
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Statement types</a></li>
-                <li class="breadcrumb-item" id="step2"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement Sheet</a></li>
-                <li class="breadcrumb-item" id="step3"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Statement header</a></li>
-                <li class="breadcrumb-item" id="step4"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Statement details</a></li>
-                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Workbook mappings</a></li>
-                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Workbook reports</a></li>
-            </ol>
-        </nav>
-
-        <!-- Workbook Dropdown -->
-        <div class="form-group">
-            <label for="SelectedWorkbook">Workbook</label>
-            <select id="SelectedWorkbook" class="form-control">
-                <option value="">-- Select Workbook --</option>
-                @foreach (var workbook in ViewBag.Workbooks)
-                {
-                    <option value="@workbook.Value">@workbook.Text</option>
-                }
-            </select>
-        </div>
-
-        <!-- Statement Type Dropdown -->
-        <div class="form-group">
-            <label for="statementTypeDropdown">Worksheet</label>
-            <select id="statementTypeDropdown" class="form-control">
-                <option value="">-- Select a Worksheet --</option>
-                @foreach (var item in ViewBag.StatementTypes)
-                {
-                    <option value="@item.STMNT_ID">@item.EXCEL_SHEET</option>
-                }
-            </select>
-        </div>
-
-
-
-        <h1 class="mt-5">Available Statement Details for @ViewBag.SelectedDescription</h1>
-        <!-- First Grid -->
-        <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-            <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
-            <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
-            <e-grid-columns>
-                <e-grid-column type="checkbox" width="50"></e-grid-column>
-                <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
-                <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
-                <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
-                <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
-                <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
-            </e-grid-columns>
-        </ejs-grid>
-
-        <!-- Spacer between grids -->
-        <div class="grid-spacer"></div>
-
-        <h1 class="mt-5">Available Ledgers</h1>
-        <!-- Dropdown for Page Size Selection -->
-        <div class="mb-3">
-            <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
-            <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
-                <option value="20" selected>20</option>
-                <option value="40">40</option>
-                <option value="80">80</option>
-                <option value="160">160</option>
-              
-            </select>
-        </div>
-
-        <!-- Second Grid -->
-        <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-            <e-grid-pagesettings pageSize="20"></e-grid-pagesettings>
-            <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
-            <e-grid-columns>
-                <e-grid-column type="checkbox" width="50"></e-grid-column>
-                <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
-                <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
-            </e-grid-columns>
-        </ejs-grid>
-
-        <!-- Buttons -->
-        <div class="button-container">
-            <button id="saveCombinedRows" class="custom-delete-button">Save MappedGL</button>
-        </div>
-        <div class="button-container">
-            <a href="@Url.Action("Grid", "ExcelWorkbookMapping")" class="btn btn-secondary">View Mapped GL</a>
-        </div>
-    </div>
-
-
-
-    <script>
-
-
-        // Event listener for Workbook Dropdown change
-        document.getElementById('SelectedWorkbook').addEventListener('change', function () {
-            var selectedWorkbook = this.value; // Get the selected workbook value
-            console.log('Selected Workbook:', selectedWorkbook); // Debugging
-
-            if (selectedWorkbook) {
-                console.log('Fetching statement types for workbook:', selectedWorkbook); // Debugging
-
-                // Fetch statement types for the selected workbook
-                fetch(`/ExcelWorkbookMapping/GetStatementTypesByWorkbook?workbook=${encodeURIComponent(selectedWorkbook)}`)
-                    .then(response => {
-                        console.log('Response received:', response); // Debugging
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok: ' + response.statusText);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Data received:', data); // Debugging
-                        var statementTypeDropdown = document.getElementById('statementTypeDropdown');
-                        statementTypeDropdown.innerHTML = '<option value="">-- Select a Worksheet --</option>'; // Reset dropdown
-
-                        // Populate the dropdown with fetched statement types
-                        data.forEach(item => {
-                            console.log('Processing item:', item); // Debugging
-                            var option = document.createElement('option');
-                            option.value = item.stmnT_ID; // Use the correct property name
-                            option.text = item.exceL_SHEET; // Use the correct property name
-                            statementTypeDropdown.appendChild(option);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error fetching statement types:', error); // Debugging
-                    });
-            } else {
-                console.log('No workbook selected. Clearing dropdown.'); // Debugging
-                // Clear the Statement Type Dropdown if no workbook is selected
-                document.getElementById('statementTypeDropdown').innerHTML = '<option value="">-- Select a Worksheet --</option>';
-            }
-        });
-
-        // Event listener for Statement Type Dropdown change
-        document.getElementById('statementTypeDropdown').addEventListener('change', function () {
-            var selectedValue = this.value; // Get the STMNT_ID
-
-            if (selectedValue) {
-                // Reload the entire page with the selected STMNT_ID as a query parameter
-                window.location.href = `/ExcelWorkbookMapping/Index?stmntId=${encodeURIComponent(selectedValue)}`;
-            } else {
-                alert('Please select a valid statement type.');
-            }
-        });
-
-        // Event listener for page size dropdown change
-        document.getElementById('pageSizeDropdown').addEventListener('change', function () {
-            var selectedPageSize = parseInt(this.value); // Get the selected value as an integer
-
-            // Get the grid instance
-            var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
-
-            // Update the pageSize of the grid
-            accountGrid.pageSettings.pageSize = selectedPageSize;
-        });
-
-        // Event listener for saving combined rows
-        document.getElementById('saveCombinedRows').addEventListener('click', function () {
-            var orderGrid = document.getElementById('grid').ej2_instances[0];
-            var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
-
-            var selectedOrderRow = orderGrid.getSelectedRecords();
-            var selectedAccountRows = accountGrid.getSelectedRecords();
-
-            // Check if exactly one row is selected in the first grid
-            if (selectedOrderRow.length !== 1) {
-                alert('Please select exactly one row in the first grid.');
-                return;
-            }
-
-            // Proceed with combining rows if exactly one row is selected in the first grid
-            if (selectedAccountRows.length > 0) {
-                var combinedRows = selectedAccountRows.map(accountRow => ({
-                    DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
-                    STMNT_ID: selectedOrderRow[0].STMNT_ID,
-                    SHEET_ID: selectedOrderRow[0].SHEET_ID,
-                    HEADER_ID: selectedOrderRow[0].HEADER_ID,
-                    GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
-                    REF_CD: selectedOrderRow[0].REF_CD,
-                    DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
-                    SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
-                    CREATED_BY: selectedOrderRow[0].CREATED_BY,
-                    LEDGER_NO: accountRow.LEDGER_NO, // Only LEDGER_NO and ACCT_DESC are available
-                    ACCT_DESC: accountRow.ACCT_DESC
-                }));
-
-                // Fetch request to save combined rows
-                fetch('/ExcelWorkbookMapping/SaveCombinedRows', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(combinedRows)
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok: ' + response.statusText);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.error) {
-                            alert('Error: ' + data.error);
-                        } else {
-                            alert(data.message);
-                            // Reload the page after a successful save
-                            location.reload();
-                        }
-                    })
-                    .catch(error => {
-                        alert('Error: ' + error.message);
-                    });
-            } else {
-                alert('No rows selected in the account grid.');
-            }
-        });
-    </script>
 
 
     <style>
-        .breadcrumb {
+        .breadcrumb-modern {
             display: flex;
-            flex-wrap: nowrap;
+            justify-content: space-between; /* Distributes items evenly */
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 10px;
             background-color: #f8f9fa;
-            padding: 8px 16px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            border-radius: 8px;
             list-style: none;
+            width: 100%;
         }
 
-        .breadcrumb-item {
-            margin-right: 8px;
-            font-size: 1rem;
-            color: #007bff;
-        }
-
-            .breadcrumb-item a {
-                text-decoration: none;
-                color: #007bff;
-                transition: color 0.3s ease;
+            .breadcrumb-modern .breadcrumb-item {
+                flex: 1; /* Makes each item take equal space */
+                text-align: center; /* Centers text */
             }
 
-                .breadcrumb-item a:hover {
-                    color: #0056b3;
+                .breadcrumb-modern .breadcrumb-item a {
+                    display: inline-block;
+                    padding: 10px 15px;
+                    background-color: #00CC00; /* Green background */
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: all 0.3s ease-in-out;
+                    width: 80%; /* Adjust width to prevent overly stretched buttons */
+                }
+
+                    .breadcrumb-modern .breadcrumb-item a:hover {
+                        background-color: #339933; /* Darker green on hover */
+                        transform: scale(1.05);
+                    }
+
+                .breadcrumb-modern .breadcrumb-item::after {
+                    content: ">";
+                    color: #00CC00;
+                    font-weight: bold;
+                    margin-left: 10px;
+                }
+
+                .breadcrumb-modern .breadcrumb-item:last-child::after {
+                    content: "";
                 }
 
         .container {
@@ -305,6 +103,9 @@
             font-size: 1rem;
             margin-bottom: 5px;
         }
+
+
+
         /* Define the white-grid class */
         .white-grid {
             background-color: white !important; /* Set the background color to white */
@@ -459,9 +260,331 @@
 
 
 
+        /* Navigation buttons container */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Navigation buttons container */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Right-side buttons container */
+        .right-buttons {
+            display: flex;
+            gap: 10px; /* Space between Next and Previous buttons */
+        }
+
+        /* Common styles for buttons */
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            background-color: #00CC00;
+            color: white;
+            text-decoration: none;
+            border-radius: 50%;
+            font-size: 20px;
+            transition: all 0.3s ease-in-out;
+        }
+
+            /* Hover effect */
+            .nav-button:hover {
+                background-color: #339933;
+                transform: scale(1.1);
+            }
+
+        /* Specific styles for back, previous, and next buttons */
+        .back-button {
+            margin-left: 10px;
+        }
+
+        .prev-button {
+        }
+
+        .next-button {
+            margin-right: 10px;
+        }
 
 
     </style>
+
+
+
+</head>
+<body>
+
+
+    <div class="container">
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+            <!-- Back Button -->
+            <a href="@Url.Action("ExcelWorkbookUpload", "ExcelMapping_Documentation")" class="nav-button back-button">
+                <i class="fa-solid fa-house"></i>
+            </a>
+
+            <div class="right-buttons">
+                <!-- Previous Button (Inverted Next) -->
+                <a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")" class="nav-button prev-button">
+                    <i class="fa-solid fa-share fa-flip-horizontal"></i>
+                </a>
+
+                <!-- Next Button -->
+                <a href="@Url.Action("Index", "ExcelMapping_Documentation")" class="nav-button next-button">
+                    <i class="fa-solid fa-share"></i>
+                </a>
+            </div>
+        </div>
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-modern">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Report type</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Report</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Report header</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Report details</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Report mappings</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Report cells</a></li>
+            </ol>
+        </nav>
+
+
+        <h2>@ViewData["Title"]</h2>
+
+
+        <!-- Workbook Dropdown -->
+        <div class="form-group">
+            <label for="SelectedWorkbook">Workbook</label>
+            <select id="SelectedWorkbook" class="form-control">
+                <option value="">-- Select Workbook --</option>
+                @foreach (var workbook in ViewBag.Workbooks)
+                {
+                    <option value="@workbook.Value">@workbook.Text</option>
+                }
+            </select>
+        </div>
+
+        <!-- Statement Type Dropdown -->
+        <div class="form-group">
+            <label for="statementTypeDropdown">Worksheet</label>
+            <select id="statementTypeDropdown" class="form-control">
+                <option value="">-- Select a Worksheet --</option>
+                @foreach (var item in ViewBag.StatementTypes)
+                {
+                    <option value="@item.STMNT_ID">@item.EXCEL_SHEET</option>
+                }
+            </select>
+        </div>
+
+
+
+        <h1 class="mt-5">Available Statement Details for @ViewBag.SelectedDescription</h1>
+        <!-- First Grid -->
+        <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+            <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
+            <e-grid-selectionsettings type="Single"></e-grid-selectionsettings>
+            <e-grid-columns>
+                <e-grid-column type="checkbox" width="50"></e-grid-column>
+                <e-grid-column field="GL_ACCT_CAT_CD" headerText="GL Account Category Code" textAlign="Right" width="200"></e-grid-column>
+                <e-grid-column field="REF_CD" headerText="Reference Code" textAlign="Right" width="200"></e-grid-column>
+                <e-grid-column field="DESCRIPTION" headerText="Description" textAlign="Right" width="500"></e-grid-column>
+                <e-grid-column field="SYS_CREATE_TS" headerText="System Create Timestamp" textAlign="Right" width="120" format="yMd"></e-grid-column>
+                <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
+            </e-grid-columns>
+        </ejs-grid>
+
+        <!-- Spacer between grids -->
+        <div class="grid-spacer"></div>
+
+        <h1 class="mt-5">Available Ledgers</h1>
+        <!-- Dropdown for Page Size Selection -->
+        <div class="mb-3">
+            <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
+            <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
+                <option value="20" selected>20</option>
+                <option value="40">40</option>
+                <option value="80">80</option>
+                <option value="160">160</option>
+              
+            </select>
+        </div>
+
+        <!-- Second Grid -->
+        <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
+            <e-grid-pagesettings pageSize="10"></e-grid-pagesettings>
+            <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
+            <e-grid-columns>
+                <e-grid-column type="checkbox" width="50"></e-grid-column>
+                <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
+            </e-grid-columns>
+        </ejs-grid>
+
+        <!-- Buttons -->
+        <div class="button-container">
+            <!-- Save MappedGL Button -->
+            <button id="saveCombinedRows" class="custom-delete-button">Save MappedGL</button>
+
+            <!-- Uploading Button (Initially Hidden) -->
+            <button id="uploadingButton" class="custom-delete-button" style="display: none;" disabled>
+                Uploading...
+            </button>
+        </div>
+        <div class="button-container">
+            <a href="@Url.Action("Grid", "ExcelWorkbookMapping")" class="btn btn-secondary">View Mapped GL</a>
+        </div>
+    </div>
+
+
+
+    <script>
+
+
+        // Event listener for Workbook Dropdown change
+        document.getElementById('SelectedWorkbook').addEventListener('change', function () {
+            var selectedWorkbook = this.value; // Get the selected workbook value
+            console.log('Selected Workbook:', selectedWorkbook); // Debugging
+
+            if (selectedWorkbook) {
+                console.log('Fetching statement types for workbook:', selectedWorkbook); // Debugging
+
+                // Fetch statement types for the selected workbook
+                fetch(`/ExcelWorkbookMapping/GetStatementTypesByWorkbook?workbook=${encodeURIComponent(selectedWorkbook)}`)
+                    .then(response => {
+                        console.log('Response received:', response); // Debugging
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Data received:', data); // Debugging
+                        var statementTypeDropdown = document.getElementById('statementTypeDropdown');
+                        statementTypeDropdown.innerHTML = '<option value="">-- Select a Worksheet --</option>'; // Reset dropdown
+
+                        // Populate the dropdown with fetched statement types
+                        data.forEach(item => {
+                            console.log('Processing item:', item); // Debugging
+                            var option = document.createElement('option');
+                            option.value = item.stmnT_ID; // Use the correct property name
+                            option.text = item.exceL_SHEET; // Use the correct property name
+                            statementTypeDropdown.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching statement types:', error); // Debugging
+                    });
+            } else {
+                console.log('No workbook selected. Clearing dropdown.'); // Debugging
+                // Clear the Statement Type Dropdown if no workbook is selected
+                document.getElementById('statementTypeDropdown').innerHTML = '<option value="">-- Select a Worksheet --</option>';
+            }
+        });
+
+        // Event listener for Statement Type Dropdown change
+        document.getElementById('statementTypeDropdown').addEventListener('change', function () {
+            var selectedValue = this.value; // Get the STMNT_ID
+
+            if (selectedValue) {
+                // Reload the entire page with the selected STMNT_ID as a query parameter
+                window.location.href = `/ExcelWorkbookMapping/Index?stmntId=${encodeURIComponent(selectedValue)}`;
+            } else {
+                alert('Please select a valid statement type.');
+            }
+        });
+
+        // Event listener for page size dropdown change
+        document.getElementById('pageSizeDropdown').addEventListener('change', function () {
+            var selectedPageSize = parseInt(this.value); // Get the selected value as an integer
+
+            // Get the grid instance
+            var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
+
+            // Update the pageSize of the grid
+            accountGrid.pageSettings.pageSize = selectedPageSize;
+        });
+
+        // Event listener for saving combined rows
+               document.getElementById('saveCombinedRows').addEventListener('click', function () {
+            var saveButton = document.getElementById('saveCombinedRows');
+            var uploadingButton = document.getElementById('uploadingButton');
+
+            var orderGrid = document.getElementById('grid').ej2_instances[0];
+            var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
+
+            var selectedOrderRow = orderGrid.getSelectedRecords();
+            var selectedAccountRows = accountGrid.getSelectedRecords();
+
+            // Ensure exactly one row is selected in the first grid
+            if (selectedOrderRow.length !== 1) {
+                alert('Please select exactly one row in the first grid.');
+                return;
+            }
+
+            if (selectedAccountRows.length === 0) {
+                alert('No rows selected in the account grid.');
+                return;
+            }
+
+            // Hide "Save MappedGL" and show "Uploading..."
+            saveButton.style.display = 'none';
+            uploadingButton.style.display = 'inline-block';
+
+            var combinedRows = selectedAccountRows.map(accountRow => ({
+                DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
+                STMNT_ID: selectedOrderRow[0].STMNT_ID,
+                SHEET_ID: selectedOrderRow[0].SHEET_ID,
+                HEADER_ID: selectedOrderRow[0].HEADER_ID,
+                GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
+                REF_CD: selectedOrderRow[0].REF_CD,
+                DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
+                SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
+                CREATED_BY: selectedOrderRow[0].CREATED_BY,
+                LEDGER_NO: accountRow.LEDGER_NO,
+                ACCT_DESC: accountRow.ACCT_DESC
+            }));
+
+            fetch('/ExcelWorkbookMapping/SaveCombinedRows', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(combinedRows)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message || 'Upload successful.');
+                // Restore buttons after alert is dismissed
+                saveButton.style.display = 'inline-block';
+                uploadingButton.style.display = 'none';
+
+                // Reload the page to reflect saved data
+                location.reload();
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+                // Restore buttons in case of failure
+                saveButton.style.display = 'inline-block';
+                uploadingButton.style.display = 'none';
+            });
+        });
+    </script>
+
+
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

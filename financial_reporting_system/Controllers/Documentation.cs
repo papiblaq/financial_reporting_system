@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
 using Syncfusion.XlsIO;
@@ -66,8 +67,16 @@ namespace financial_reporting_system.Controllers
             return View("InsertValues");
         }
 
+
+        // method to export financial data to excel
+
         [HttpPost]
-        public IActionResult ExportFinancialDataToExcel(List<UserDefinedCellValues> exellCellsMappingInfo, string selectedDirectory, string selectedTemplate)
+        public IActionResult ExportFinancialDataToExcel(
+            List<UserDefinedCellValues> exellCellsMappingInfo,
+            string selectedDirectory,
+            string selectedTemplate,
+            string startDate,  // Start Date from the form
+            string endDate)    // End Date from the form
         {
             try
             {
@@ -104,8 +113,17 @@ namespace financial_reporting_system.Controllers
                         // Loop through the list of UserDefinedCellValues
                         foreach (var cellValue in exellCellsMappingInfo)
                         {
-                            // Construct the SQL query using the ref_cd
-                            string sqlQuery = $"SELECT SUM(gas.ledger_bal) FROM ORG_FINANCIAL_MAPPING a, gl_account_summary gas WHERE a.gl_acct_id = gas.gl_acct_id AND ref_cd = '{cellValue.RefCd}'";
+                            // Format the dates for the SQL query
+                            var formattedStartDate = DateTime.Parse(startDate).ToString("dd-MMM-yyyy").ToUpper();
+                            var formattedEndDate = DateTime.Parse(endDate).ToString("dd-MMM-yyyy").ToUpper();
+
+                            // Construct the SQL query using the ref_cd and date range
+                            string sqlQuery = $@"
+                            SELECT SUM(gas.ledger_bal) 
+                            FROM SINGLE_SHEET_MAPPED_DESCRIPTION_WITH_LEDGRRS a, gl_account_summary gas 
+                            WHERE a.gl_acct_id = gas.gl_acct_id 
+                            AND ref_cd = '{cellValue.RefCd}' 
+                            AND VALUE_DATE BETWEEN TO_DATE('{formattedStartDate}', 'DD-MON-YYYY') AND TO_DATE('{formattedEndDate}', 'DD-MON-YYYY')";
 
                             // Execute the SQL query to fetch the specific value
                             double specificValue = GetSpecificValueFromDatabase(sqlQuery);
@@ -133,6 +151,31 @@ namespace financial_reporting_system.Controllers
             }
         }
 
+
+        // helper method for the  method to export financial data to excel communicates wuth database
+        private double GetSpecificValueFromDatabase(string sqlQuery, string refCd, string formattedStartDate, string formattedEndDate)
+        {
+            double result = 0.0;
+
+            // Replace with your actual database connection string
+            string connectionString = "OracleConnection";
+
+            using (var connection = new SqlConnection(connectionString))
+            {
+                var command = new SqlCommand(sqlQuery, connection);
+                command.Parameters.AddWithValue("@RefCd", refCd);
+                command.Parameters.AddWithValue("@StartDate", formattedStartDate);
+                command.Parameters.AddWithValue("@EndDate", formattedEndDate);
+
+                connection.Open();
+                var dbResult = command.ExecuteScalar();
+                result = dbResult != DBNull.Value ? Convert.ToDouble(dbResult) : 0.0;
+            }
+
+            return result;
+        }
+
+        // inserting of new cell(ref_cd and cellValue) when a user clicks 'add new cell button' in the index view
         [HttpPost]
         public IActionResult SaveExportingData([FromBody] SaveExportingDataModel model)
         {
@@ -197,6 +240,10 @@ namespace financial_reporting_system.Controllers
             }
         }
 
+
+
+        // method to edit  cell(ref_cd and cellValue) when a user clicks 'edit' in the index view 
+
         [HttpPost]
         public IActionResult EditExportingData([FromBody] EditExportingDataModel model)
         {
@@ -237,6 +284,9 @@ namespace financial_reporting_system.Controllers
                 return Json(new { success = false, message = "An error occurred while updating exporting data.", details = ex.Message });
             }
         }
+
+
+        // method to delete  cell(ref_cd and cellValue) when a user clicks 'delete' in the index view 
 
         [HttpPost]
         public IActionResult DeleteExportingData([FromBody] DeleteExportingDataModel model)
@@ -279,12 +329,9 @@ namespace financial_reporting_system.Controllers
             }
         }
 
-        [HttpGet]
-        public IActionResult CheckSavedValues(string selectedTemplate)
-        {
-            var savedValues = GetSavedValues(selectedTemplate);
-            return Json(new { noSavedValues = savedValues == null || savedValues.Count == 0 });
-        }
+
+
+
 
         private double GetSpecificValueFromDatabase(string sqlQuery)
         {
@@ -321,6 +368,12 @@ namespace financial_reporting_system.Controllers
             return specificValue;
         }
 
+
+
+
+
+        // this is a method to fetch paths for the dropdown
+
         private List<string> FetchingExcelDirectories()
         {
             var directories = new List<string>();
@@ -340,7 +393,7 @@ namespace financial_reporting_system.Controllers
             }
             return directories;
         }
-
+        // helper method to check if the path is valid, and returns the templates from there 
         private List<string> GetAvailableTemplates(string directoryPath)
         {
             try
@@ -361,13 +414,15 @@ namespace financial_reporting_system.Controllers
             }
         }
 
+
+        //method to get the description and ref_cd of the mapped descriptions
         private List<RefCode> GetRefCodes()
         {
             var refCodes = new List<RefCode>();
             using (var connection = new OracleConnection(_connectionString))
             {
                 connection.Open();
-                using (var command = new OracleCommand("SELECT DISTINCT ref_cd, description FROM ORG_FINANCIAL_MAPPING", connection))
+                using (var command = new OracleCommand("SELECT DISTINCT REF_CD, DESCRIPTION FROM SINGLE_SHEET_MAPPED_DESCRIPTION", connection))
                 {
                     using (var reader = command.ExecuteReader())
                     {
@@ -384,6 +439,19 @@ namespace financial_reporting_system.Controllers
             }
             return refCodes;
         }
+
+
+
+        // helper method to check saved values 
+
+        [HttpGet]
+        public IActionResult CheckSavedValues(string selectedTemplate)
+        {
+            var savedValues = GetSavedValues(selectedTemplate);
+            return Json(new { noSavedValues = savedValues == null || savedValues.Count == 0 });
+        }
+
+        // method to fetch saved cell values 
 
         private List<UserDefinedCellValues> GetSavedValues(string selectedTemplate)
         {
@@ -411,6 +479,8 @@ namespace financial_reporting_system.Controllers
         }
 
         // New Action: GetTemplatesByDirectory
+
+
         [HttpGet]
         public IActionResult GetTemplatesByDirectory(string selectedDirectory)
         {

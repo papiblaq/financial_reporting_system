@@ -134,13 +134,12 @@
             <!-- Date-Time Picker for Start Date and End Date -->
             <div class="form-group">
                 <label for="startDatePicker">Start Date:</label>
-                <input type="text" id="startDatePicker" name="startDate" class="datePicker form-control" placeholder="Select Start Date" value="@ViewBag.StartDate">
+                <input type="text" id="startDatePicker" name="startDate" class="datePicker form-control" placeholder="Select Start Date" value="@ViewBag.StartDate" required>
 
                 <label for="endDatePicker" class="ml-3">End Date:</label>
-                <input type="text" id="endDatePicker" name="endDate" class="datePicker form-control" placeholder="Select End Date" value="@ViewBag.EndDate">
-
-
+                <input type="text" id="endDatePicker" name="endDate" class="datePicker form-control" placeholder="Select End Date" value="@ViewBag.EndDate" required>
             </div>
+
 
             <div class="form-group">
                 <label for="selectedDirectory">Select Directory:</label>
@@ -271,6 +270,62 @@
                 }
             });
         });
+
+
+
+
+        // form validation 
+                document.querySelector('form').addEventListener('submit', function (event) {
+            // Prevent form submission if validation fails
+            if (!validateForm()) {
+                event.preventDefault(); // Stop the form from submitting
+            }
+        });
+
+        function validateForm() {
+            let isValid = true;
+
+            // Validate Start Date and End Date
+            const startDate = document.getElementById('startDatePicker').value;
+            const endDate = document.getElementById('endDatePicker').value;
+            if (!startDate || !endDate) {
+                alert('Please select both Start Date and End Date.');
+                isValid = false;
+            }
+
+            // Validate Selected Directory
+            const selectedDirectory = document.querySelector('select[name="selectedDirectory"]').value;
+            if (!selectedDirectory) {
+                alert('Please select a Directory.');
+                isValid = false;
+            }
+
+            // Validate Selected Template
+            const selectedTemplate = document.querySelector('select[name="selectedTemplate"]').value;
+            if (!selectedTemplate) {
+                alert('Please select an Excel Sheet.');
+                isValid = false;
+            }
+
+            // Validate Cell Values
+            const cellValueRows = document.querySelectorAll('.cellValueRow');
+            cellValueRows.forEach((row, index) => {
+                const refCd = row.querySelector('select[name="exellCellsMappingInfo[' + index + '].RefCd"]').value;
+                const valueForCells = row.querySelector('input[name="exellCellsMappingInfo[' + index + '].ValueForCells"]').value;
+
+                if (!refCd || !valueForCells) {
+                    alert('Please fill out all Reference Code and Value for Cells fields.');
+                    isValid = false;
+                }
+            });
+
+            return isValid;
+        }
+
+
+
+
+
     
 
         function updateSelectedTemplate(value) {
@@ -349,10 +404,10 @@
                                 <label for="RefCd">Reference Code:</label>
                                 <select name="exellCellsMappingInfo[${rowIndex}].RefCd" class="form-control" required>
                                     <option value="">-- Select Reference Code --</option>
-        @foreach (var refCode in ViewBag.RefCodes)
-        {
-                                                <option value="@refCode.RefCd">@refCode.RefCd (@refCode.Description)</option>
-        }
+                                @foreach (var refCode in ViewBag.RefCodes)
+                                {
+                                   <option value="@refCode.RefCd">@refCode.RefCd (@refCode.Description)</option>
+                                }
                                 </select>
                                 <label for="ValueForCells">Value for Cells:</label>
                                 <input type="text" name="exellCellsMappingInfo[${rowIndex}].ValueForCells" class="form-control" required />

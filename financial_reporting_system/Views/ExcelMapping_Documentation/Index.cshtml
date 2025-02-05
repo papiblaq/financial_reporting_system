@@ -1,23 +1,13 @@
 ﻿@model List<financial_reporting_system.Controllers.ExcelMapping_Documentation.UserDefinedCellValues>
 
 @{
-    ViewData["Title"] = "Export Financial Data to Excel";
+    ViewData["Title"] = "Report cells";
 }
 
 <h2>@ViewData["Title"]</h2>
 
 <div class="container">
-    <!-- Breadcrumb Navigation -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Statement types</a></li>
-            <li class="breadcrumb-item" id="step2"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement Sheet</a></li>
-            <li class="breadcrumb-item" id="step3"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Statement header</a></li>
-            <li class="breadcrumb-item" id="step4"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Statement details</a></li>
-            <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Workbook mappings</a></li>
-            <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Workbook Reports</a></li>
-        </ol>
-    </nav>
+
     <div class="formContainer">
         <div class="formContent">
             <!-- Directory Dropdown -->
@@ -258,61 +248,74 @@
         // Edit Row
         $("#cellValuesContainer").on("click", ".editRow", function () {
             var row = $(this).closest(".cellValueRow");
-            var refCd = row.find("select").val();
+
+            var refCdDropdown = row.find("select[name*='RefCd']");
             var valueForCells = row.find("input").val();
             var selectedTemplate = $("select[name='selectedTemplate']").val();
             var selectedWorkbook = $("select[name='selectedWorkbook']").val();
 
-            // Display the first confirmation dialog
-            if (confirm("Are you sure you want to edit this row?")) {
-                // Show the "Save Edits" button
-                var saveEditsButton = $('<button type="button" class="btn btn-success saveEdits">Save Edits</button>');
-                row.append(saveEditsButton);
+            // Ensure we capture the latest selection
+            refCdDropdown.on("change", function () {
+                console.log("Updated RefCd:", $(this).val());
+            });
 
-                // Event handler for the "Save Edits" button
-                saveEditsButton.click(function () {
-                    // Display the second confirmation dialog
-                    if (confirm("Are you sure you want to save the edits?")) {
-                        // Perform the AJAX request to save the edits
-                        $.ajax({
-                            url: '@Url.Action("EditExportingData", "ExcelMapping_Documentation")',
-                            type: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify({
-                                SelectedTemplate: selectedTemplate,
-                                SelectedWorkbook: selectedWorkbook,
-                                RefCd: refCd,
-                                ValueForCells: valueForCells
-                            }),
-                            success: function (response) {
-                                if (response.success) {
-                                    alert(response.message);
-                                    // Hide the "Save Edits" button after saving
-                                    saveEditsButton.remove();
-                                } else {
-                                    alert("Error: " + response.message);
+            // Fetch RefCd after the dropdown is populated
+            setTimeout(function () {
+                var refCd = refCdDropdown.val();
+                console.log("RefCd after delay:", refCd);
+
+                if (confirm("Are you sure you want to edit this row?")) {
+                    row.find(".saveEdits").remove();
+
+                    var saveEditsButton = $('<button type="button" class="btn btn-success saveEdits">Save Edits</button>');
+                    row.append(saveEditsButton);
+
+                    saveEditsButton.off("click").on("click", function () {
+                        if (confirm("Are you sure you want to save the edits?")) {
+                            $.ajax({
+                                url: '@Url.Action("EditExportingData", "ExcelMapping_Documentation")',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    SelectedTemplate: selectedTemplate,
+                                    SelectedWorkbook: selectedWorkbook,
+                                    RefCd: refCd,
+                                    ValueForCells: valueForCells
+                                }),
+                                success: function (response) {
+                                    if (response.success) {
+                                        alert(response.message);
+                                        saveEditsButton.remove();
+                                    } else {
+                                        alert("Error: " + response.message);
+                                    }
+                                },
+                                error: function () {
+                                    alert("An error occurred while editing exporting data.");
                                 }
-                            },
-                            error: function () {
-                                alert("An error occurred while editing exporting data.");
-                            }
-                        });
-                    }
-                });
-            }
+                            });
+                        }
+                    });
+                }
+            }, 300);  // Adjust delay based on dropdown population speed
         });
 
+
         // Delete Row
-        $("#cellValuesContainer").on("click", ".deleteRow", function () {
+               $("#cellValuesContainer").on("click", ".deleteRow", function () {
             var row = $(this).closest(".cellValueRow");
-            var refCd = row.find("select").val();
-            var valueForCells = row.find("input").val();
+
+            // Correct selector for RefCd
+            var refCdDropdown = row.find("select[name*='RefCd']");
+            var refCd = refCdDropdown.val() || refCdDropdown.find("option:selected").val();
+
+            var valueForCells = row.find("input[name^='savedValues']").val();
             var selectedTemplate = $("select[name='selectedTemplate']").val();
             var selectedWorkbook = $("select[name='selectedWorkbook']").val();
 
-            // Display the confirmation dialog
+            console.log("Deleting RefCd:", refCd, "Value:", valueForCells); // Debugging
+
             if (confirm("Are you sure you want to delete this row?")) {
-                // Perform the AJAX request to delete the row
                 $.ajax({
                     url: '@Url.Action("DeleteExportingData", "ExcelMapping_Documentation")',
                     type: 'POST',
@@ -326,8 +329,7 @@
                     success: function (response) {
                         if (response.success) {
                             alert(response.message);
-                            // Remove the row from the UI
-                            row.remove();
+                            row.remove(); // Remove row from UI
                         } else {
                             alert("Error: " + response.message);
                         }
@@ -338,6 +340,7 @@
                 });
             }
         });
+
 
         // Export to Excel Button
         $("#exportToExcelButton").click(function () {
@@ -376,46 +379,46 @@
         });
 
         // Save Exporting Data
-        $("#saveExportingData").click(function () {
+                $("#saveExportingData").click(function () {
             var savedValues = {};
             var selectedTemplate = $("select[name='selectedTemplate']").val();
-            var selectedWorkbook = $("select[name='selectedWorkbook']").val(); // Get the selected workbook
+            var selectedWorkbook = $("select[name='selectedWorkbook']").val();
 
-            // Validate selected workbook
             if (!selectedWorkbook) {
                 alert("Please select a workbook before saving.");
                 return;
             }
 
-            // Iterate through each row of mappings
             $(".cellValueRow").each(function () {
-                // Use the selected workbook as the worksheet name
-                var worksheetName = selectedWorkbook; // Use the selected workbook value
-                var refCd = $(this).find("select[name^='savedValues']").val();
+                var worksheetName = selectedWorkbook;
+
+                // Correct dropdown selector for RefCd
+                var refCdDropdown = $(this).find("select[name*='RefCd']");
+                var refCd = refCdDropdown.val() || refCdDropdown.find("option:selected").val(); // Ensure value is captured
+
                 var valueForCells = $(this).find("input[name^='savedValues']").val();
 
-                // Ensure the worksheetName exists in the savedValues dictionary
+                // Ensure worksheet exists in the object
                 if (!savedValues[worksheetName]) {
                     savedValues[worksheetName] = [];
                 }
 
-                // Add the mapping to the worksheet's list
+                // Store row data
                 savedValues[worksheetName].push({
                     RefCd: refCd,
                     ValueForCells: valueForCells
                 });
+
+                console.log("Captured RefCd:", refCd); // Debugging log
             });
 
-            // Prepare the data to send
             var data = {
                 savedValues: savedValues,
                 selectedTemplate: selectedTemplate
             };
 
-            // Log the payload for debugging
             console.log("Sending payload:", JSON.stringify(data));
 
-            // Send the data to the server via AJAX
             $.ajax({
                 url: '@Url.Action("SaveExportingData", "ExcelMapping_Documentation")',
                 type: 'POST',
@@ -433,6 +436,7 @@
                 }
             });
         });
+
 
         // Help Modal
         function showHelpPopup() {

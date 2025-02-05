@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
 using Syncfusion.XlsIO;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Text.Json;
+
 
 namespace financial_reporting_system.Controllers
 {
@@ -111,16 +111,31 @@ namespace financial_reporting_system.Controllers
         }
 
         // Export Financial Data to Excel
+        // Controller action to export financial data to Excel
         [HttpPost]
-        public IActionResult ExportFinancialDataToExcel(string selectedDirectory, string selectedWorkbook)
+        public IActionResult ExportFinancialDataToExcel([FromBody] ExportExcelRequestModel model)
         {
+            // Validate input
+            if (model == null || string.IsNullOrEmpty(model.SelectedDirectory) ||
+                string.IsNullOrEmpty(model.SelectedWorkbook) || string.IsNullOrEmpty(model.StartDate) ||
+                string.IsNullOrEmpty(model.EndDate))
+            {
+                return Json(new { error = "Invalid input. Please provide the directory, workbook name, start date, and end date." });
+            }
+
             try
             {
-                // Fetch the saved values from the database
-                var savedValues = ExcelWorkbookMappingData(selectedWorkbook);
+                // Fetch saved values
+                var savedValues = ExcelWorkbookMappingData(model.SelectedWorkbook);
 
-                // Construct the workbook path
-                string workbookPath = Path.Combine(selectedDirectory, selectedWorkbook);
+                // Construct workbook path
+                string workbookPath = Path.Combine(model.SelectedDirectory, model.SelectedWorkbook);
+
+                // Ensure file exists
+                if (!System.IO.File.Exists(workbookPath))
+                {
+                    return Json(new { error = "The specified workbook does not exist." });
+                }
 
                 // Open the workbook
                 using (FileStream fileStream = new FileStream(workbookPath, FileMode.Open, FileAccess.Read))
@@ -129,56 +144,60 @@ namespace financial_reporting_system.Controllers
                     IApplication application = excelEngine.Excel;
                     application.DefaultVersion = ExcelVersion.Excel97to2003;
 
-                    // Load the workbook
                     IWorkbook workbook = application.Workbooks.Open(fileStream);
 
-                    // Loop through each worksheet in the savedValues dictionary
-                    foreach (var worksheetMapping in savedValues)
+                    using (var connection = new OracleConnection(_connectionString))
                     {
-                        string worksheetName = worksheetMapping.Key;
-                        List<UserDefinedCellValues> cellValues = worksheetMapping.Value;
+                        connection.Open();
 
-                        // Get the worksheet by name
-                        IWorksheet worksheet = workbook.Worksheets[worksheetName];
-                        if (worksheet == null)
+                        foreach (var worksheetMapping in savedValues)
                         {
-                            throw new Exception($"Worksheet '{worksheetName}' not found in the workbook.");
-                        }
+                            string worksheetName = worksheetMapping.Key;
+                            List<UserDefinedCellValues> cellValues = worksheetMapping.Value;
 
-                        // Process each cell value for the current worksheet
-                        foreach (var cellValue in cellValues)
-                        {
-                            if (cellValue == null)
+                            IWorksheet worksheet = workbook.Worksheets[worksheetName];
+                            if (worksheet == null)
                             {
-                                throw new Exception("A null value was found in the cell values list.");
+                                throw new Exception($"Worksheet '{worksheetName}' not found in the workbook.");
                             }
 
-                            if (string.IsNullOrEmpty(cellValue.ValueForCells))
+                            foreach (var cellValue in cellValues)
                             {
-                                throw new Exception("Cell address is null or empty.");
+                                if (cellValue == null || string.IsNullOrEmpty(cellValue.ValueForCells) || string.IsNullOrEmpty(cellValue.RefCd))
+                                {
+                                    throw new Exception("Cell address or RefCd is null or empty.");
+                                }
+
+                                // Secure parameterized SQL query
+                                string sqlQuery = @"
+                        SELECT SUM(gas.ledger_bal) 
+                        FROM ORG_MAPPED_DESCRIPTION_WITH_LEDGRRS a, gl_account_summary gas 
+                        WHERE a.gl_acct_id = gas.gl_acct_id 
+                        AND ref_cd = :refCd
+                        AND VALUE_DATE BETWEEN TO_DATE(:startDate, 'DD-MON-YY') 
+                        AND TO_DATE(:endDate, 'DD-MON-YY')";
+
+                                using (var command = new OracleCommand(sqlQuery, connection))
+                                {
+                                    command.Parameters.Add(new OracleParameter("refCd", cellValue.RefCd)); // Secure RefCd
+                                    command.Parameters.Add(new OracleParameter("startDate", model.StartDate));
+                                    command.Parameters.Add(new OracleParameter("endDate", model.EndDate));
+
+                                    object result = command.ExecuteScalar();
+                                    double specificValue = result != DBNull.Value ? Convert.ToDouble(result) : 0.0;
+
+                                    // Insert value into the specified cell
+                                    worksheet.Range[cellValue.ValueForCells].Value = specificValue.ToString();
+                                }
                             }
-
-                            // Construct the SQL query
-                            string sqlQuery = $"SELECT SUM(gas.ledger_bal) FROM EXCEL_WORKBOOK_FINANCIAL_MAPPING a, gl_account_summary gas WHERE a.gl_acct_id = gas.gl_acct_id AND ref_cd = '{cellValue.RefCd}'";
-
-                            // Execute the SQL query to fetch the specific value
-                            double specificValue = GetSpecificValueFromDatabase(sqlQuery);
-                            if (specificValue == null)
-                            {
-                                throw new Exception("No value was returned from the database.");
-                            }
-
-                            // Insert the specific value into the specified cell
-                            worksheet.Range[cellValue.ValueForCells].Value = specificValue.ToString();
                         }
                     }
 
-                    // Create a memory stream for the modified workbook
+                    // Save the updated workbook
                     MemoryStream workbookStream = new MemoryStream();
                     workbook.SaveAs(workbookStream);
                     workbookStream.Position = 0;
 
-                    // Return the workbook as a downloadable file
                     return File(workbookStream, "application/vnd.ms-excel", $"{Path.GetFileNameWithoutExtension(workbookPath)}_Processed.xls");
                 }
             }
@@ -190,27 +209,28 @@ namespace financial_reporting_system.Controllers
             }
         }
 
+
+
+
         // Save Exporting Data
+
         [HttpPost]
         public IActionResult SaveExportingData([FromBody] SaveExportingDataModel model)
         {
             try
             {
-                // Validate the model
                 if (model == null || model.SavedValues == null || model.SelectedTemplate == null)
                 {
                     return Json(new { success = false, message = "Invalid data received." });
                 }
 
-                // Save the values to the temporary table
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     connection.Open();
 
-                    // Iterate through each worksheet and its mappings
                     foreach (var worksheetEntry in model.SavedValues)
                     {
-                        string worksheetName = worksheetEntry.Key; // This will be the selected workbook value
+                        string worksheetName = worksheetEntry.Key;
                         var mappings = worksheetEntry.Value;
 
                         foreach (var item in mappings)
@@ -229,12 +249,16 @@ namespace financial_reporting_system.Controllers
 
                                 if (duplicateCount > 0)
                                 {
-                                    Console.WriteLine($"Duplicate found for Template: {model.SelectedTemplate}, Worksheet: {worksheetName}, RefCd: {item.RefCd}, Value for Cells: {item.ValueForCells}. Skipping insertion.");
-                                    continue; // Skip insertion if duplicate is found
+                                    // Alert user and stop process
+                                    return Json(new
+                                    {
+                                        success = false,
+                                        message = $"Duplicate value found for Template: {model.SelectedTemplate}, Worksheet: {worksheetName}, RefCd: {item.RefCd}, Value: {item.ValueForCells}. Saving stopped."
+                                    });
                                 }
                             }
 
-                            // Insert the value if no duplicate is found
+                            // Insert if no duplicate is found
                             using (var insertCommand = new OracleCommand(
                                 "INSERT INTO EXCEL_WORKBOOK_TEMP_EXPORT_DATA (TEMPLATE_NAME, WORKSHEET_NAME, REF_CD, VALUE_FOR_CELLS) VALUES (:templateName, :worksheetName, :refCd, :valueForCells)",
                                 connection))
@@ -253,42 +277,77 @@ namespace financial_reporting_system.Controllers
             }
             catch (Exception ex)
             {
-                // Log the full exception details
                 Console.WriteLine($"Exception: {ex.Message}");
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 return Json(new { success = false, message = "An error occurred while saving exporting data.", details = ex.Message });
             }
         }
 
+
         // Fetch Specific Value from Database
         private double GetSpecificValueFromDatabase(string sqlQuery)
         {
             double specificValue = 0;
 
+            // Debugging: Print the SQL query
+            Console.WriteLine($"SQL Query: {sqlQuery}");
+
+            // Execute the query and fetch the result
             using (var connection = new OracleConnection(_connectionString))
             {
-                connection.Open();
-                using (var command = new OracleCommand(sqlQuery, connection))
+                try
                 {
-                    try
+                    connection.Open();
+                    Console.WriteLine("Database connection established successfully.");
+
+                    using (var command = new OracleCommand(sqlQuery, connection))
                     {
-                        object result = command.ExecuteScalar();
-                        if (result != null && result != DBNull.Value)
+                        try
                         {
-                            specificValue = Convert.ToDouble(result);
+                            object result = command.ExecuteScalar();
+
+                            // Log the raw result from the database
+                            Console.WriteLine($"Raw Query Result: {result}");
+
+                            if (result != null && result != DBNull.Value)
+                            {
+                                if (double.TryParse(result.ToString(), out specificValue))
+                                {
+                                    Console.WriteLine($"Parsed Result as Double: {specificValue}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Result is not a valid double. Defaulting to 0.");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Query returned NULL or no result.");
+                            }
+                        }
+                        catch (OracleException ex)
+                        {
+                            // Log the Oracle exception details
+                            Console.WriteLine($"Oracle Exception: {ex.Message}");
+                            Console.WriteLine($"Oracle Error Code: {ex.ErrorCode}");
+                            Console.WriteLine($"Oracle Error State: {ex.Source}");
+                            throw;
                         }
                     }
-                    catch (OracleException ex)
-                    {
-                        Console.WriteLine($"Oracle Exception: {ex.Message}");
-                        Console.WriteLine($"Oracle Error Code: {ex.ErrorCode}");
-                        throw;
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"General Exception: {ex.Message}");
+                    throw;
                 }
             }
 
+            // Log the final value being returned
+            Console.WriteLine($"Final Returned Value: {specificValue}");
+
             return specificValue;
         }
+
 
         // Fetch Directories
         private List<string> FetchingExcelDirectories()
@@ -375,7 +434,7 @@ namespace financial_reporting_system.Controllers
             using (var connection = new OracleConnection(_connectionString))
             {
                 connection.Open();
-                using (var command = new OracleCommand("SELECT DISTINCT ref_cd, description FROM EXCEL_WORKBOOK_FINANCIAL_MAPPING", connection))
+                using (var command = new OracleCommand("SELECT DISTINCT ref_cd, description FROM ORG_MAPPED_DESCRIPTION", connection))
                 {
                     using (var reader = command.ExecuteReader())
                     {
@@ -513,19 +572,21 @@ namespace financial_reporting_system.Controllers
                 {
                     connection.Open();
                     using (var command = new OracleCommand(
-                        "SELECT EWST.EXCEL_SHEET, EWSD.DESCRIPTION " +
-                        "FROM EXCEL_WORKBOOK_STATEMENT_TYPE EWST " +
-                        "JOIN EXCEL_WORKBOOK_STMNT_DETAIL EWSD " +
-                        "ON EWST.STMNT_ID = EWSD.STMNT_ID " +
-                        "WHERE EWST.EXCEL_WORKBOOK = :selectedWorkbook " +
-                        "ORDER BY EWST.EXCEL_SHEET", connection))
+                        "SELECT SHEET_ID, DESCRIPTION " +
+                        "FROM ORG_MAPPED_DESCRIPTION " +
+                        "WHERE STMNT_ID = :selectedWorkbook", connection))
                     {
-                        command.Parameters.Add(new OracleParameter("selectedWorkbook", selectedWorkbook));
+                        // Use OracleDbType.Varchar2 for safer parameter handling
+                        command.Parameters.Add(new OracleParameter("selectedWorkbook", OracleDbType.Varchar2)
+                        {
+                            Value = selectedWorkbook
+                        });
+
                         using (var reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                var sheet = reader["EXCEL_SHEET"].ToString();
+                                var sheet = reader["SHEET_ID"].ToString();
                                 var description = reader["DESCRIPTION"].ToString();
 
                                 if (!sheetDescriptions.ContainsKey(sheet))
@@ -548,6 +609,7 @@ namespace financial_reporting_system.Controllers
                 return StatusCode(500, new { error = "An error occurred while fetching descriptions." });
             }
         }
+
 
         // editing existing rows
 
@@ -666,5 +728,19 @@ namespace financial_reporting_system.Controllers
             public string RefCd { get; set; }
             public string ValueForCells { get; set; }
         }
+
+
+
+
+        // Strongly-typed request model for the export action
+        public class ExportExcelRequestModel
+        {
+            public string SelectedDirectory { get; set; }
+            public string SelectedWorkbook { get; set; }
+            public string StartDate { get; set; }
+            public string EndDate { get; set; }
+        }
     }
+
+
 }

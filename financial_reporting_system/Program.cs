@@ -5,8 +5,6 @@ using Microsoft.Extensions.Configuration;
 using System.IO;
 using syncfusion_grid;
 using syncfusion_grid.Controllers;
-//using static financial_reporting_system.Statement_typesController;
-using static syncfusion_grid.Controllers.MappingController;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +17,15 @@ builder.Services.AddControllersWithViews();
 
 // Register OracleService
 builder.Services.AddScoped<OracleService>();
+
+// Add session services
+builder.Services.AddDistributedMemoryCache(); // Store session in memory (use other options for production)
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true; // Ensure session cookie is only accessible via HTTP
+    options.Cookie.IsEssential = true; // Make the session cookie essential
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Set session timeout
+});
 
 // Load the external configuration file
 var externalConfig = new ConfigurationBuilder()
@@ -46,6 +53,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Enable session middleware before other middleware like UseAuthorization
+app.UseSession();
 
 app.UseAuthorization();
 

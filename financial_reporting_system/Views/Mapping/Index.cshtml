@@ -25,7 +25,6 @@
 
            
 
-
         </form>
 
         <!-- Available Statement Details -->
@@ -52,17 +51,17 @@
         <div class="mb-3">
             <label for="pageSizeDropdown" class="custom-label">Rows to be fetched:</label>
             <select id="pageSizeDropdown" class="form-select" style="width: 200px;">
-                <option value="20" selected>20</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
                 <option value="40">40</option>
-                <option value="80">80</option>
-                <option value="160">160</option>
+                <option value="100">100</option>
 
             </select>
         </div>
         
         <!-- Second Grid -->
         <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-            <e-grid-pagesettings pageSize="20"></e-grid-pagesettings>
+            <e-grid-pagesettings pageSize="10"></e-grid-pagesettings>
             <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
             <e-grid-columns>
                 <e-grid-column type="checkbox" width="50"></e-grid-column>
@@ -225,74 +224,76 @@
     });
 
     // Event listener for saving combined rows
-    document.getElementById('saveCombinedRows').addEventListener('click', function () {
-        var saveButton = document.getElementById('saveCombinedRows');
-        var uploadingButton = document.getElementById('uploadingButton');
+       document.getElementById('saveCombinedRows').addEventListener('click', function () {
+            var saveButton = document.getElementById('saveCombinedRows');
+            var uploadingButton = document.getElementById('uploadingButton');
 
-        var orderGrid = document.getElementById('grid').ej2_instances[0];
-        var accountGrid = document.getElementById('accountGrid').ej2_instances[0];
+            var orderGrid = document.getElementById('grid').ej2_instances[0];  // First Grid
+            var accountGrid = document.getElementById('accountGrid').ej2_instances[0];  // Second Grid
 
-        var selectedOrderRow = orderGrid.getSelectedRecords();
-        var selectedAccountRows = accountGrid.getSelectedRecords();
+            var selectedOrderRow = orderGrid.getSelectedRecords();  // Selected rows in first grid
+            var selectedAccountRows = accountGrid.getSelectedRecords();  // Selected rows in second grid
 
-        // Ensure exactly one row is selected in the first grid
-        if (selectedOrderRow.length !== 1) {
-            alert('Please select exactly one row in the first grid.');
-            return;
-        }
-
-        if (selectedAccountRows.length === 0) {
-            alert('No rows selected in the account grid.');
-            return;
-        }
-
-        // Hide "Save MappedGL" and show "Uploading..."
-        saveButton.style.display = 'none';
-        uploadingButton.style.display = 'inline-block';
-
-        var combinedRows = selectedAccountRows.map(accountRow => ({
-            DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
-            STMNT_ID: selectedOrderRow[0].STMNT_ID,
-            SHEET_ID: selectedOrderRow[0].SHEET_ID,
-            HEADER_ID: selectedOrderRow[0].HEADER_ID,
-            GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
-            REF_CD: selectedOrderRow[0].REF_CD,
-            DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
-            SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
-            CREATED_BY: selectedOrderRow[0].CREATED_BY,
-            LEDGER_NO: accountRow.LEDGER_NO,
-            ACCT_DESC: accountRow.ACCT_DESC
-        }));
-
-        fetch('/Mapping/SaveCombinedRows', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(combinedRows)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok: ' + response.statusText);
+            // Ensure exactly one row is selected in the first grid
+            if (selectedOrderRow.length !== 1) {
+                alert('Please select exactly one row in the first grid.');
+                return;
             }
-            return response.json();
-        })
-        .then(data => {
-            alert(data.message || 'Upload successful.');
-            // Restore buttons after alert is dismissed
-            saveButton.style.display = 'inline-block';
-            uploadingButton.style.display = 'none';
 
-            // Reload the page to reflect saved data
-            location.reload();
-        })
-        .catch(error => {
-            alert('Error: ' + error.message);
-            // Restore buttons in case of failure
-            saveButton.style.display = 'inline-block';
-            uploadingButton.style.display = 'none';
+            // Ensure exactly one row is selected in the second grid
+            if (selectedAccountRows.length !== 1) {
+                alert('Please select exactly one row in the second grid.');
+                return;
+            }
+
+            // Hide "Save MappedGL" and show "Uploading..."
+            saveButton.style.display = 'none';
+            uploadingButton.style.display = 'inline-block';
+
+            var combinedRows = selectedAccountRows.map(accountRow => ({
+                DETAIL_ID: selectedOrderRow[0].DETAIL_ID,
+                STMNT_ID: selectedOrderRow[0].STMNT_ID,
+                SHEET_ID: selectedOrderRow[0].SHEET_ID,
+                HEADER_ID: selectedOrderRow[0].HEADER_ID,
+                GL_ACCT_CAT_CD: selectedOrderRow[0].GL_ACCT_CAT_CD,
+                REF_CD: selectedOrderRow[0].REF_CD,
+                DESCRIPTION: selectedOrderRow[0].DESCRIPTION,
+                SYS_CREATE_TS: selectedOrderRow[0].SYS_CREATE_TS,
+                CREATED_BY: selectedOrderRow[0].CREATED_BY,
+                LEDGER_NO: accountRow.LEDGER_NO,
+                ACCT_DESC: accountRow.ACCT_DESC
+            }));
+
+            fetch('/Mapping/SaveCombinedRows', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(combinedRows)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message || 'Upload successful.');
+                // Restore buttons after alert is dismissed
+                saveButton.style.display = 'inline-block';
+                uploadingButton.style.display = 'none';
+
+                // Reload the page to reflect saved data
+                location.reload();
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+                // Restore buttons in case of failure
+                saveButton.style.display = 'inline-block';
+                uploadingButton.style.display = 'none';
         });
     });
+
 </script>
 
 <style>

@@ -3,7 +3,7 @@
 
 @{
     Layout = null;
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Report mapping";
 }
 
 <!DOCTYPE html>
@@ -19,20 +19,346 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+
+    <style>
+        .breadcrumb-modern {
+            display: flex;
+            justify-content: space-between; /* Distributes items evenly */
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            list-style: none;
+            width: 100%;
+        }
+
+            .breadcrumb-modern .breadcrumb-item {
+                flex: 1; /* Makes each item take equal space */
+                text-align: center; /* Centers text */
+            }
+
+                .breadcrumb-modern .breadcrumb-item a {
+                    display: inline-block;
+                    padding: 10px 15px;
+                    background-color: #00CC00; /* Green background */
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: all 0.3s ease-in-out;
+                    width: 80%; /* Adjust width to prevent overly stretched buttons */
+                }
+
+                    .breadcrumb-modern .breadcrumb-item a:hover {
+                        background-color: #339933; /* Darker green on hover */
+                        transform: scale(1.05);
+                    }
+
+                .breadcrumb-modern .breadcrumb-item::after {
+                    content: ">";
+                    color: #00CC00;
+                    font-weight: bold;
+                    margin-left: 10px;
+                }
+
+                .breadcrumb-modern .breadcrumb-item:last-child::after {
+                    content: "";
+                }
+
+        .container {
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 1200px;
+            max-height: calc(100vh - 40px); /* Adjusted to fit above the bottom */
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Arial', sans-serif;
+        }
+
+
+            .container h1 {
+                font-size: 1.5rem;
+                color: #333;
+                margin-bottom: 10px;
+            }
+
+            .container select {
+                display: block;
+                padding: 8px;
+                margin-top: 10px;
+                font-size: 1rem;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                width: 100%;
+                max-width: 300px;
+            }
+
+        .custom-label {
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+
+
+        /* Define the white-grid class */
+        .white-grid {
+            background-color: white !important; /* Set the background color to white */
+            color: black; /* Set the text color to black */
+        }
+
+            /* Style the header */
+            .white-grid .e-gridheader {
+                background-color: white !important; /* Set the header background color to white */
+                color: aquamarine; /* Set the header text color to black */
+                border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of the header */
+            }
+
+            /* Style the rows */
+            .white-grid .e-gridcontent .e-rowcell {
+                background-color: white; /* Set the row cell background color to white */
+                color: #6c757d !important; /* Set the row cell text color to #6c757d */
+                border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of each row */
+                border: none;
+            }
+            /* Style the rows on hover */
+            .white-grid .e-gridcontent .e-row:hover .e-rowcell {
+                background-color: lightgray !important;
+                color: aquamarine !important; /* Set the row cell text color to aquamarine on hover */
+            }
+
+            /* Style the pager */
+            .white-grid .e-gridpager {
+                background-color: white; /* Set the pager background color to white */
+                color: black; /* Set the pager text color to black */
+                border-top: 1px solid #dee2e6; /* Add a border at the top of the pager */
+            }
+
+            /* Style the filter row */
+            .white-grid .e-filterbarcell {
+                background-color: white !important; /* Set the filter row background color to white */
+                color: InactiveCaptionText !important; /* Set the filter row text color to black */
+                border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of the filter row */
+            }
+
+                /* Style the filter input */
+                .white-grid .e-filterbarcell input {
+                    background-color: white; /* Set the filter input background color to white */
+                    color: #6c757d !important; /* Set the filter input text color to #6c757d */
+                    border: 1px solid #ced4da; /* Add a border to the filter input */
+                }
+
+                /* Style the filter dropdown */
+                .white-grid .e-filterbarcell .e-dropdownlist {
+                    background-color: white !important; /* Set the filter dropdown background color to white */
+                    color: #6c757d; /* Set the filter dropdown text color to #6c757d */
+                    border: 1px solid #ced4da; /* Add a border to the filter dropdown */
+                }
+
+                    /* Style the filter dropdown options */
+                    .white-grid .e-filterbarcell .e-dropdownlist .e-list-item {
+                        background-color: white; /* Set the filter dropdown option background color to white */
+                        color: #6c757d; /* Set the filter dropdown option text color to #6c757d */
+                    }
+
+                        /* Style the filter dropdown options on hover */
+                        .white-grid .e-filterbarcell .e-dropdownlist .e-list-item:hover {
+                            background-color: hotpink !important; /* Set the filter dropdown option background color on hover */
+                            color: aquamarine !important; /* Set the filter dropdown option text color on hover */
+                        }
+
+                        /* Style the filter dropdown options on focus */
+                        .white-grid .e-filterbarcell .e-dropdownlist .e-list-item.e-active {
+                            background-color: #e9ecef; /* Set the filter dropdown option background color on focus */
+                            color: #6c757d; /* Set the filter dropdown option text color on focus */
+                        }
+
+        .button-container {
+            display: flex; /* Use Flexbox */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            margin-top: 20px; /* Add space above the button */
+        }
+
+        .custom-delete-button {
+            background-color: #d9534f; /* Red background color */
+            color: white; /* White text color */
+            border: none; /* No border */
+            padding: 10px 20px; /* Padding for spacing */
+            font-size: 16px; /* Font size */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Pointer cursor on hover */
+            transition: background-color 0.3s ease; /* Smooth transition effect */
+        }
+
+            .custom-delete-button:hover {
+                background-color: #c9302c; /* Darker red on hover */
+            }
+
+        .grid-spacer {
+            height: 20px; /* Spacer height between the grids */
+        }
+
+        h1 {
+            font-size: 18px; /* Smaller font size */
+            color: #6c757d; /* Greyish color */
+            font-weight: normal; /* Normal font weight */
+            margin-bottom: 10px; /* Margin below the heading */
+        }
+
+        .custom-label {
+            font-size: 18px; /* Smaller font size */
+            color: #6c757d; /* Greyish color */
+            font-weight: normal; /* Normal font weight */
+            margin-bottom: 10px; /* Margin below the heading */
+        }
+
+        #pageSizeDropdown {
+            margin-top: 5px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .custom-delete-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .custom-delete-button:hover {
+                background-color: #0056b3;
+            }
+
+        .btn-secondary {
+            text-decoration: none;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .btn-secondary:hover {
+                background-color: #5a6268;
+            }
+
+
+
+        /* Navigation buttons container */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Navigation buttons container */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* Right-side buttons container */
+        .right-buttons {
+            display: flex;
+            gap: 10px; /* Space between Next and Previous buttons */
+        }
+
+        /* Common styles for buttons */
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            background-color: #00CC00;
+            color: white;
+            text-decoration: none;
+            border-radius: 50%;
+            font-size: 20px;
+            transition: all 0.3s ease-in-out;
+        }
+
+            /* Hover effect */
+            .nav-button:hover {
+                background-color: #339933;
+                transform: scale(1.1);
+            }
+
+        /* Specific styles for back, previous, and next buttons */
+        .back-button {
+            margin-left: 10px;
+        }
+
+        .prev-button {
+        }
+
+        .next-button {
+            margin-right: 10px;
+        }
+
+
+    </style>
+
+
+
 </head>
 <body>
+
+
     <div class="container">
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons">
+            <!-- Back Button -->
+            <a href="@Url.Action("ExcelWorkbookUpload", "ExcelMapping_Documentation")" class="nav-button back-button">
+                <i class="fa-solid fa-house"></i>
+            </a>
+
+            <div class="right-buttons">
+                <!-- Previous Button (Inverted Next) -->
+                <a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")" class="nav-button prev-button">
+                    <i class="fa-solid fa-share fa-flip-horizontal"></i>
+                </a>
+
+                <!-- Next Button -->
+                <a href="@Url.Action("Index", "ExcelMapping_Documentation")" class="nav-button next-button">
+                    <i class="fa-solid fa-share"></i>
+                </a>
+            </div>
+        </div>
         <!-- Breadcrumb Navigation -->
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item" id="step1"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Statement types</a></li>
-                <li class="breadcrumb-item" id="step2"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Statement Sheet</a></li>
-                <li class="breadcrumb-item" id="step3"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Statement header</a></li>
-                <li class="breadcrumb-item" id="step4"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Statement details</a></li>
-                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Workbook mappings</a></li>
-                <li class="breadcrumb-item" id="step5"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Workbook reports</a></li>
+            <ol class="breadcrumb breadcrumb-modern">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")">Report type</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Sheet")">Report</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")">Report header</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbook_Statement_Details")">Report details</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelWorkbookMapping")">Report mappings</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Report cells</a></li>
             </ol>
         </nav>
+
+
+        <h2>@ViewData["Title"]</h2>
+
 
         <!-- Workbook Dropdown -->
         <div class="form-group">
@@ -93,7 +419,7 @@
 
         <!-- Second Grid -->
         <ejs-grid id="accountGrid" dataSource="@ViewBag.AccountDetails" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
-            <e-grid-pagesettings pageSize="20"></e-grid-pagesettings>
+            <e-grid-pagesettings pageSize="10"></e-grid-pagesettings>
             <e-grid-selectionsettings type="Multiple"></e-grid-selectionsettings>
             <e-grid-columns>
                 <e-grid-column type="checkbox" width="50"></e-grid-column>
@@ -258,225 +584,7 @@
     </script>
 
 
-    <style>
-        .breadcrumb {
-            display: flex;
-            flex-wrap: nowrap;
-            background-color: #f8f9fa;
-            padding: 8px 16px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            list-style: none;
-        }
 
-        .breadcrumb-item {
-            margin-right: 8px;
-            font-size: 1rem;
-            color: #007bff;
-        }
-
-            .breadcrumb-item a {
-                text-decoration: none;
-                color: #007bff;
-                transition: color 0.3s ease;
-            }
-
-                .breadcrumb-item a:hover {
-                    color: #0056b3;
-                }
-
-        .container {
-            margin: 20px auto;
-            padding: 20px;
-            max-width: 1200px;
-            max-height: calc(100vh - 40px); /* Adjusted to fit above the bottom */
-            overflow-y: auto;
-            background-color: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-family: 'Arial', sans-serif;
-        }
-
-
-            .container h1 {
-                font-size: 1.5rem;
-                color: #333;
-                margin-bottom: 10px;
-            }
-
-            .container select {
-                display: block;
-                padding: 8px;
-                margin-top: 10px;
-                font-size: 1rem;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                width: 100%;
-                max-width: 300px;
-            }
-
-        .custom-label {
-            font-weight: bold;
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-        /* Define the white-grid class */
-        .white-grid {
-            background-color: white !important; /* Set the background color to white */
-            color: black; /* Set the text color to black */
-        }
-
-            /* Style the header */
-            .white-grid .e-gridheader {
-                background-color: white !important; /* Set the header background color to white */
-                color: aquamarine; /* Set the header text color to black */
-                border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of the header */
-            }
-
-            /* Style the rows */
-            .white-grid .e-gridcontent .e-rowcell {
-                background-color: white; /* Set the row cell background color to white */
-                color: #6c757d !important; /* Set the row cell text color to #6c757d */
-                border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of each row */
-                border: none;
-            }
-            /* Style the rows on hover */
-            .white-grid .e-gridcontent .e-row:hover .e-rowcell {
-                background-color: lightgray !important;
-                color: aquamarine !important; /* Set the row cell text color to aquamarine on hover */
-            }
-
-            /* Style the pager */
-            .white-grid .e-gridpager {
-                background-color: white; /* Set the pager background color to white */
-                color: black; /* Set the pager text color to black */
-                border-top: 1px solid #dee2e6; /* Add a border at the top of the pager */
-            }
-
-            /* Style the filter row */
-            .white-grid .e-filterbarcell {
-                background-color: white !important; /* Set the filter row background color to white */
-                color: InactiveCaptionText !important; /* Set the filter row text color to black */
-                border-bottom: 1px solid #dee2e6; /* Add a border at the bottom of the filter row */
-            }
-
-                /* Style the filter input */
-                .white-grid .e-filterbarcell input {
-                    background-color: white; /* Set the filter input background color to white */
-                    color: #6c757d !important; /* Set the filter input text color to #6c757d */
-                    border: 1px solid #ced4da; /* Add a border to the filter input */
-                }
-
-                /* Style the filter dropdown */
-                .white-grid .e-filterbarcell .e-dropdownlist {
-                    background-color: white !important; /* Set the filter dropdown background color to white */
-                    color: #6c757d; /* Set the filter dropdown text color to #6c757d */
-                    border: 1px solid #ced4da; /* Add a border to the filter dropdown */
-                }
-
-                    /* Style the filter dropdown options */
-                    .white-grid .e-filterbarcell .e-dropdownlist .e-list-item {
-                        background-color: white; /* Set the filter dropdown option background color to white */
-                        color: #6c757d; /* Set the filter dropdown option text color to #6c757d */
-                    }
-
-                        /* Style the filter dropdown options on hover */
-                        .white-grid .e-filterbarcell .e-dropdownlist .e-list-item:hover {
-                            background-color: hotpink !important; /* Set the filter dropdown option background color on hover */
-                            color: aquamarine !important; /* Set the filter dropdown option text color on hover */
-                        }
-
-                        /* Style the filter dropdown options on focus */
-                        .white-grid .e-filterbarcell .e-dropdownlist .e-list-item.e-active {
-                            background-color: #e9ecef; /* Set the filter dropdown option background color on focus */
-                            color: #6c757d; /* Set the filter dropdown option text color on focus */
-                        }
-
-        .button-container {
-            display: flex; /* Use Flexbox */
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
-            margin-top: 20px; /* Add space above the button */
-        }
-
-        .custom-delete-button {
-            background-color: #d9534f; /* Red background color */
-            color: white; /* White text color */
-            border: none; /* No border */
-            padding: 10px 20px; /* Padding for spacing */
-            font-size: 16px; /* Font size */
-            border-radius: 5px; /* Rounded corners */
-            cursor: pointer; /* Pointer cursor on hover */
-            transition: background-color 0.3s ease; /* Smooth transition effect */
-        }
-
-            .custom-delete-button:hover {
-                background-color: #c9302c; /* Darker red on hover */
-            }
-
-        .grid-spacer {
-            height: 20px; /* Spacer height between the grids */
-        }
-
-        h1 {
-            font-size: 18px; /* Smaller font size */
-            color: #6c757d; /* Greyish color */
-            font-weight: normal; /* Normal font weight */
-            margin-bottom: 10px; /* Margin below the heading */
-        }
-
-        .custom-label {
-            font-size: 18px; /* Smaller font size */
-            color: #6c757d; /* Greyish color */
-            font-weight: normal; /* Normal font weight */
-            margin-bottom: 10px; /* Margin below the heading */
-        }
-
-        #pageSizeDropdown {
-            margin-top: 5px;
-        }
-
-        .button-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .custom-delete-button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-            .custom-delete-button:hover {
-                background-color: #0056b3;
-            }
-
-        .btn-secondary {
-            text-decoration: none;
-            background-color: #6c757d;
-            color: white;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-            .btn-secondary:hover {
-                background-color: #5a6268;
-            }
-
-
-
-
-
-    </style>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

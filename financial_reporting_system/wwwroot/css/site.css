@@ -26,6 +26,12 @@ nav.navbar {
     background-color: #3EB489; /* Light background color */
 }
 
+    nav.navbar .container-fluid {
+        display: flex;
+        justify-content: flex-end; /* Align elements to the right */
+        align-items: center; /* Vertically center the items */
+    }
+
     nav.navbar i {
         padding: 10px;
         border-radius: 50px;
@@ -39,9 +45,27 @@ nav.navbar {
             transform: scale(1.05) translateZ(0px);
         }
 
-nav.navbar {
-    margin-left: 290px;
-}
+    nav.navbar .navbar-right {
+        display: flex;
+        gap: 15px; /* Space between icons and profile picture */
+    }
+
+    nav.navbar .profilePic {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+    }
+
+
+
+
+
+
+
+
+
+
+
 
 /* Profile picture */
 img.profilePic {

@@ -20,7 +20,7 @@ namespace financial_reporting_system.Controllers
             _connectionString = configuration.GetConnectionString("OracleConnection");
         }
 
-        public IActionResult Index(string stmntId = "0")
+        public IActionResult Index(string stmntId = "0", int detailId = 0)
         {
             // Fetch workbooks for the dropdown
             var workbooks = GetWorkbooks();
@@ -28,49 +28,56 @@ namespace financial_reporting_system.Controllers
 
             // Fetch filtered financial statement details based on the STMNT_ID
             var financialStatementDetails = GetFinancialStatementDetails(stmntId);
-            var accountDetails = GetAccountDetails(); // Fetch account details using the new query
-            var statementTypes = GetExcelWorkbookStatementTypes();
+
+            // Fetch account details using the new query
+            var accountDetails = GetAccountDetails(detailId);
+
+            // Fetch all statement types (only STMNT_ID)
+            var statementTypes = GetExcelWorkbookStatementTypes(); // Updated method call
 
             // Find the selected statement type excel sheets
-            var selectedDescription = statementTypes.FirstOrDefault(st => st.STMNT_ID == stmntId)?.EXCEL_SHEET ?? "All statement types";
+            var selectedDescription = statementTypes.FirstOrDefault(st => st == stmntId) ?? "All statement types";
+
+            
+
+
+            // Pass data to the view
             ViewBag.AccountDetails = accountDetails;
-            ViewBag.StatementTypes = statementTypes;
-            ViewBag.SelectedDescription = selectedDescription; // Pass the selected description to the view
+            ViewBag.StatementTypes = statementTypes; // Pass the list of STMNT_IDs
+            ViewBag.SelectedDescription = selectedDescription;
 
             return View(financialStatementDetails); // Pass the filtered data to the view
         }
 
+
+
         [HttpGet]
         public async Task<IActionResult> GetStatementTypesByWorkbook(string workbook)
         {
-            var statementTypes = await GetStatementTypesForWorkbookAsync(workbook);
-            return Json(statementTypes);
+            var sheetNames = await GetSheetNamesForWorkbookAsync(workbook);
+            return Json(sheetNames); // Return the list of sheet names as JSON
         }
 
-        private async Task<List<ExcelWorkbookStatementType>> GetStatementTypesForWorkbookAsync(string workbook)
+        private async Task<List<string>> GetSheetNamesForWorkbookAsync(string workbook)
         {
-            var statementTypes = new List<ExcelWorkbookStatementType>();
+            var sheetNames = new List<string>();
             using (var connection = new OracleConnection(_connectionString))
             {
                 await connection.OpenAsync();
                 using (var command = new OracleCommand(
-                    "SELECT STMNT_ID, EXCEL_SHEET FROM EXCEL_WORKBOOK_STATEMENT_TYPE WHERE EXCEL_WORKBOOK = :EXCEL_WORKBOOK", connection))
+                    "SELECT DISTINCT SHEET_ID FROM EXCEL_WORKBOOK_STMNT_DETAIL WHERE STMNT_ID = :EXCEL_WORKBOOK", connection))
                 {
                     command.Parameters.Add(new OracleParameter("EXCEL_WORKBOOK", workbook));
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         while (await reader.ReadAsync())
                         {
-                            statementTypes.Add(new ExcelWorkbookStatementType
-                            {
-                                STMNT_ID = reader.IsDBNull(0) ? null : reader.GetString(0),
-                                EXCEL_SHEET = reader.GetString(1)
-                            });
+                            sheetNames.Add(reader.IsDBNull(0) ? null : reader.GetString(0)); // Add SHEET_ID to the list
                         }
                     }
                 }
             }
-            return statementTypes;
+            return sheetNames;
         }
 
         private List<SelectListItem> GetWorkbooks()
@@ -79,7 +86,7 @@ namespace financial_reporting_system.Controllers
             using (var connection = new OracleConnection(_connectionString))
             {
                 connection.Open();
-                using (var command = new OracleCommand("SELECT DISTINCT EXCEL_WORKBOOK FROM EXCEL_WORKBOOK_STATEMENT_TYPE", connection))
+                using (var command = new OracleCommand("SELECT DISTINCT STMNT_ID FROM EXCEL_WORKBOOK_STMNT_DETAIL", connection))
                 {
                     using (var reader = command.ExecuteReader())
                     {
@@ -87,8 +94,8 @@ namespace financial_reporting_system.Controllers
                         {
                             workbooks.Add(new SelectListItem
                             {
-                                Text = reader["EXCEL_WORKBOOK"].ToString(),
-                                Value = reader["EXCEL_WORKBOOK"].ToString()
+                                Text = reader["STMNT_ID"].ToString(),
+                                Value = reader["STMNT_ID"].ToString()
                             });
                         }
                     }
@@ -103,12 +110,7 @@ namespace financial_reporting_system.Controllers
             return View(mappings); // Return the Grid view with data
         }
 
-        [HttpGet]
-        public IActionResult GetFilteredFinancialStatements(string stmntId)
-        {
-            var financialStatementDetails = GetFinancialStatementDetails(stmntId); // Filter by STMNT_ID
-            return Json(financialStatementDetails); // Return filtered data as JSON
-        }
+
 
         [HttpPost]
         public IActionResult SaveCombinedRows([FromBody] List<CombinedRow> combinedRows)
@@ -191,6 +193,8 @@ namespace financial_reporting_system.Controllers
             }
         }
 
+
+        
         private List<FinancialStatementDetail> GetFinancialStatementDetails(string stmntId)
         {
             var financialStatementDetails = new List<FinancialStatementDetail>();
@@ -206,7 +210,7 @@ namespace financial_reporting_system.Controllers
 
                     if (!string.IsNullOrEmpty(stmntId) && stmntId != "0")
                     {
-                        command.CommandText += " WHERE D.STMNT_ID = :stmntId";
+                        command.CommandText += " WHERE D.SHEET_ID = :stmntId";
                         command.Parameters.Add(new OracleParameter("stmntId", OracleDbType.Varchar2) { Value = stmntId });
                     }
 
@@ -233,7 +237,9 @@ namespace financial_reporting_system.Controllers
             return financialStatementDetails;
         }
 
-        private List<AccountDetail> GetAccountDetails()
+
+        // method to fetch ledgers that are unmapped
+        private List<AccountDetail> GetAccountDetails(int detailId = 0)
         {
             var accountDetails = new List<AccountDetail>();
             using (var connection = new OracleConnection(_connectionString))
@@ -242,8 +248,25 @@ namespace financial_reporting_system.Controllers
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                        SELECT DISTINCT LEDGER_NO, ACCT_DESC 
-                        FROM V_ORG_CHART_OF_ACCOUNT_DETAILS_WITHVALUE_DATE";
+                SELECT DISTINCT v.LEDGER_NO, v.ACCT_DESC, v.GL_ACCT_NO
+                FROM V_ORG_CHART_OF_ACCOUNT_DETAILS_WITHVALUE_DATE v
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM ORG_MAPPED_DESCRIPTION_WITH_LEDGRRS l
+                    WHERE l.DETAIL_ID = :selectedDetailId
+                      AND l.LEDGER_NO = v.LEDGER_NO
+                )";
+
+                    // Add the parameter for DETAIL_ID (selectedDetailId)
+                    if (detailId > 0)  // Only pass DETAIL_ID if it's greater than 0
+                    {
+                        command.Parameters.Add(new OracleParameter("selectedDetailId", detailId));
+                    }
+                    else
+                    {
+                        command.Parameters.Add(new OracleParameter("selectedDetailId", DBNull.Value));
+                    }
+
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
@@ -251,7 +274,8 @@ namespace financial_reporting_system.Controllers
                             accountDetails.Add(new AccountDetail
                             {
                                 LEDGER_NO = reader.IsDBNull(0) ? null : reader.GetString(0),
-                                ACCT_DESC = reader.IsDBNull(1) ? null : reader.GetString(1)
+                                ACCT_DESC = reader.IsDBNull(1) ? null : reader.GetString(1),
+                                GL_ACCT_NO = reader.IsDBNull(2) ? null : reader.GetString(2)
                             });
                         }
                     }
@@ -348,29 +372,25 @@ namespace financial_reporting_system.Controllers
             return mappings;
         }
 
-        private List<ExcelWorkbookStatementType> GetExcelWorkbookStatementTypes()
+        private List<string> GetExcelWorkbookStatementTypes()
         {
-            var statementTypes = new List<ExcelWorkbookStatementType>();
+            var statementTypes = new List<string>(); // Changed to a list of strings since we're fetching only STMNT_ID
             using (var connection = new OracleConnection(_connectionString))
             {
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT STMNT_ID, EXCEL_SHEET FROM EXCEL_WORKBOOK_STATEMENT_TYPE";
+                    command.CommandText = "SELECT DISTINCT SHEET_ID FROM EXCEL_WORKBOOK_STMNT_DETAIL"; // Updated SQL query
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
                         {
-                            statementTypes.Add(new ExcelWorkbookStatementType
-                            {
-                                STMNT_ID = reader.IsDBNull(0) ? null : reader.GetString(0),
-                                EXCEL_SHEET = reader.GetString(1)
-                            });
+                            statementTypes.Add(reader.IsDBNull(0) ? null : reader.GetString(0)); // Add STMNT_ID to the list
                         }
                     }
                 }
             }
-            return statementTypes;
+            return statementTypes; // Return a list of STMNT_IDs
         }
 
         // Model Classes
@@ -391,6 +411,7 @@ namespace financial_reporting_system.Controllers
         {
             public string LEDGER_NO { get; set; }
             public string ACCT_DESC { get; set; }
+            public string GL_ACCT_NO { get; set; }
         }
 
         public class CombinedRow

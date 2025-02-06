@@ -211,6 +211,8 @@
         accountGrid.pageSettings.pageSize = selectedPageSize;
     });
 
+
+
     // Event listener for dropdown change
     document.getElementById('statementTypeDropdown').addEventListener('change', function () {
         var selectedValue = this.value; // Get the STMNT_ID
@@ -222,6 +224,9 @@
             alert('Please select a valid statement type.');
         }
     });
+
+
+
 
     // Event listener for saving combined rows
        document.getElementById('saveCombinedRows').addEventListener('click', function () {

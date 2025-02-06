@@ -57,10 +57,16 @@
             <div class="col-md-8">
                 <div class="card">
 
-                    <!-- Back Button -->
-                    <a href="@Url.Action("ExcelWorkbookUpload", "ExcelMapping_Documentation")" class="back-button">
-                        <i class="fa-solid fa-house"></i>
-                    </a>
+                    <!-- Back Buttons Container -->
+                    <div class="d-flex gap-2">
+                        <!-- Home Button -->
+                        <a href="@Url.Action("ExcelWorkbookUpload", "ExcelMapping_Documentation")" class="back-button btn btn-outline-secondary">
+                            <i class="fa-solid fa-house"></i>
+                        </a>
+                        <!-- New Back Button -->
+                        <a href="@Url.Action("Upload", "Excel")" class="btn btn-outline-secondary">Back</a>
+
+                    </div>
                     <h2 class="text-center">@ViewData["Title"]</h2>
 
                     @if (ViewBag.Error != null)
@@ -99,7 +105,7 @@
 
                         <div class="btn-container">
                             <button type="submit" class="btn btn-primary">View Sheet Details</button>
-                            <a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")" class="btn btn-success">Excel Analysis</a>
+                            
                         </div>
                     </form>
                 </div>

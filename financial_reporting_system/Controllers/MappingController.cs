@@ -178,7 +178,7 @@ namespace syncfusion_grid.Controllers
 
 
 
-        // Method to fetch all financial statement details or filter by STMNT_ID, excluding mapped descriptions
+        // Method to fetch all financial statement details or filter by STMNT_ID
         private List<FinancialStatementDetail> GetFinancialStatementDetails(int stmntId)
         {
             var financialStatementDetails = new List<FinancialStatementDetail>();

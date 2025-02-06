@@ -377,16 +377,20 @@
             <label for="statementTypeDropdown">Worksheet</label>
             <select id="statementTypeDropdown" class="form-control">
                 <option value="">-- Select a Worksheet --</option>
-                @foreach (var item in ViewBag.StatementTypes)
+                @foreach (var stmId in ViewBag.StatementTypes as List<string>)
                 {
-                    <option value="@item.STMNT_ID">@item.EXCEL_SHEET</option>
+                    <option value="@stmId">@stmId</option> <!-- Use STMNT_ID as both value and text -->
                 }
             </select>
         </div>
 
+        <!-- Invisible input field to store the selected workbook value -->
+        <input type="hidden" id="selectedWorkbookInput" name="selectedWorkbook" />
+
 
 
         <h1 class="mt-5">Available Statement Details for @ViewBag.SelectedDescription</h1>
+       
         <!-- First Grid -->
         <ejs-grid id="grid" dataSource="@Model" allowPaging="true" allowSorting="true" allowFiltering="true" allowGrouping="false" cssClass="white-grid">
             <e-grid-pagesettings pageSize="5"></e-grid-pagesettings>
@@ -400,6 +404,7 @@
                 <e-grid-column field="CREATED_BY" headerText="Created By" textAlign="Right" width="120"></e-grid-column>
             </e-grid-columns>
         </ejs-grid>
+
 
         <!-- Spacer between grids -->
         <div class="grid-spacer"></div>
@@ -424,6 +429,7 @@
             <e-grid-columns>
                 <e-grid-column type="checkbox" width="50"></e-grid-column>
                 <e-grid-column field="LEDGER_NO" headerText="Ledger No" textAlign="Right" width="150"></e-grid-column>
+                <e-grid-column field="GL_ACCT_NO" headerText="Ledger account" textAlign="Right" width="150"></e-grid-column>
                 <e-grid-column field="ACCT_DESC" headerText="Account Description" textAlign="Right" width="350"></e-grid-column>
             </e-grid-columns>
         </ejs-grid>
@@ -449,14 +455,12 @@
 
 
         // Event listener for Workbook Dropdown change
-        document.getElementById('SelectedWorkbook').addEventListener('change', function () {
+               document.getElementById('SelectedWorkbook').addEventListener('change', function () {
             var selectedWorkbook = this.value; // Get the selected workbook value
             console.log('Selected Workbook:', selectedWorkbook); // Debugging
-
             if (selectedWorkbook) {
-                console.log('Fetching statement types for workbook:', selectedWorkbook); // Debugging
-
-                // Fetch statement types for the selected workbook
+                console.log('Fetching sheet names for workbook:', selectedWorkbook); // Debugging
+                // Fetch sheet names for the selected workbook
                 fetch(`/ExcelWorkbookMapping/GetStatementTypesByWorkbook?workbook=${encodeURIComponent(selectedWorkbook)}`)
                     .then(response => {
                         console.log('Response received:', response); // Debugging
@@ -469,18 +473,17 @@
                         console.log('Data received:', data); // Debugging
                         var statementTypeDropdown = document.getElementById('statementTypeDropdown');
                         statementTypeDropdown.innerHTML = '<option value="">-- Select a Worksheet --</option>'; // Reset dropdown
-
-                        // Populate the dropdown with fetched statement types
-                        data.forEach(item => {
-                            console.log('Processing item:', item); // Debugging
+                        // Populate the dropdown with fetched sheet names
+                        data.forEach(sheetName => {
+                            console.log('Processing sheet name:', sheetName); // Debugging
                             var option = document.createElement('option');
-                            option.value = item.stmnT_ID; // Use the correct property name
-                            option.text = item.exceL_SHEET; // Use the correct property name
+                            option.value = sheetName; // Use the sheet name as both value and text
+                            option.text = sheetName; // Use the sheet name as both value and text
                             statementTypeDropdown.appendChild(option);
                         });
                     })
                     .catch(error => {
-                        console.error('Error fetching statement types:', error); // Debugging
+                        console.error('Error fetching sheet names:', error); // Debugging
                     });
             } else {
                 console.log('No workbook selected. Clearing dropdown.'); // Debugging
@@ -511,6 +514,73 @@
             // Update the pageSize of the grid
             accountGrid.pageSettings.pageSize = selectedPageSize;
         });
+
+
+
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var orderGrid = document.getElementById('grid').ej2_instances[0]; // Get Syncfusion Grid instance
+
+            // ✅ Function to handle row selection & reload with new DETAIL_ID
+            function handleRowSelection(args) {
+                var selectedRow = orderGrid.getSelectedRecords()[0]; // Get selected row
+                if (selectedRow) {
+                    var DETAIL_ID = selectedRow.DETAIL_ID; // Capture DETAIL_ID
+
+                    // ✅ If the selected DETAIL_ID is different, update and reload
+                    if (sessionStorage.getItem('selectedDetailId') !== DETAIL_ID.toString()) {
+                        sessionStorage.setItem('selectedDetailId', DETAIL_ID); // Save new DETAIL_ID
+
+                        var selectedValue = '@ViewBag.SelectedDescription'; // Get STMNT_ID from ViewBag
+                        if (DETAIL_ID && selectedValue) {
+                            var newUrl = `/ExcelWorkbookMapping/Index?stmntId=${encodeURIComponent(selectedValue)}&detailId=${encodeURIComponent(DETAIL_ID)}`;
+                            window.location.href = newUrl; // ✅ Reload with updated DETAIL_ID
+                        } else {
+                            console.error('DETAIL_ID or STMNT_ID is missing');
+                        }
+                    } else {
+                        console.log('DETAIL_ID is the same as the stored one, no reload needed');
+                    }
+                } else {
+                    console.error('No row selected');
+                }
+            }
+
+            // ✅ Assign rowSelected event to handle row selection
+            orderGrid.rowSelected = handleRowSelection;
+
+            // ✅ After page reload, reselect the previously selected row WITHOUT triggering rowSelected event
+            setTimeout(() => {
+                var storedDetailId = sessionStorage.getItem('selectedDetailId'); // Retrieve stored DETAIL_ID
+                if (storedDetailId) {
+                    var gridData = orderGrid.getCurrentViewRecords(); // Get grid data
+                    var selectedRecord = gridData.find(record => record.DETAIL_ID == storedDetailId);
+
+                    if (selectedRecord) {
+                        var rowIndex = gridData.indexOf(selectedRecord); // Get row index
+                        if (rowIndex !== -1) {
+                            // ✅ Temporarily disable event listener to prevent reload loop
+                            orderGrid.rowSelected = null;
+
+                            orderGrid.selectRows([rowIndex]); // ✅ Reselect row
+
+                            // ✅ Re-enable row selection after a delay
+                            setTimeout(() => {
+                                orderGrid.rowSelected = handleRowSelection; // ✅ Re-enable row selection
+                            }, 1000);
+                        }
+                    }
+                }
+            }, 1500); // Delay to ensure grid is fully loaded
+        });
+
+
+
+
+
+
+
 
         // Event listener for saving combined rows
                document.getElementById('saveCombinedRows').addEventListener('click', function () {

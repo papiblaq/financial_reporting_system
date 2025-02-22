@@ -175,30 +175,50 @@
             margin-right: 10px;
         }
 
+
+        .nav-button {
+            display: inline-block;
+            padding: 10px 20px; /* Adjust padding for size */
+            text-align: center;
+            text-decoration: none;
+            background-color: #00CC00;
+            color: white;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            white-space: nowrap; /* Ensure the text does not wrap */
+            transition: background-color 0.3s ease;
+        }
+
+            .nav-button:hover {
+                background-color: #0056b3; /* Darker color on hover */
+                color: white;
+            }
+
+        .right-buttons {
+            display: flex;
+            gap: 10px; /* Space between buttons */
+        }
+
+            .right-buttons .nav-button {
+                min-width: 100px; /* Minimum width to ensure the buttons are rectangular */
+                max-width: 150px; /* Maximum width for buttons */
+                text-overflow: ellipsis; /* Show "..." if text overflows */
+                overflow: hidden;
+                word-wrap: break-word; /* Break long words to avoid overflow */
+            }
+
+
     </style>
 </head>
 <body>
     <div class="container">
 
-        <!-- Navigation Buttons -->
-        <div class="nav-buttons">
-            <!-- Back Button -->
-            <a href="@Url.Action("ExcelWorkbookUpload", "ExcelMapping_Documentation")" class="nav-button back-button">
-                <i class="fa-solid fa-house"></i>
-            </a>
+        <!-- Back Button -->
+        <a href="@Url.Action("ExcelWorkbookUpload", "ExcelMapping_Documentation")" class="nav-button back-button">
+            <i class="fa-solid fa-house"></i>
+        </a>
 
-            <div class="right-buttons">
-                <!-- Previous Button (Inverted Next) -->
-                <a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")" class="nav-button prev-button">
-                    <i class="fa-solid fa-share fa-flip-horizontal"></i>
-                </a>
-
-                <!-- Next Button -->
-                <a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")" class="nav-button next-button">
-                    <i class="fa-solid fa-share"></i>
-                </a>
-            </div>
-        </div>
         <!-- Breadcrumb Navigation -->
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb breadcrumb-modern">
@@ -237,6 +257,21 @@
             </form>
 
             <div id="message"></div>
+
+
+        <div class="nav-buttons" style="display: flex; justify-content: flex-end;">
+            <div class="right-buttons">
+                <!-- Previous Button -->
+                <a href="@Url.Action("Index", "ExcelWorkbook_Statement_types")" class="nav-button prev-button">
+                    Back
+                </a>
+
+                <!-- Next Button -->
+                <a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")" class="nav-button next-button">
+                    Next
+                </a>
+            </div>
+        </div>
     </div>
 
         <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>

@@ -36,7 +36,7 @@
                 <img class="profilePic" src="~/neptunePic.jpg" />
                 <div class="titles d-flex flex-column p-3">
                     <h6 class="mb-0">@ViewBag.PortfolioName</h6>
-                    <span class="text-muted">Neptune GL Mapping</span>
+                    <span class="text-muted">Neptune software group</span>
                 </div>
             </div>
 
@@ -51,7 +51,7 @@
     /* Sidebar container styling */
     #sidebar {
         background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
-        color: #2c3e50; /* Adjust text color for contrast */
+        color: #000000; /* Black text color */
         font-family: Arial, sans-serif;
         border-right: 1px solid rgba(221, 221, 221, 0.5); /* Semi-transparent border */
         display: flex;
@@ -140,9 +140,14 @@
         background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
     }
 
+    .menu-item-style {
+        color: black !important;
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        opacity: 0.9 !important;
+    }
         /* Menu item styling */
-        #menu .e-menu-item {
-            color: #2c3e50; /* Dark text color for menu items */
+        #menu .e-menu-item  {
+            color: #000000; /* Black text color for menu items */
             padding: 10px 15px;
             cursor: pointer;
             background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
@@ -153,6 +158,14 @@
             width: 100%; /* Ensure each menu item takes the full width of the container */
             border-bottom: 1px solid rgba(221, 221, 221, 0.5); /* Semi-transparent border */
             opacity: 0.9; /* Slightly transparent menu items */
+        }
+
+        #menu .e-menu-item a {
+            width: 100px;
+            color: #212f3d;
+            font-weight: 500;
+            padding: 7px 5px;
+            box-sizing: border-box;
         }
 
             /* Change the menu text color to black and background to #39FF14 on hover */
@@ -167,11 +180,18 @@
                 color: #000000; /* Black text for active item */
             }
 
+            /* Icon color */
+            #menu .e-menu-item .e-icons {
+                color: #000000; /* Set icons to black */
+            }
+
         /* Smooth hover transition */
         #menu .e-menu-item {
             transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
         }
+
 </style>
+
 
 
 

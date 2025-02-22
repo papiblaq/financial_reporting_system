@@ -28,7 +28,7 @@ namespace syncfusion_grid.Controllers
             using (var connection = new OracleConnection(_connectionString))
             {
                 connection.Open();
-                var query = "SELECT SYSUSER_ID, FIRST_NM FROM sysuser WHERE LOGIN_ID = :LoginId";
+                var query = "SELECT SYSUSER_ID, FIRST_NM FROM bingwalive.sysuser WHERE LOGIN_ID = :LoginId";
                 using (var command = new OracleCommand(query, connection))
                 {
                     command.Parameters.Add(new OracleParameter("LoginId", loginId));
@@ -113,7 +113,7 @@ namespace syncfusion_grid.Controllers
             using (var connection = new OracleConnection(_connectionString))
             {
                 connection.Open();
-                var query = "SELECT passwd FROM syspwd_hist WHERE sysuser_id = :sysuserId AND rec_st = 'A'";
+                var query = "SELECT passwd FROM bingwalive.syspwd_hist WHERE sysuser_id = :sysuserId AND rec_st = 'A'";
                 using (var command = new OracleCommand(query, connection))
                 {
                     command.Parameters.Add(new OracleParameter("sysuserId", sysuserId));

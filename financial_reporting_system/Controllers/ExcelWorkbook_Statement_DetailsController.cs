@@ -13,78 +13,29 @@ namespace financial_reporting_system.Controllers
     public class ExcelWorkbook_Statement_DetailsController : Controller
     {
         private readonly string _connectionString;
-        private readonly ILogger<ExcelWorkbook_Statement_DetailsController> _logger;
+        private readonly ILogger _logger;
 
         public ExcelWorkbook_Statement_DetailsController(IConfiguration configuration, ILogger<ExcelWorkbook_Statement_DetailsController> logger)
         {
             _connectionString = configuration.GetConnectionString("OracleConnection");
             _logger = logger;
         }
+        
 
         // GET: /ExcelWorkbook_Statement_Details
         public async Task<IActionResult> Index()
         {
             var selectedWorkbook = HttpContext.Session.GetString("SelectedWorkbook");
             var selectedWorksheet = HttpContext.Session.GetString("SelectedWorksheet");
-            // Retrieve the GL Account Category from the session
-            var selectedGLAccountCategory = HttpContext.Session.GetString("SelectedGLAccountCategory");
-
 
             // Pass selected workbook and worksheet to the view
             ViewBag.SelectedWorkbook = selectedWorkbook;
             ViewBag.SelectedWorksheet = selectedWorksheet;
-            ViewBag.SelectedGL = selectedGLAccountCategory;
 
-           
             // Fetch available headers for the selected worksheet
             ViewBag.AvailableHeaders = GetAvailableHeaders();
 
-            var model = new SaveDetailsInputModel
-            {
-                AccountCategories = await GetAccountCategoriesAsync(),
-
-            };
-
-            return View(model);
-        }
-
-        // Fetch GL Account Categories
-        private async Task<List<SelectListItem>> GetAccountCategoriesAsync()
-        {
-            var accountCategories = new List<SelectListItem>
-                {
-                    new SelectListItem { Value = "", Text = "-- Select Account Category --" } // Default option
-                };
-
-            try
-            {
-                using (var connection = new OracleConnection(_connectionString))
-                {
-                    await connection.OpenAsync();
-                    string query = "SELECT DISTINCT GL_ACCT_CAT_CD FROM V_ORG_CHART_OF_ACCOUNT_DETAILS";
-                    using (var command = new OracleCommand(query, connection))
-                    {
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                string glAcctCatCd = reader["GL_ACCT_CAT_CD"].ToString();
-                                accountCategories.Add(new SelectListItem
-                                {
-                                    Value = glAcctCatCd,
-                                    Text = glAcctCatCd
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            catch (OracleException ex)
-            {
-                _logger.LogError(ex, "Database error occurred while fetching account categories.");
-            }
-
-            return accountCategories;
+            return View();
         }
 
         // Fetch available workbooks
@@ -120,11 +71,6 @@ namespace financial_reporting_system.Controllers
             return workbooks;
         }
 
-
-
-
-
-
         // Fetch Available Headers using Selected Worksheet from Session
         private List<SelectListItem> GetAvailableHeaders()
         {
@@ -144,9 +90,9 @@ namespace financial_reporting_system.Controllers
                 {
                     connection.Open();
                     string query = @"
-                SELECT  REF_CD, DESCRIPTION 
-                FROM EXCEL_WORKBOOK_STMNT_HEADER 
-                WHERE SHEET_ID = :SHEET_ID";
+                    SELECT  REF_CD, DESCRIPTION 
+                    FROM EXCEL_WORKBOOK_STMNT_HEADER 
+                    WHERE SHEET_ID = :SHEET_ID";
                     using (var command = new OracleCommand(query, connection))
                     {
                         command.Parameters.Add(new OracleParameter("SHEET_ID", selectedWorksheet));
@@ -157,7 +103,6 @@ namespace financial_reporting_system.Controllers
                                 string refCd = reader["REF_CD"].ToString();
                                 string description = reader["DESCRIPTION"].ToString();
                                 string fullHeader = $"({refCd}) {description}"; // Combine REF_CD and DESCRIPTION
-
                                 availableHeaders.Add(new SelectListItem
                                 {
                                     Value = fullHeader, // Set the Value to the full format "(REF_CD) DESCRIPTION"
@@ -175,9 +120,6 @@ namespace financial_reporting_system.Controllers
             return availableHeaders;
         }
 
-
-
-
         [HttpGet]
         public async Task<IActionResult> GetHeaderIdByDescriptionInView(string description)
         {
@@ -189,8 +131,6 @@ namespace financial_reporting_system.Controllers
             return NotFound(); // Return 404 if no HEADER_ID is found
         }
 
-
-
         // Fetch HEADER_ID by DESCRIPTION
         private async Task<int?> GetHeaderIdByDescription(string description)
         {
@@ -200,10 +140,9 @@ namespace financial_reporting_system.Controllers
                 {
                     await connection.OpenAsync();
                     string query = @"
-                SELECT HEADER_ID 
-                FROM EXCEL_WORKBOOK_STMNT_HEADER 
-                WHERE DESCRIPTION = :DESCRIPTION";
-
+                    SELECT HEADER_ID 
+                    FROM EXCEL_WORKBOOK_STMNT_HEADER 
+                    WHERE DESCRIPTION = :DESCRIPTION";
                     using (var command = new OracleCommand(query, connection))
                     {
                         command.Parameters.Add(new OracleParameter("DESCRIPTION", description));
@@ -221,15 +160,10 @@ namespace financial_reporting_system.Controllers
             {
                 _logger.LogError(ex, "Database error occurred while fetching HEADER_ID by DESCRIPTION.");
             }
-
             return null; // Return null if no HEADER_ID is found
         }
 
         // POST: /ExcelWorkbook_Statement_Details/SaveData
-
-
-    
-
         [HttpPost]
         public async Task<IActionResult> SaveData(SaveDetailsInputModel model)
         {
@@ -237,46 +171,41 @@ namespace financial_reporting_system.Controllers
             {
                 return Json(new { success = false, message = "Please correct the errors below." });
             }
-
             try
             {
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     await connection.OpenAsync();
                     string insertQuery = @"
-                INSERT INTO EXCEL_WORKBOOK_STMNT_DETAIL (
+                    INSERT INTO EXCEL_WORKBOOK_STMNT_DETAIL (
                     STMNT_ID, 
                     SHEET_ID, 
                     REF_CD, 
-                    GL_ACCT_CAT_CD, 
                     HEADER_ID, 
                     DESCRIPTION, 
                     SYS_CREATE_TS, 
                     CREATED_BY
-                ) 
-                VALUES (
+                    ) 
+                    VALUES (
                     :STMNT_ID, 
                     :SHEET_ID, 
                     :REF_CD, 
-                    :GL_ACCT_CAT_CD, 
                     :HEADER_ID, 
                     :DESCRIPTION, 
                     SYSTIMESTAMP, 
                     :CREATED_BY
-                )";
+                    )";
                     using (var command = new OracleCommand(insertQuery, connection))
                     {
                         command.Parameters.Add(new OracleParameter("STMNT_ID", model.STMNT_ID));
                         command.Parameters.Add(new OracleParameter("SHEET_ID", model.SHEET_ID));
                         command.Parameters.Add(new OracleParameter("REF_CD", model.REF_CD));
-                        command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", model.GL_ACCT_CAT_CD));
                         command.Parameters.Add(new OracleParameter("HEADER_ID", model.HEADER_ID)); // Use HEADER_ID
                         command.Parameters.Add(new OracleParameter("DESCRIPTION", model.DESCRIPTION));
                         command.Parameters.Add(new OracleParameter("CREATED_BY", model.CREATED_BY));
                         await command.ExecuteNonQueryAsync();
                     }
                 }
-
                 return Json(new { success = true, message = "Data saved successfully!", redirectUrl = Url.Action("Index") });
             }
             catch (OracleException ex)
@@ -291,55 +220,47 @@ namespace financial_reporting_system.Controllers
             }
         }
 
-
-
-
-
-
         // GET: ExcelWorkbook_Statement_Details/DetailsGridView
         public async Task<IActionResult> DetailsGridView()
         {
-            var Detailss = await GetDetailssAsync();
-            return View(Detailss);
+            var details = await GetDetailsAsync();
+            return View(details);
         }
 
-        // Fetch all Detailss
-        private async Task<List<Details>> GetDetailssAsync()
+        // Fetch all Details
+        private async Task<List<Details>> GetDetailsAsync()
         {
-            var Detailss = new List<Details>();
+            var details = new List<Details>();
             try
             {
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     await connection.OpenAsync();
                     string query = @"
-                        SELECT 
-                            Details_ID, 
-                            STMNT_ID, 
-                            SHEET_ID, 
-                            REF_CD, 
-                            GL_ACCT_CAT_CD, 
-                            DESCRIPTION, 
-                            SYS_CREATE_TS, 
-                            CREATED_BY 
-                        FROM EXCEL_WORKBOOK_STMNT_Details";
-
+                    SELECT 
+                    Details_ID, 
+                    STMNT_ID, 
+                    SHEET_ID, 
+                    REF_CD, 
+                    DESCRIPTION, 
+                    SYS_CREATE_TS, 
+                    CREATED_BY 
+                    FROM EXCEL_WORKBOOK_STMNT_Details";
                     using (var command = new OracleCommand(query, connection))
                     {
                         using (var reader = await command.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
                             {
-                                Detailss.Add(new Details
+                                details.Add(new Details
                                 {
                                     Details_ID = reader.GetInt32(0),
                                     STMNT_ID = reader.GetString(1), // Updated to string
                                     SHEET_ID = reader.GetString(2), // Updated to string
                                     REF_CD = reader.GetString(3),
-                                    GL_ACCT_CAT_CD = reader.GetString(4),
-                                    DESCRIPTION = reader.GetString(5),
-                                    SYS_CREATE_TS = reader.GetDateTime(6),
-                                    CREATED_BY = reader.GetString(7)
+                                    DESCRIPTION = reader.GetString(4),
+                                    SYS_CREATE_TS = reader.GetDateTime(5),
+                                    CREATED_BY = reader.GetString(6)
                                 });
                             }
                         }
@@ -348,57 +269,52 @@ namespace financial_reporting_system.Controllers
             }
             catch (OracleException ex)
             {
-                _logger.LogError(ex, "Database error occurred while fetching Detailss.");
+                _logger.LogError(ex, "Database error occurred while fetching Details.");
             }
-            return Detailss;
+            return details;
         }
 
         // GET: ExcelWorkbook_Statement_Details/Edit/{id}
         public async Task<IActionResult> Edit(int id)
         {
-            var Details = await GetDetailsByIdAsync(id);
-            if (Details == null)
+            var detail = await GetDetailByIdAsync(id);
+            if (detail == null)
             {
                 return NotFound();
             }
-
             var model = new EditDetailsInputModel
             {
-                Details_ID = Details.Details_ID,
-                STMNT_ID = Details.STMNT_ID,
-                SHEET_ID = Details.SHEET_ID,
-                REF_CD = Details.REF_CD,
-                GL_ACCT_CAT_CD = Details.GL_ACCT_CAT_CD,
-                DESCRIPTION = Details.DESCRIPTION,
-                SYS_CREATE_TS = Details.SYS_CREATE_TS,
-                CREATED_BY = Details.CREATED_BY
+                Details_ID = detail.Details_ID,
+                STMNT_ID = detail.STMNT_ID,
+                SHEET_ID = detail.SHEET_ID,
+                REF_CD = detail.REF_CD,
+                DESCRIPTION = detail.DESCRIPTION,
+                SYS_CREATE_TS = detail.SYS_CREATE_TS,
+                CREATED_BY = detail.CREATED_BY
             };
-
             return View(model);
         }
 
-        // Fetch a single Details by ID
-        private async Task<Details> GetDetailsByIdAsync(int id)
+        // Fetch a single Detail by ID
+        private async Task<Details> GetDetailByIdAsync(int id)
         {
-            Details Details = null;
+            Details detail = null;
             try
             {
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     await connection.OpenAsync();
                     string query = @"
-                        SELECT 
-                            Details_ID, 
-                            STMNT_ID, 
-                            SHEET_ID, 
-                            REF_CD, 
-                            GL_ACCT_CAT_CD, 
-                            DESCRIPTION, 
-                            SYS_CREATE_TS, 
-                            CREATED_BY 
-                        FROM EXCEL_WORKBOOK_STMNT_Details 
-                        WHERE Details_ID = :Details_ID";
-
+                    SELECT 
+                    Details_ID, 
+                    STMNT_ID, 
+                    SHEET_ID, 
+                    REF_CD, 
+                    DESCRIPTION, 
+                    SYS_CREATE_TS, 
+                    CREATED_BY 
+                    FROM EXCEL_WORKBOOK_STMNT_Details 
+                    WHERE Details_ID = :Details_ID";
                     using (var command = new OracleCommand(query, connection))
                     {
                         command.Parameters.Add(new OracleParameter("Details_ID", id));
@@ -406,16 +322,15 @@ namespace financial_reporting_system.Controllers
                         {
                             if (await reader.ReadAsync())
                             {
-                                Details = new Details
+                                detail = new Details
                                 {
                                     Details_ID = reader.GetInt32(0),
                                     STMNT_ID = reader.GetString(1), // Updated to string
                                     SHEET_ID = reader.GetString(2), // Updated to string
                                     REF_CD = reader.GetString(3),
-                                    GL_ACCT_CAT_CD = reader.GetString(4),
-                                    DESCRIPTION = reader.GetString(5),
-                                    SYS_CREATE_TS = reader.GetDateTime(6),
-                                    CREATED_BY = reader.GetString(7)
+                                    DESCRIPTION = reader.GetString(4),
+                                    SYS_CREATE_TS = reader.GetDateTime(5),
+                                    CREATED_BY = reader.GetString(6)
                                 };
                             }
                         }
@@ -424,48 +339,42 @@ namespace financial_reporting_system.Controllers
             }
             catch (OracleException ex)
             {
-                _logger.LogError(ex, "Database error occurred while fetching Details by ID.");
+                _logger.LogError(ex, "Database error occurred while fetching Detail by ID.");
             }
-            return Details;
+            return detail;
         }
 
         // POST: ExcelWorkbook_Statement_Details/Edit/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Details_ID,STMNT_ID,SHEET_ID,REF_CD,GL_ACCT_CAT_CD,DESCRIPTION,SYS_CREATE_TS,CREATED_BY")] EditDetailsInputModel model)
+        public async Task<IActionResult> Edit(int id, [Bind("Details_ID,STMNT_ID,SHEET_ID,REF_CD,DESCRIPTION,SYS_CREATE_TS,CREATED_BY")] EditDetailsInputModel model)
         {
             if (id != model.Details_ID)
             {
                 TempData["ErrorMessage"] = "Invalid record ID.";
                 return NotFound();
             }
-
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Please correct the errors below.";
                 return View(model);
             }
-
             try
             {
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     await connection.OpenAsync();
                     string updateQuery = @"
-                        UPDATE EXCEL_WORKBOOK_STMNT_Details 
-                        SET 
-                            REF_CD = :REF_CD, 
-                            GL_ACCT_CAT_CD = :GL_ACCT_CAT_CD, 
-                            DESCRIPTION = :DESCRIPTION 
-                        WHERE Details_ID = :Details_ID";
-
+                    UPDATE EXCEL_WORKBOOK_STMNT_Details 
+                    SET 
+                    REF_CD = :REF_CD, 
+                    DESCRIPTION = :DESCRIPTION 
+                    WHERE Details_ID = :Details_ID";
                     using (var command = new OracleCommand(updateQuery, connection))
                     {
                         command.Parameters.Add(new OracleParameter("REF_CD", model.REF_CD));
-                        command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", model.GL_ACCT_CAT_CD));
                         command.Parameters.Add(new OracleParameter("DESCRIPTION", model.DESCRIPTION));
                         command.Parameters.Add(new OracleParameter("Details_ID", model.Details_ID));
-
                         int rowsAffected = await command.ExecuteNonQueryAsync();
                         if (rowsAffected > 0)
                         {
@@ -477,20 +386,18 @@ namespace financial_reporting_system.Controllers
                         }
                     }
                 }
-
                 return RedirectToAction("DetailsGridView");
             }
             catch (OracleException ex)
             {
                 TempData["ErrorMessage"] = $"Database error: {ex.Message}";
-                _logger.LogError(ex, "Database error occurred while updating Details data.");
+                _logger.LogError(ex, "Database error occurred while updating Detail data.");
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"An unexpected error occurred: {ex.Message}";
                 _logger.LogError(ex, "An error occurred while processing the request.");
             }
-
             return View(model);
         }
 
@@ -505,14 +412,12 @@ namespace financial_reporting_system.Controllers
                 {
                     await connection.OpenAsync();
                     string deleteQuery = "DELETE FROM EXCEL_WORKBOOK_STMNT_Details WHERE Details_ID = :Details_ID";
-
                     using (var command = new OracleCommand(deleteQuery, connection))
                     {
                         command.Parameters.Add(new OracleParameter("Details_ID", id));
                         await command.ExecuteNonQueryAsync();
                     }
                 }
-
                 TempData["SuccessMessage"] = "Record deleted successfully.";
                 return RedirectToAction("DetailsGridView");
             }
@@ -531,19 +436,10 @@ namespace financial_reporting_system.Controllers
             public string SHEET_ID { get; set; } // Updated to string
             [Required(ErrorMessage = "Reference Code is required.")]
             public string REF_CD { get; set; }
-            [Required(ErrorMessage = "GL Account Category is required.")]
-            public string GL_ACCT_CAT_CD { get; set; }
             [Required(ErrorMessage = "Description is required.")]
             public string DESCRIPTION { get; set; }
             [Required(ErrorMessage = "Created By is required.")]
             public string CREATED_BY { get; set; }
-
-            // Add the AccountCategories property with a default value
-            public List<SelectListItem> AccountCategories { get; set; } = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "", Text = "-- Select Account Category --" }
-            };
-
             // Add a property for HEADER_ID (optional, for internal use)
             public int HEADER_ID { get; set; }
         }
@@ -555,7 +451,6 @@ namespace financial_reporting_system.Controllers
             public string STMNT_ID { get; set; } // Updated to string
             public string SHEET_ID { get; set; } // Updated to string
             public string REF_CD { get; set; }
-            public string GL_ACCT_CAT_CD { get; set; }
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }
             public string CREATED_BY { get; set; }
@@ -568,7 +463,6 @@ namespace financial_reporting_system.Controllers
             public string STMNT_ID { get; set; } // Updated to string
             public string SHEET_ID { get; set; } // Updated to string
             public string REF_CD { get; set; }
-            public string GL_ACCT_CAT_CD { get; set; }
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }
             public string CREATED_BY { get; set; }

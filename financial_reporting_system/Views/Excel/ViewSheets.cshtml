@@ -59,14 +59,12 @@
 
                     <!-- Back Buttons Container -->
                     <div class="d-flex gap-2">
-                        <!-- Home Button -->
                         <a href="@Url.Action("ExcelWorkbookUpload", "ExcelMapping_Documentation")" class="back-button btn btn-outline-secondary">
                             <i class="fa-solid fa-house"></i>
                         </a>
-                        <!-- New Back Button -->
                         <a href="@Url.Action("Upload", "Excel")" class="btn btn-outline-secondary">Back</a>
-
                     </div>
+
                     <h2 class="text-center">@ViewData["Title"]</h2>
 
                     @if (ViewBag.Error != null)
@@ -74,10 +72,10 @@
                         <div class="alert alert-danger">@ViewBag.Error</div>
                     }
 
-                    <form method="get" asp-action="GetSheetDetails" onsubmit="console.log('Form submitted');">
+                    <form method="get" asp-action="GetSheetDetails">
                         <div class="form-group mb-3">
                             <label for="selectedWorkbook">Select Workbook:</label>
-                            <select name="selectedWorkbook" class="form-control" onchange="updateSheets()">
+                            <select name="selectedWorkbook" id="selectedWorkbook" class="form-control" onchange="updateSheets()">
                                 <option value="">-- Select Workbook --</option>
                                 @if (ViewBag.Workbooks != null)
                                 {
@@ -103,9 +101,13 @@
                             </select>
                         </div>
 
-                        <div class="btn-container">
+                        <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">View Sheet Details</button>
-                            
+
+                            <!-- Hidden Delete Button -->
+                            <button type="button" id="deleteWorkbookBtn" class="btn btn-danger d-none" onclick="confirmDelete()">
+                                Delete This Workbook
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -144,9 +146,50 @@
         function updateSheets() {
             const selectedWorkbook = document.querySelector('select[name="selectedWorkbook"]').value;
             if (selectedWorkbook) {
-                window.location.href = `@Url.Action("ViewSheets", "Excel")?selectedWorkbook=${selectedWorkbook}`;
+                window.location.href = `@Url.Action("ViewSheets", "Excel")?selectedWorkbook=${encodeURIComponent(selectedWorkbook)}`;
+            }
+        }
+
+        // Show delete button when the page reloads and a workbook is selected
+        document.addEventListener("DOMContentLoaded", function () {
+            const selectedWorkbook = document.querySelector('select[name="selectedWorkbook"]').value;
+            const deleteButton = document.getElementById('deleteWorkbookBtn');
+            if (selectedWorkbook) {
+                deleteButton.classList.remove('d-none'); // Make button visible
+            }
+        });
+
+        function confirmDelete() {
+            const selectedWorkbook = document.getElementById('selectedWorkbook').value;
+            if (!selectedWorkbook) return;
+
+            const userConfirmed = confirm(`The workbook "${selectedWorkbook}" will be permanently deleted. This process cannot be undone. Proceed?`);
+            if (userConfirmed) {
+                deleteWorkbook(selectedWorkbook);
+            }
+        }
+
+        async function deleteWorkbook(workbook) {
+            try {
+                const response = await fetch('@Url.Action("DeleteWorkbookData", "Excel")' + '?workbook=' + encodeURIComponent(workbook), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    alert(`Workbook "${workbook}" deleted successfully.`);
+                    window.location.reload();
+                } else {
+                    alert(`Error deleting workbook "${workbook}".`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
             }
         }
     </script>
 </body>
+
+
+
 </html>

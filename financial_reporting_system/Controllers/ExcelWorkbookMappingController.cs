@@ -38,9 +38,6 @@ namespace financial_reporting_system.Controllers
             // Find the selected statement type excel sheets
             var selectedDescription = statementTypes.FirstOrDefault(st => st == stmntId) ?? "All statement types";
 
-            
-
-
             // Pass data to the view
             ViewBag.AccountDetails = accountDetails;
             ViewBag.StatementTypes = statementTypes; // Pass the list of STMNT_IDs
@@ -48,8 +45,6 @@ namespace financial_reporting_system.Controllers
 
             return View(financialStatementDetails); // Pass the filtered data to the view
         }
-
-
 
         [HttpGet]
         public async Task<IActionResult> GetStatementTypesByWorkbook(string workbook)
@@ -110,8 +105,6 @@ namespace financial_reporting_system.Controllers
             return View(mappings); // Return the Grid view with data
         }
 
-
-
         [HttpPost]
         public IActionResult SaveCombinedRows([FromBody] List<CombinedRow> combinedRows)
         {
@@ -153,28 +146,26 @@ namespace financial_reporting_system.Controllers
                     IWorksheet worksheet = workbook.Worksheets[0];
 
                     // Set header
-                    worksheet.Range["A1"].Text = "GL Account Category Code";
-                    worksheet.Range["B1"].Text = "Reference Code";
-                    worksheet.Range["C1"].Text = "Description";
-                    worksheet.Range["D1"].Text = "System Create Timestamp";
-                    worksheet.Range["E1"].Text = "Created By";
-                    worksheet.Range["F1"].Text = "Ledger No";
-                    worksheet.Range["G1"].Text = "Account Description";
-                    worksheet.Range["H1"].Text = "Statement ID"; // Added column for STMNT_ID
-                    worksheet.Range["I1"].Text = "Sheet ID";     // Added column for SHEET_ID
+                    worksheet.Range["A1"].Text = "Reference Code";
+                    worksheet.Range["B1"].Text = "Description";
+                    worksheet.Range["C1"].Text = "System Create Timestamp";
+                    worksheet.Range["D1"].Text = "Created By";
+                    worksheet.Range["E1"].Text = "Ledger No";
+                    worksheet.Range["F1"].Text = "Account Description";
+                    worksheet.Range["G1"].Text = "Statement ID"; // Added column for STMNT_ID
+                    worksheet.Range["H1"].Text = "Sheet ID";     // Added column for SHEET_ID
 
                     // Set data
                     for (int i = 0; i < mappings.Count; i++)
                     {
-                        worksheet.Range["A" + (i + 2)].Text = mappings[i].GL_ACCT_CAT_CD;
-                        worksheet.Range["B" + (i + 2)].Text = mappings[i].REF_CD;
-                        worksheet.Range["C" + (i + 2)].Text = mappings[i].DESCRIPTION;
-                        worksheet.Range["D" + (i + 2)].Text = mappings[i].SYS_CREATE_TS.ToString("yyyy-MM-dd");
-                        worksheet.Range["E" + (i + 2)].Text = mappings[i].CREATED_BY;
-                        worksheet.Range["F" + (i + 2)].Text = mappings[i].LEDGER_NO;
-                        worksheet.Range["G" + (i + 2)].Text = mappings[i].ACCT_DESC;
-                        worksheet.Range["H" + (i + 2)].Text = mappings[i].STMNT_ID; // Write STMNT_ID as string
-                        worksheet.Range["I" + (i + 2)].Text = mappings[i].SHEET_ID; // Write SHEET_ID as string
+                        worksheet.Range["A" + (i + 2)].Text = mappings[i].REF_CD;
+                        worksheet.Range["B" + (i + 2)].Text = mappings[i].DESCRIPTION;
+                        worksheet.Range["C" + (i + 2)].Text = mappings[i].SYS_CREATE_TS.ToString("yyyy-MM-dd");
+                        worksheet.Range["D" + (i + 2)].Text = mappings[i].CREATED_BY;
+                        worksheet.Range["E" + (i + 2)].Text = mappings[i].LEDGER_NO;
+                        worksheet.Range["F" + (i + 2)].Text = mappings[i].ACCT_DESC;
+                        worksheet.Range["G" + (i + 2)].Text = mappings[i].STMNT_ID; // Write STMNT_ID as string
+                        worksheet.Range["H" + (i + 2)].Text = mappings[i].SHEET_ID; // Write SHEET_ID as string
                     }
 
                     // Save the workbook to a memory stream
@@ -193,8 +184,6 @@ namespace financial_reporting_system.Controllers
             }
         }
 
-
-        
         private List<FinancialStatementDetail> GetFinancialStatementDetails(string stmntId)
         {
             var financialStatementDetails = new List<FinancialStatementDetail>();
@@ -204,10 +193,9 @@ namespace financial_reporting_system.Controllers
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                        SELECT D.DETAIL_ID, D.STMNT_ID, D.SHEET_ID, D.HEADER_ID, D.GL_ACCT_CAT_CD, 
-                               D.REF_CD, D.DESCRIPTION, D.SYS_CREATE_TS, D.CREATED_BY
-                        FROM EXCEL_WORKBOOK_STMNT_DETAIL D";
-
+                    SELECT D.DETAIL_ID, D.STMNT_ID, D.SHEET_ID, D.HEADER_ID, 
+                           D.REF_CD, D.DESCRIPTION, D.SYS_CREATE_TS, D.CREATED_BY
+                    FROM EXCEL_WORKBOOK_STMNT_DETAIL D";
                     if (!string.IsNullOrEmpty(stmntId) && stmntId != "0")
                     {
                         command.CommandText += " WHERE D.SHEET_ID = :stmntId";
@@ -224,11 +212,10 @@ namespace financial_reporting_system.Controllers
                                 STMNT_ID = reader.IsDBNull(1) ? null : reader.GetString(1),
                                 SHEET_ID = reader.IsDBNull(2) ? null : reader.GetString(2),
                                 HEADER_ID = reader.GetInt32(3),
-                                GL_ACCT_CAT_CD = reader.IsDBNull(4) ? null : reader.GetString(4),
-                                REF_CD = reader.IsDBNull(5) ? null : reader.GetString(5),
-                                DESCRIPTION = reader.IsDBNull(6) ? null : reader.GetString(6),
-                                SYS_CREATE_TS = reader.GetDateTime(7),
-                                CREATED_BY = reader.IsDBNull(8) ? null : reader.GetString(8)
+                                REF_CD = reader.IsDBNull(4) ? null : reader.GetString(4),
+                                DESCRIPTION = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                SYS_CREATE_TS = reader.GetDateTime(6),
+                                CREATED_BY = reader.IsDBNull(7) ? null : reader.GetString(7)
                             });
                         }
                     }
@@ -237,8 +224,7 @@ namespace financial_reporting_system.Controllers
             return financialStatementDetails;
         }
 
-
-        // method to fetch ledgers that are unmapped
+        // Method to fetch ledgers that are unmapped
         private List<AccountDetail> GetAccountDetails(int detailId = 0)
         {
             var accountDetails = new List<AccountDetail>();
@@ -248,14 +234,14 @@ namespace financial_reporting_system.Controllers
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                SELECT DISTINCT v.LEDGER_NO, v.ACCT_DESC, v.GL_ACCT_NO
-                FROM V_ORG_CHART_OF_ACCOUNT_DETAILS_WITHVALUE_DATE v
-                WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM ORG_MAPPED_DESCRIPTION_WITH_LEDGRRS l
-                    WHERE l.DETAIL_ID = :selectedDetailId
-                      AND l.LEDGER_NO = v.LEDGER_NO
-                )";
+                    SELECT DISTINCT v.LEDGER_NO, v.ACCT_DESC, v.GL_ACCT_NO
+                    FROM V_ORG_CHART_OF_ACCOUNT_DETAILS_WITHVALUE_DATE v
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM ORG_MAPPED_DESCRIPTION_WITH_LEDGRRS l
+                        WHERE l.DETAIL_ID = :selectedDetailId
+                          AND l.LEDGER_NO = v.LEDGER_NO
+                    )";
 
                     // Add the parameter for DETAIL_ID (selectedDetailId)
                     if (detailId > 0)  // Only pass DETAIL_ID if it's greater than 0
@@ -292,9 +278,10 @@ namespace financial_reporting_system.Controllers
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                        INSERT INTO ORG_MAPPED_DESCRIPTION 
-                        (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC) 
-                        VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :LEDGER_NO, :ACCT_DESC)";
+                    INSERT INTO ORG_MAPPED_DESCRIPTION 
+                    (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC) 
+                    VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :LEDGER_NO, :ACCT_DESC)";
+
                     foreach (var row in combinedRows)
                     {
                         command.Parameters.Clear();
@@ -302,7 +289,6 @@ namespace financial_reporting_system.Controllers
                         command.Parameters.Add(new OracleParameter("STMNT_ID", OracleDbType.Varchar2) { Value = row.STMNT_ID ?? (object)DBNull.Value });
                         command.Parameters.Add(new OracleParameter("SHEET_ID", OracleDbType.Varchar2) { Value = row.SHEET_ID ?? (object)DBNull.Value });
                         command.Parameters.Add(new OracleParameter("HEADER_ID", row.HEADER_ID));
-                        command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", row.GL_ACCT_CAT_CD ?? (object)DBNull.Value));
                         command.Parameters.Add(new OracleParameter("REF_CD", row.REF_CD ?? (object)DBNull.Value));
                         command.Parameters.Add(new OracleParameter("DESCRIPTION", row.DESCRIPTION ?? (object)DBNull.Value));
                         command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", row.SYS_CREATE_TS));
@@ -345,7 +331,11 @@ namespace financial_reporting_system.Controllers
                 connection.Open();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "SELECT MAPPED_DESC_ID, DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC FROM ORG_MAPPED_DESCRIPTION";
+                    command.CommandText = @"
+                    SELECT MAPPED_DESC_ID, DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, 
+                           REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC 
+                    FROM ORG_MAPPED_DESCRIPTION";
+
                     using (var reader = command.ExecuteReader())
                     {
                         while (reader.Read())
@@ -357,13 +347,12 @@ namespace financial_reporting_system.Controllers
                                 STMNT_ID = reader.IsDBNull(2) ? null : reader.GetString(2),
                                 SHEET_ID = reader.IsDBNull(3) ? null : reader.GetString(3),
                                 HEADER_ID = reader.GetInt32(4),
-                                GL_ACCT_CAT_CD = reader.IsDBNull(5) ? null : reader.GetString(5),
-                                REF_CD = reader.IsDBNull(6) ? null : reader.GetString(6),
-                                DESCRIPTION = reader.IsDBNull(7) ? null : reader.GetString(7),
-                                SYS_CREATE_TS = reader.GetDateTime(8),
-                                CREATED_BY = reader.IsDBNull(9) ? null : reader.GetString(9),
-                                LEDGER_NO = reader.IsDBNull(10) ? null : reader.GetString(10),
-                                ACCT_DESC = reader.IsDBNull(11) ? null : reader.GetString(11),
+                                REF_CD = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                DESCRIPTION = reader.IsDBNull(6) ? null : reader.GetString(6),
+                                SYS_CREATE_TS = reader.GetDateTime(7),
+                                CREATED_BY = reader.IsDBNull(8) ? null : reader.GetString(8),
+                                LEDGER_NO = reader.IsDBNull(9) ? null : reader.GetString(9),
+                                ACCT_DESC = reader.IsDBNull(10) ? null : reader.GetString(10)
                             });
                         }
                     }
@@ -400,7 +389,6 @@ namespace financial_reporting_system.Controllers
             public string STMNT_ID { get; set; } // Changed from int to string
             public string SHEET_ID { get; set; } // Changed from int to string
             public int HEADER_ID { get; set; }
-            public string GL_ACCT_CAT_CD { get; set; }
             public string REF_CD { get; set; }
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }
@@ -420,7 +408,6 @@ namespace financial_reporting_system.Controllers
             public string STMNT_ID { get; set; } // Changed from int to string
             public string SHEET_ID { get; set; } // Changed from int to string
             public int HEADER_ID { get; set; }
-            public string GL_ACCT_CAT_CD { get; set; }
             public string REF_CD { get; set; }
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }
@@ -436,7 +423,6 @@ namespace financial_reporting_system.Controllers
             public string STMNT_ID { get; set; } // Changed from int to string
             public string SHEET_ID { get; set; } // Changed from int to string
             public int HEADER_ID { get; set; }
-            public string GL_ACCT_CAT_CD { get; set; }
             public string REF_CD { get; set; }
             public string DESCRIPTION { get; set; }
             public DateTime SYS_CREATE_TS { get; set; }

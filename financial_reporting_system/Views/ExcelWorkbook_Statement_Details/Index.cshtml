@@ -216,10 +216,7 @@
             <a href="@Url.Action("ExcelWorkbookUpload", "ExcelMapping_Documentation")" class="nav-button back-button">
                 <i class="fa-solid fa-house"></i>
             </a>
-
-           
         </div>
-
         <!-- Breadcrumb Navigation -->
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb breadcrumb-modern">
@@ -231,7 +228,6 @@
                 <li class="breadcrumb-item"><a href="@Url.Action("Index", "ExcelMapping_Documentation")">Report cells</a></li>
             </ol>
         </nav>
-
         <div class="profile-card">
             <h1>Report Details</h1>
             <form id="saveDataForm" method="post" asp-action="SaveData" class="mt-4">
@@ -244,7 +240,6 @@
                         <option value="@ViewBag.SelectedWorkbook" selected>@ViewBag.SelectedWorkbook</option>
                     </select>
                 </div>
-
                 <!-- Report Dropdown -->
                 <div class="form-group">
                     <label for="SHEET_ID">Report</label>
@@ -253,16 +248,6 @@
                         <option value="@ViewBag.SelectedWorksheet" selected>@ViewBag.SelectedWorksheet</option>
                     </select>
                 </div>
-
-                <!-- GL Account Category Dropdown -->
-                <div class="form-group">
-                    <label for="GL_ACCT_CAT_CD">GL Account Category</label>
-                    <select id="GL_ACCT_CAT_CD" name="GL_ACCT_CAT_CD" class="form-control" required>
-                        <option value="">-- Select GL Account Category --</option>
-                        <option value="@ViewBag.SelectedGL" selected>@ViewBag.SelectedGL</option>
-                    </select>
-                </div>
-
                 <!-- Available Headers Dropdown -->
                 <div class="form-group">
                     <label for="AvailableHeaders">Available Headers</label>
@@ -274,30 +259,25 @@
                              )
                     <span class="text-danger">@Html.ValidationMessage("AvailableHeaders")</span> <!-- Validation message -->
                 </div>
-
                 <!-- Hidden Input Field for HEADER_ID -->
                 <div class="form-group">
                     <input type="hidden" id="headerIdField" name="HEADER_ID" />
                 </div>
-
                 <!-- Reference Code -->
                 <div class="form-group">
                     <label for="REF_CD">Reference Code</label>
                     <input id="REF_CD" name="REF_CD" class="form-control" required />
                 </div>
-
                 <!-- Description -->
                 <div class="form-group">
                     <label for="DESCRIPTION">Description</label>
                     <input id="DESCRIPTION" name="DESCRIPTION" class="form-control" required />
                 </div>
-
                 <!-- Created By -->
                 <div class="form-group">
                     <label for="CREATED_BY">Created By</label>
                     <input id="CREATED_BY" name="CREATED_BY" class="form-control" required />
                 </div>
-
                 <!-- Submit and Link Buttons -->
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Submit</button>
@@ -305,7 +285,6 @@
                 </div>
             </form>
         </div>
-
         <div class="nav-buttons" style="display: flex; justify-content: flex-end;">
             <div class="right-buttons">
                 <div class="right-buttons">
@@ -313,7 +292,6 @@
                     <a href="@Url.Action("Index", "ExcelWorkbook_Statement_Header")" class="nav-button prev-button">
                         back</i>
                     </a>
-
                     <!-- Next Button -->
                     <a href="@Url.Action("Index", "ExcelWorkbookMapping")" class="nav-button next-button">
                         next</i>
@@ -322,7 +300,6 @@
             </div>
         </div>
     </div>
-
     <!-- Script Section -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
@@ -330,13 +307,11 @@
             // Handle dropdown change event
             $('#headerDropdown').on('change', function () {
                 var selectedValue = $(this).val(); // Get the selected value from the dropdown
-
                 if (selectedValue) {
                     // Split the value to extract REF_CD and DESCRIPTION
                     var parts = selectedValue.split(')');
                     if (parts.length === 2) {
                         var description = parts[1].trim(); // Extract DESCRIPTION
-
                         // Call the server-side method to fetch HEADER_ID by DESCRIPTION
                         $.ajax({
                             url: '/ExcelWorkbook_Statement_Details/GetHeaderIdByDescriptionInView',
@@ -362,13 +337,10 @@
                     $('#headerIdField').val('');
                 }
             });
-
             // Handle form submission
             $('#saveDataForm').on('submit', function (event) {
                 event.preventDefault(); // Prevent default form submission
-
                 var formData = $(this).serialize(); // Serialize form data
-
                 // Send AJAX POST request to SaveData action
                 $.ajax({
                     url: '/ExcelWorkbook_Statement_Details/SaveData',

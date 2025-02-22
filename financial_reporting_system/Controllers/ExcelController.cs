@@ -8,6 +8,7 @@ using Syncfusion.XlsIO;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -505,7 +506,67 @@ namespace financial_reporting_system.Controllers
             parameter.Value = value ?? DBNull.Value;
             command.Parameters.Add(parameter);
         }
+
+        // method to delete workbook data 
+        [HttpPost]
+        public async Task<IActionResult> DeleteWorkbookData(string workbook)
+        {
+            if (string.IsNullOrWhiteSpace(workbook))
+            {
+                return BadRequest("Invalid workbook name.");
+            }
+
+            try
+            {
+                using (var connection = new OracleConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var transaction = connection.BeginTransaction())
+                    using (var command = new OracleCommand())
+                    {
+                        command.Connection = connection;
+                        command.Transaction = transaction;
+                        command.CommandText = @"
+                    BEGIN
+                        DELETE FROM EXCEL_WORKBOOK_TEMP_FILE_PATHS WHERE FILE_IN_PATH = :workbook;
+                        DELETE FROM ExcelSheetData WHERE WORK_BOOKNAME = :workbook;
+                        DELETE FROM EXCEL_WORKBOOK_STMNT_HEADER WHERE STMNT_ID = :workbook;
+                        DELETE FROM ORG_MAPPED_DESCRIPTION WHERE STMNT_ID = :workbook;
+                        DELETE FROM ORG_MAPPED_DESCRIPTION_WITH_LEDGRRS WHERE STMNT_ID = :workbook;
+                        DELETE FROM EXCEL_WORKBOOK_TEMP_EXPORT_DATA WHERE WORKSHEET_NAME = :workbook;
+                        COMMIT;
+                    END;";
+
+                        command.Parameters.Add(new OracleParameter("workbook", OracleDbType.Varchar2, workbook, ParameterDirection.Input));
+
+                        await command.ExecuteNonQueryAsync();
+                        transaction.Commit();
+                    }
+                }
+
+                _logger.LogInformation($"Successfully deleted all data for workbook: {workbook}");
+                return Ok($"Workbook '{workbook}' and related data deleted successfully.");
+            }
+            catch (OracleException ex)
+            {
+                _logger.LogError($"Oracle error while deleting workbook '{workbook}': {ex.Message}");
+                return StatusCode(500, "Database error occurred while deleting the workbook.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Unexpected error while deleting workbook '{workbook}': {ex.Message}");
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+
+
+
+
+
     }
+
+
+
 
     public class SheetDetail
     {

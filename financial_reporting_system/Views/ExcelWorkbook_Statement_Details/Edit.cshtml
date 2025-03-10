@@ -95,9 +95,9 @@
         </div>
         <hr />
 
-        <form asp-action="Edit" asp-route-id="@Model.Details_ID" method="post" onsubmit="validateForm(event)">
+        <form asp-action="Edit" asp-route-id="@Model.DETAIL_ID" method="post" onsubmit="validateForm(event)">
             <!-- Hidden input fields -->
-            <input type="hidden" name="Details_ID" value="@Model.Details_ID" />
+            <input type="hidden" name="DETAIL_ID" value="@Model.DETAIL_ID" />
             <input type="hidden" name="STMNT_ID" value="@Model.STMNT_ID" />
             <input type="hidden" name="SHEET_ID" value="@Model.SHEET_ID" />
             <input type="hidden" name="SYS_CREATE_TS" value="@Model.SYS_CREATE_TS.ToString("yyyy-MM-ddTHH:mm:ss")" />

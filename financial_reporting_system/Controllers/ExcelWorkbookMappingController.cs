@@ -2,12 +2,14 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Oracle.ManagedDataAccess.Client;
+using Syncfusion.EJ2.Spreadsheet;
 using Syncfusion.XlsIO;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace financial_reporting_system.Controllers
 {
@@ -111,11 +113,12 @@ namespace financial_reporting_system.Controllers
             try
             {
                 InsertCombinedRows(combinedRows);
-                return Json(new { message = "Combined rows saved successfully" });
+                return Json(new { success = true, message = "Data inserted successfully." });
             }
             catch (Exception ex)
             {
-                return Json(new { error = ex.Message });
+                Console.WriteLine($"[ERROR] SaveCombinedRows Failed: {ex.Message}");
+                return Json(new { error = "An error occurred while saving the data." });
             }
         }
 
@@ -274,41 +277,118 @@ namespace financial_reporting_system.Controllers
         {
             using (var connection = new OracleConnection(_connectionString))
             {
-                connection.Open();
-                using (var command = connection.CreateCommand())
+                try
                 {
-                    command.CommandText = @"
-                    INSERT INTO ORG_MAPPED_DESCRIPTION 
-                    (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC) 
-                    VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :LEDGER_NO, :ACCT_DESC)";
+                    connection.Open();
 
-                    foreach (var row in combinedRows)
+                    using (var command = connection.CreateCommand())
                     {
-                        command.Parameters.Clear();
-                        command.Parameters.Add(new OracleParameter("DETAIL_ID", row.DETAIL_ID));
-                        command.Parameters.Add(new OracleParameter("STMNT_ID", OracleDbType.Varchar2) { Value = row.STMNT_ID ?? (object)DBNull.Value });
-                        command.Parameters.Add(new OracleParameter("SHEET_ID", OracleDbType.Varchar2) { Value = row.SHEET_ID ?? (object)DBNull.Value });
-                        command.Parameters.Add(new OracleParameter("HEADER_ID", row.HEADER_ID));
-                        command.Parameters.Add(new OracleParameter("REF_CD", row.REF_CD ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("DESCRIPTION", row.DESCRIPTION ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", row.SYS_CREATE_TS));
-                        command.Parameters.Add(new OracleParameter("CREATED_BY", row.CREATED_BY ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("ACCT_DESC", row.ACCT_DESC ?? (object)DBNull.Value));
+                        // SQL Insert Command with Default Values
+                        command.CommandText = @"
+                    INSERT INTO ORG_MAPPED_DESCRIPTION 
+                    (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, REF_CD, DESCRIPTION, 
+                     SYS_CREATE_TS, CREATED_BY, REC_ST, VERSION_NUMBER, LEDGER_NO, ACCT_DESC) 
+                    VALUES 
+                    (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :REF_CD, :DESCRIPTION, 
+                     :SYS_CREATE_TS, :CREATED_BY, 'A', 1, :LEDGER_NO, :ACCT_DESC)";
 
-                        command.ExecuteNonQuery();
-
-                        if (!string.IsNullOrEmpty(row.LEDGER_NO))
+                        foreach (var row in combinedRows)
                         {
-                            command.CommandText = "CALL CALL_TRIGGER_LOGIC(:LEDGER_NO)";
-                            command.Parameters.Clear();
-                            command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO));
-                            command.ExecuteNonQuery();
+                            try
+                            {
+                                // Clear parameters for each row
+                                command.Parameters.Clear();
+
+                                // Add parameters for the INSERT command
+                                command.Parameters.Add(new OracleParameter("DETAIL_ID", row.DETAIL_ID));
+                                command.Parameters.Add(new OracleParameter("STMNT_ID", OracleDbType.Varchar2)
+                                { Value = row.STMNT_ID ?? (object)DBNull.Value });
+                                command.Parameters.Add(new OracleParameter("SHEET_ID", OracleDbType.Varchar2)
+                                { Value = row.SHEET_ID ?? (object)DBNull.Value });
+                                command.Parameters.Add(new OracleParameter("HEADER_ID", row.HEADER_ID));
+                                command.Parameters.Add(new OracleParameter("REF_CD", OracleDbType.Varchar2)
+                                { Value = row.REF_CD ?? (object)DBNull.Value });
+                                command.Parameters.Add(new OracleParameter("DESCRIPTION", OracleDbType.Varchar2)
+                                { Value = row.DESCRIPTION ?? (object)DBNull.Value });
+                                command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", OracleDbType.TimeStamp)
+                                { Value = row.SYS_CREATE_TS });
+                                command.Parameters.Add(new OracleParameter("CREATED_BY", OracleDbType.Varchar2)
+                                { Value = row.CREATED_BY ?? (object)DBNull.Value });
+                                command.Parameters.Add(new OracleParameter("LEDGER_NO", OracleDbType.Varchar2)
+                                { Value = row.LEDGER_NO ?? (object)DBNull.Value });
+                                command.Parameters.Add(new OracleParameter("ACCT_DESC", OracleDbType.Varchar2)
+                                { Value = row.ACCT_DESC ?? (object)DBNull.Value });
+
+                                // Execute the INSERT command
+                                int rowsAffected = command.ExecuteNonQuery();
+
+                                if (rowsAffected > 0)
+                                {
+                                    Console.WriteLine($"[SUCCESS] Row inserted successfully: DETAIL_ID = {row.DETAIL_ID}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"[WARNING] No rows affected for DETAIL_ID: {row.DETAIL_ID}");
+                                }
+
+                                // Execute trigger logic if LEDGER_NO is provided
+                                if (!string.IsNullOrEmpty(row.LEDGER_NO))
+                                {
+                                    try
+                                    {
+                                        command.CommandText = "CALL CALL_TRIGGER_LOGIC(:LEDGER_NO)";
+                                        command.Parameters.Clear();
+                                        command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO));
+
+                                        int triggerResult = command.ExecuteNonQuery();
+
+                                        if (triggerResult >= 0)
+                                        {
+                                            Console.WriteLine($"[SUCCESS] Trigger executed successfully for LEDGER_NO: {row.LEDGER_NO}");
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine($"[WARNING] Trigger did not execute as expected for LEDGER_NO: {row.LEDGER_NO}");
+                                        }
+                                    }
+                                    catch (OracleException ex)
+                                    {
+                                        Console.WriteLine($"[ERROR] Trigger Execution Failed: {ex.Message}");
+                                        Console.WriteLine($"Oracle Error Code: {ex.Number}");
+                                        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                                    }
+                                }
+                            }
+                            catch (OracleException ex)
+                            {
+                                Console.WriteLine($"[ERROR] Oracle Insertion Failed for DETAIL_ID: {row.DETAIL_ID}");
+                                Console.WriteLine($"Oracle Error Code: {ex.Number}");
+                                Console.WriteLine($"Message: {ex.Message}");
+                                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[ERROR] General Exception for DETAIL_ID: {row.DETAIL_ID}");
+                                Console.WriteLine($"Message: {ex.Message}");
+                                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                            }
                         }
                     }
                 }
+                catch (OracleException ex)
+                {
+                    Console.WriteLine($"[ERROR] Database Connection Issue: {ex.Message}");
+                    Console.WriteLine($"Oracle Error Code: {ex.Number}");
+                    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] General Exception: {ex.Message}");
+                    Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                }
             }
         }
+
 
         private void DeleteMappingRows(List<int> mappingIds)
         {

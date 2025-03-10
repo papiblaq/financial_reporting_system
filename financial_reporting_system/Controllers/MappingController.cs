@@ -4,6 +4,7 @@ using Oracle.ManagedDataAccess.Client;
 using Syncfusion.XlsIO;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 
 namespace syncfusion_grid.Controllers
@@ -193,7 +194,7 @@ namespace syncfusion_grid.Controllers
                         command.CommandText = @"
                         SELECT D.DETAIL_ID, D.STMNT_ID, D.SHEET_ID, D.HEADER_ID, D.GL_ACCT_CAT_CD, 
                         D.REF_CD, D.DESCRIPTION, D.SYS_CREATE_TS, D.CREATED_BY
-                        FROM ORG_FINANCIAL_STMNT_DETAIL D";
+                        FROM ORG_FINANCIAL_STMNT_DETAIL D WHERE REC_ST = 'A'";
 
 
                     // Log the parameter value for debugging
@@ -292,52 +293,71 @@ namespace syncfusion_grid.Controllers
 
 
 
-        // method to join all the rows selected by the user
         private void InsertCombinedRows(List<CombinedRow> combinedRows)
         {
-            using (var connection = new OracleConnection(_connectionString))
+            try
             {
-                connection.Open();
-                using (var command = connection.CreateCommand())
+                using (var connection = new OracleConnection(_connectionString))
                 {
-                    // Insert into ORG_MAPPED_DESCRIPTION
-                    command.CommandText = @"
-                        INSERT INTO SINGLE_SHEET_MAPPED_DESCRIPTION 
-                        (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC) 
-                        VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :LEDGER_NO, :ACCT_DESC)";
-
-                    foreach (var row in combinedRows)
+                    connection.Open();
+                    using (var transaction = connection.BeginTransaction())
+                    using (var command = connection.CreateCommand())
                     {
-                        // Clear parameters for each iteration
-                        command.Parameters.Clear();
+                        command.Transaction = transaction;
 
-                        // Add parameters for the INSERT statement
-                        command.Parameters.Add(new OracleParameter("DETAIL_ID", row.DETAIL_ID));
-                        command.Parameters.Add(new OracleParameter("STMNT_ID", row.STMNT_ID));
-                        command.Parameters.Add(new OracleParameter("SHEET_ID", row.SHEET_ID));
-                        command.Parameters.Add(new OracleParameter("HEADER_ID", row.HEADER_ID));
-                        command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", row.GL_ACCT_CAT_CD ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("REF_CD", row.REF_CD ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("DESCRIPTION", row.DESCRIPTION ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", row.SYS_CREATE_TS));
-                        command.Parameters.Add(new OracleParameter("CREATED_BY", row.CREATED_BY ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO ?? (object)DBNull.Value));
-                        command.Parameters.Add(new OracleParameter("ACCT_DESC", row.ACCT_DESC ?? (object)DBNull.Value));
+                        // Insert into SINGLE_SHEET_MAPPED_DESCRIPTION
+                        command.CommandText = @"
+                    INSERT INTO SINGLE_SHEET_MAPPED_DESCRIPTION 
+                    (DETAIL_ID, STMNT_ID, SHEET_ID, HEADER_ID, GL_ACCT_CAT_CD, REF_CD, DESCRIPTION, SYS_CREATE_TS, CREATED_BY, LEDGER_NO, ACCT_DESC) 
+                    VALUES (:DETAIL_ID, :STMNT_ID, :SHEET_ID, :HEADER_ID, :GL_ACCT_CAT_CD, :REF_CD, :DESCRIPTION, :SYS_CREATE_TS, :CREATED_BY, :LEDGER_NO, :ACCT_DESC)";
 
-                        // Execute the INSERT statement
-                        command.ExecuteNonQuery();
-
-                        // Call the CALL_TRIGGER_LOGIC procedure if LEDGER_NO is not null or empty
-                        if (!string.IsNullOrEmpty(row.LEDGER_NO))
+                        foreach (var row in combinedRows)
                         {
-                            // Reuse the same command object for the procedure call
-                            command.CommandText = "CALL CALL_SINGLE_SHEET_TRIGGER_LOGIC(:LEDGER_NO)";
-                            command.Parameters.Clear(); // Clear previous parameters
-                            command.Parameters.Add(new OracleParameter("LEDGER_NO", row.LEDGER_NO));
+                            command.Parameters.Clear();
+
+                            // Add parameters for the INSERT statement
+                            command.Parameters.Add(new OracleParameter("DETAIL_ID", OracleDbType.Int32, row.DETAIL_ID, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("STMNT_ID", OracleDbType.Int32, row.STMNT_ID, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("SHEET_ID", OracleDbType.Int32, row.SHEET_ID, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("HEADER_ID", OracleDbType.Int32, row.HEADER_ID, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("GL_ACCT_CAT_CD", OracleDbType.Varchar2, row.GL_ACCT_CAT_CD ?? (object)DBNull.Value, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("REF_CD", OracleDbType.Varchar2, row.REF_CD ?? (object)DBNull.Value, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("DESCRIPTION", OracleDbType.Varchar2, row.DESCRIPTION ?? (object)DBNull.Value, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("SYS_CREATE_TS", OracleDbType.TimeStamp, row.SYS_CREATE_TS, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("CREATED_BY", OracleDbType.Varchar2, row.CREATED_BY ?? (object)DBNull.Value, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("LEDGER_NO", OracleDbType.Varchar2, row.LEDGER_NO ?? (object)DBNull.Value, ParameterDirection.Input));
+                            command.Parameters.Add(new OracleParameter("ACCT_DESC", OracleDbType.Varchar2, row.ACCT_DESC ?? (object)DBNull.Value, ParameterDirection.Input));
+
                             command.ExecuteNonQuery();
+
+                            // Call the stored procedure if LEDGER_NO is not null or empty
+                            if (!string.IsNullOrEmpty(row.LEDGER_NO))
+                            {
+                                command.CommandText = "CALL CALL_SINGLE_SHEET_TRIGGER_LOGIC(:LEDGER_NO)";
+                                command.Parameters.Clear();
+                                command.Parameters.Add(new OracleParameter("LEDGER_NO", OracleDbType.Varchar2, row.LEDGER_NO, ParameterDirection.Input));
+                                command.ExecuteNonQuery();
+                            }
                         }
+
+                        transaction.Commit();
                     }
                 }
+            }
+            catch (OracleException ex)
+            {
+                // Log Oracle-specific errors to the console
+                Console.WriteLine($"Oracle Exception: {ex.Message}");
+                Console.WriteLine($"Oracle Error Code: {ex.Number}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                throw; // Re-throw the exception or handle it as needed
+            }
+            catch (Exception ex)
+            {
+                // Log general exceptions to the console
+                Console.WriteLine($"Exception: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                throw; // Re-throw the exception or handle it as needed
             }
         }
 

@@ -163,7 +163,7 @@ namespace financial_reporting_system.Controllers
                     await connection.OpenAsync();
                     string insertQuery = @"
                         INSERT INTO EXCEL_WORKBOOK_STMNT_HEADER (
-                            HEADER_ID, 
+                           
                             STMNT_ID, 
                             SHEET_ID, 
                             REF_CD, 
@@ -173,7 +173,7 @@ namespace financial_reporting_system.Controllers
                             CREATED_BY
                         ) 
                         VALUES (
-                            SEQ_EXCEL_WORKBOOK_STMNT_HEADER.NEXTVAL, 
+                            
                             :STMNT_ID, 
                             :SHEET_ID, 
                             :REF_CD, 

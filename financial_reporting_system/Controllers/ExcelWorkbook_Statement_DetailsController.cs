@@ -238,14 +238,14 @@ namespace financial_reporting_system.Controllers
                     await connection.OpenAsync();
                     string query = @"
                     SELECT 
-                    Details_ID, 
+                    DETAIL_ID, 
                     STMNT_ID, 
                     SHEET_ID, 
                     REF_CD, 
                     DESCRIPTION, 
                     SYS_CREATE_TS, 
                     CREATED_BY 
-                    FROM EXCEL_WORKBOOK_STMNT_Details";
+                    FROM EXCEL_WORKBOOK_STMNT_DETAIL";
                     using (var command = new OracleCommand(query, connection))
                     {
                         using (var reader = await command.ExecuteReaderAsync())
@@ -254,7 +254,7 @@ namespace financial_reporting_system.Controllers
                             {
                                 details.Add(new Details
                                 {
-                                    Details_ID = reader.GetInt32(0),
+                                    DETAIL_ID = reader.GetInt32(0),
                                     STMNT_ID = reader.GetString(1), // Updated to string
                                     SHEET_ID = reader.GetString(2), // Updated to string
                                     REF_CD = reader.GetString(3),
@@ -284,7 +284,7 @@ namespace financial_reporting_system.Controllers
             }
             var model = new EditDetailsInputModel
             {
-                Details_ID = detail.Details_ID,
+                DETAIL_ID = detail.DETAIL_ID,
                 STMNT_ID = detail.STMNT_ID,
                 SHEET_ID = detail.SHEET_ID,
                 REF_CD = detail.REF_CD,
@@ -306,25 +306,25 @@ namespace financial_reporting_system.Controllers
                     await connection.OpenAsync();
                     string query = @"
                     SELECT 
-                    Details_ID, 
+                    DETAIL_ID, 
                     STMNT_ID, 
                     SHEET_ID, 
                     REF_CD, 
                     DESCRIPTION, 
                     SYS_CREATE_TS, 
                     CREATED_BY 
-                    FROM EXCEL_WORKBOOK_STMNT_Details 
-                    WHERE Details_ID = :Details_ID";
+                    FROM EXCEL_WORKBOOK_STMNT_DETAIL 
+                    WHERE DETAIL_ID = :DETAIL_ID";
                     using (var command = new OracleCommand(query, connection))
                     {
-                        command.Parameters.Add(new OracleParameter("Details_ID", id));
+                        command.Parameters.Add(new OracleParameter("DETAIL_ID", id));
                         using (var reader = await command.ExecuteReaderAsync())
                         {
                             if (await reader.ReadAsync())
                             {
                                 detail = new Details
                                 {
-                                    Details_ID = reader.GetInt32(0),
+                                    DETAIL_ID = reader.GetInt32(0),
                                     STMNT_ID = reader.GetString(1), // Updated to string
                                     SHEET_ID = reader.GetString(2), // Updated to string
                                     REF_CD = reader.GetString(3),
@@ -347,9 +347,9 @@ namespace financial_reporting_system.Controllers
         // POST: ExcelWorkbook_Statement_Details/Edit/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Details_ID,STMNT_ID,SHEET_ID,REF_CD,DESCRIPTION,SYS_CREATE_TS,CREATED_BY")] EditDetailsInputModel model)
+        public async Task<IActionResult> Edit(int id, [Bind("DETAIL_ID,STMNT_ID,SHEET_ID,REF_CD,DESCRIPTION,SYS_CREATE_TS,CREATED_BY")] EditDetailsInputModel model)
         {
-            if (id != model.Details_ID)
+            if (id != model.DETAIL_ID)
             {
                 TempData["ErrorMessage"] = "Invalid record ID.";
                 return NotFound();
@@ -365,16 +365,16 @@ namespace financial_reporting_system.Controllers
                 {
                     await connection.OpenAsync();
                     string updateQuery = @"
-                    UPDATE EXCEL_WORKBOOK_STMNT_Details 
+                    UPDATE EXCEL_WORKBOOK_STMNT_DETAIL 
                     SET 
                     REF_CD = :REF_CD, 
                     DESCRIPTION = :DESCRIPTION 
-                    WHERE Details_ID = :Details_ID";
+                    WHERE DETAIL_ID = :DETAIL_ID";
                     using (var command = new OracleCommand(updateQuery, connection))
                     {
                         command.Parameters.Add(new OracleParameter("REF_CD", model.REF_CD));
                         command.Parameters.Add(new OracleParameter("DESCRIPTION", model.DESCRIPTION));
-                        command.Parameters.Add(new OracleParameter("Details_ID", model.Details_ID));
+                        command.Parameters.Add(new OracleParameter("DETAIL_ID", model.DETAIL_ID));
                         int rowsAffected = await command.ExecuteNonQueryAsync();
                         if (rowsAffected > 0)
                         {
@@ -411,10 +411,10 @@ namespace financial_reporting_system.Controllers
                 using (var connection = new OracleConnection(_connectionString))
                 {
                     await connection.OpenAsync();
-                    string deleteQuery = "DELETE FROM EXCEL_WORKBOOK_STMNT_Details WHERE Details_ID = :Details_ID";
+                    string deleteQuery = "DELETE FROM EXCEL_WORKBOOK_STMNT_DETAIL WHERE DETAIL_ID = :DETAIL_ID";
                     using (var command = new OracleCommand(deleteQuery, connection))
                     {
-                        command.Parameters.Add(new OracleParameter("Details_ID", id));
+                        command.Parameters.Add(new OracleParameter("DETAIL_ID", id));
                         await command.ExecuteNonQueryAsync();
                     }
                 }
@@ -447,7 +447,7 @@ namespace financial_reporting_system.Controllers
         // Data model class for EXCEL_WORKBOOK_STMNT_Details
         public class Details
         {
-            public int Details_ID { get; set; }
+            public int DETAIL_ID { get; set; }
             public string STMNT_ID { get; set; } // Updated to string
             public string SHEET_ID { get; set; } // Updated to string
             public string REF_CD { get; set; }
@@ -459,7 +459,7 @@ namespace financial_reporting_system.Controllers
         // View model for the Edit view
         public class EditDetailsInputModel
         {
-            public int Details_ID { get; set; }
+            public int DETAIL_ID { get; set; }
             public string STMNT_ID { get; set; } // Updated to string
             public string SHEET_ID { get; set; } // Updated to string
             public string REF_CD { get; set; }

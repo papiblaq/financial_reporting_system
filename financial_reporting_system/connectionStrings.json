@@ -1,5 +1,5 @@
 {
     "ConnectionStrings": {
-        "OracleConnection": "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=10.1.63.201)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=prjctpdb)));User ID=bingwatest;Password=bingwatest"
+        "OracleConnection": "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.100.240)(PORT=1539))(CONNECT_DATA=(SERVICE_NAME=NEP02PDB)));User ID=taifalive;Password=taifalive"
     }
 }
